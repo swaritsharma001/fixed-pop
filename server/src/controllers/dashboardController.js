@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { z } = require('zod');
 const Order = require('../models/Order');
 const Payment = require('../models/Payment');
+const ProcessedEmail = require('../models/ProcessedEmail');
 const UnmatchedPayment = require('../models/UnmatchedPayment');
 const { serializeOrder } = require('./orderController');
 const { validationError } = require('./authController');
@@ -9,6 +10,8 @@ const {
   paginationQuerySchema,
   claimUnmatchedSchema,
   claimUnmatchedParamsSchema,
+  reportedUtrParamsSchema,
+  reportedUtrConfirmationSchema,
 } = require('../validators/dashboardSchemas');
 const { decimalToPaise, paiseToRupees } = require('../utils/money');
 const { settleOrderFromVerifiedAlert } = require('../services/paymentSettlementService');
@@ -37,6 +40,7 @@ function paymentSummary(payment) {
     utr: payment.utr,
     amount: paiseToRupees(decimalToPaise(payment.amount)),
     receivedAt: payment.receivedAt,
+    verificationMethod: payment.verificationMethod || 'FAMAPP_EMAIL',
   };
 }
 
@@ -251,6 +255,99 @@ async function claimUnmatched(req, res, next) {
   return res.json({ claimed: true, order_id: orderId, payment_id: paymentId });
 }
 
+async function confirmReportedUtr(req, res, next) {
+  const params = reportedUtrParamsSchema.safeParse(req.params);
+  if (!params.success) return validationError(res, params.error);
+  const parsed = reportedUtrConfirmationSchema.safeParse(req.body);
+  if (!parsed.success) return validationError(res, parsed.error);
+
+  const session = await mongoose.startSession();
+  let paymentId;
+  let orderId;
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({
+        merchantId: req.merchantId,
+        orderId: params.data.orderId,
+      }).session(session);
+      if (!order) {
+        const error = new Error('Order not found');
+        error.status = 404;
+        throw error;
+      }
+      if (!['PENDING', 'EXPIRED'].includes(order.status) || !order.reportedUtr) {
+        const error = new Error('This order no longer has a UTR awaiting verification');
+        error.status = 409;
+        throw error;
+      }
+
+      const { amount, received_at: receivedAt } = parsed.data;
+      if (decimalToPaise(order.payableAmount) !== amount) {
+        const error = new Error('The verified transfer amount does not match this order');
+        error.status = 409;
+        throw error;
+      }
+      if (
+        receivedAt < order.createdAt ||
+        receivedAt > order.expiresAt ||
+        receivedAt > new Date()
+      ) {
+        const error = new Error('The transfer time is outside this order’s payment window');
+        error.status = 409;
+        throw error;
+      }
+
+      const utr = order.reportedUtr;
+      if (!/^\d{12}$/.test(utr)) {
+        const error = new Error('The reported UTR is invalid and cannot be confirmed');
+        error.status = 409;
+        throw error;
+      }
+      const [existingPayment, processedEmail, unmatchedPayment, otherReport] =
+        await Promise.all([
+          Payment.findOne({ utr }).session(session),
+          ProcessedEmail.findOne({ utr }).session(session),
+          UnmatchedPayment.findOne({ utr }).session(session),
+          Order.findOne({
+            reportedUtr: utr,
+            orderId: { $ne: order.orderId },
+          }).session(session),
+        ]);
+      if (existingPayment || processedEmail || unmatchedPayment || otherReport) {
+        const error = new Error('This UTR has already been used or reported');
+        error.status = 409;
+        throw error;
+      }
+
+      const payment = await settleOrderFromVerifiedAlert({
+        session,
+        merchantId: req.merchantId,
+        order,
+        utr,
+        amount: order.payableAmount,
+        receivedAt,
+        verificationMethod: 'MERCHANT_MANUAL',
+      });
+      paymentId = payment.id;
+      orderId = order.orderId;
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: 'This UTR has already been confirmed' });
+    }
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    return next(error);
+  } finally {
+    await session.endSession();
+  }
+  return res.json({
+    confirmed: true,
+    order_id: orderId,
+    payment_id: paymentId,
+    verification_method: 'MERCHANT_MANUAL',
+  });
+}
+
 module.exports = {
   indiaDayBounds,
   paymentSummary,
@@ -259,4 +356,5 @@ module.exports = {
   listPayments,
   listUnmatched,
   claimUnmatched,
+  confirmReportedUtr,
 };

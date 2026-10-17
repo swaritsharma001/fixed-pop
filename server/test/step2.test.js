@@ -23,7 +23,7 @@ test('signup and login validate and normalize email addresses', () => {
     name: '  PopPay Shop ',
     email: ' Owner@Example.com ',
     password: 'correct-horse-battery',
-  });
+    });
   assert.equal(signup.name, 'PopPay Shop');
   assert.equal(signup.email, 'owner@example.com');
   assert.equal(loginSchema.safeParse({ email: 'bad', password: '' }).success, false);
@@ -154,6 +154,11 @@ test('auth and merchant routes enforce validation and bearer authentication', as
       ['/dashboard/orders', 'GET', undefined],
       ['/payments', 'GET', undefined],
       ['/unmatched', 'GET', undefined],
+      ['/reported-utr/order_abcdefghijkl/confirm', 'POST', {
+        amount: '25.00',
+        received_at: '2026-10-17T12:00:00.000Z',
+        verified_in_bank: true,
+      }],
       ['/webhooks/logs', 'GET', undefined],
       ['/dev/simulate-payment', 'POST', {}],
     ]) {

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import {
   claimUnmatched,
+  confirmReportedUtr,
   disconnectGmail,
   getDashboardOrders,
   getDashboardStats,
@@ -157,7 +158,7 @@ export function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <StatTile accent label="Collected today" value={formatMoney(stats.todayCollection)} caption={`${Number(stats.todayPaymentCount || 0)} confirmed ${Number(stats.todayPaymentCount || 0) === 1 ? 'payment' : 'payments'} today`} icon={ArrowDownRight} />
             <StatTile label="Success rate today" value={`${Number(stats.successRate || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}%`} caption="Paid orders compared with orders created today" icon={Activity} />
-            <StatTile label="Payments received" value={String(Number(stats.todayPaymentCount || 0))} caption="Based on confirmed UPI notifications today" icon={CheckCircle2} />
+            <StatTile label="Payments received" value={String(Number(stats.todayPaymentCount || 0))} caption="FamApp alerts and bank-app confirmations" icon={CheckCircle2} />
           </div>
         ) : null}
 
@@ -168,7 +169,7 @@ export function DashboardPage() {
               {recent.map((payment) => (
                 <div key={payment.payment_id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 sm:px-6">
                   <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#e8f3e6] text-[#3f795e]"><CheckCircle2 className="h-4 w-4" /></span>
-                  <div className="min-w-[130px] flex-1"><p className="font-mono text-xs font-semibold text-[#294b40]">{payment.order_id}</p><p className="mt-1 text-[10px] text-[#8a9890]">UTR {payment.utr || '—'} · {formatDate(payment.receivedAt, { time: true })}</p></div>
+                  <div className="min-w-[130px] flex-1"><p className="font-mono text-xs font-semibold text-[#294b40]">{payment.order_id}</p><p className="mt-1 text-[10px] text-[#8a9890]">UTR {payment.utr || '—'} · {formatDate(payment.receivedAt, { time: true })}</p><p className="mt-1 text-[10px] font-semibold text-[#648071]">{payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant verified in bank app' : 'FamApp credit alert'}</p></div>
                   <p className="font-[var(--font-display)] text-sm font-bold tabular-nums text-[#1e493a]">{formatMoney(payment.amount)}</p>
                 </div>
               ))}
@@ -265,20 +266,21 @@ export function PaymentsPage() {
   const payments = result?.payments || [];
   return (
     <div className="page-enter">
-      <PageHeading eyebrow="Confirmed transfers" title="Payments" detail="Payments are recorded when an incoming UPI transfer matches an order." />
+      <PageHeading eyebrow="Confirmed transfers" title="Payments" detail="Payments are recorded after a verified transfer matches an order." />
       <Panel className="overflow-hidden">
         <PanelTitle title="Payment history" detail={result ? `${result.total} confirmed ${result.total === 1 ? 'payment' : 'payments'}` : 'Most recent first'} />
         {loading ? <TableLoading columns={4} /> : error ? <div className="p-5"><ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /></div> : !payments.length ? (
           <EmptyState icon={WalletCards} title="No confirmed payments" detail="A payment will appear here after a matching UPI transfer is confirmed." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] border-collapse text-left">
-              <thead><tr className="bg-[#f8faf6] text-[9px] font-bold uppercase tracking-[.13em] text-[#84928a]"><th className="px-5 py-3.5">Payment</th><th className="px-4 py-3.5">Order</th><th className="px-4 py-3.5">UTR</th><th className="px-4 py-3.5">Received</th><th className="px-5 py-3.5 text-right">Amount</th></tr></thead>
+            <table className="w-full min-w-[780px] border-collapse text-left">
+              <thead><tr className="bg-[#f8faf6] text-[9px] font-bold uppercase tracking-[.13em] text-[#84928a]"><th className="px-5 py-3.5">Payment</th><th className="px-4 py-3.5">Order</th><th className="px-4 py-3.5">UTR</th><th className="px-4 py-3.5">Verified by</th><th className="px-4 py-3.5">Received</th><th className="px-5 py-3.5 text-right">Amount</th></tr></thead>
               <tbody className="divide-y divide-[#edf0eb]">
                 {payments.map((payment) => <tr key={payment.payment_id} className="hover:bg-[#fbfcf9]">
                   <td className="px-5 py-4 font-mono text-[11px] text-[#59756a]">{payment.payment_id}</td>
                   <td className="px-4 py-4 font-mono text-xs font-semibold text-[#294b40]">{payment.order_id}</td>
                   <td className="px-4 py-4 font-mono text-xs text-[#71817b]">{payment.utr || '—'}</td>
+                  <td className="px-4 py-4 text-[11px] font-semibold text-[#557565]">{payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant bank app' : 'FamApp alert'}</td>
                   <td className="px-4 py-4 text-[11px] text-[#71817b]">{formatDate(payment.receivedAt, { time: true })}</td>
                   <td className="px-5 py-4 text-right text-xs font-bold tabular-nums text-[#24483a]">{formatMoney(payment.amount)}</td>
                 </tr>)}
@@ -309,6 +311,8 @@ export function UnmatchedPage() {
   const [claiming, setClaiming] = useState('');
   const [claimError, setClaimError] = useState('');
   const [claimSuccess, setClaimSuccess] = useState('');
+  const [bankConfirmations, setBankConfirmations] = useState({});
+  const [confirmingUtr, setConfirmingUtr] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -350,19 +354,68 @@ export function UnmatchedPage() {
     }
   }
 
+  function updateBankConfirmation(orderId, patch) {
+    setBankConfirmations((current) => ({
+      ...current,
+      [orderId]: { ...current[orderId], ...patch },
+    }));
+  }
+
+  async function confirmReportedPayment(order) {
+    const confirmation = bankConfirmations[order.order_id];
+    if (!confirmation?.amount || !confirmation?.receivedAt || !confirmation?.verified) return;
+
+    setConfirmingUtr(order.order_id);
+    setClaimError('');
+    setClaimSuccess('');
+    try {
+      const istDateTime = confirmation.receivedAt.length === 16
+        ? `${confirmation.receivedAt}:00+05:30`
+        : `${confirmation.receivedAt}+05:30`;
+      const receivedAt = new Date(istDateTime);
+      if (!Number.isFinite(receivedAt.getTime())) {
+        throw new Error('Enter a valid transfer date and time.');
+      }
+      await confirmReportedUtr(order.order_id, {
+        amount: confirmation.amount.trim(),
+        received_at: receivedAt.toISOString(),
+        verified_in_bank: true,
+      });
+      setClaimSuccess(`UTR ${order.reportedUtr} was confirmed as a bank-app-verified payment for ${order.order_id}.`);
+      setData((current) => current ? {
+        ...current,
+        pendingOrders: current.pendingOrders.filter((item) => item.order_id !== order.order_id),
+      } : current);
+      setBankConfirmations((current) => {
+        const next = { ...current };
+        delete next[order.order_id];
+        return next;
+      });
+      try {
+        setData(await getUnmatched({ page: 1, limit: 100 }));
+      } catch {
+        // Keep the successful confirmation reflected locally if refresh fails.
+      }
+    } catch (requestError) {
+      setClaimError(requestError.message || 'This reported UTR could not be confirmed.');
+    } finally {
+      setConfirmingUtr('');
+    }
+  }
+
   const payments = data?.payments || [];
   const pendingOrders = data?.pendingOrders || [];
   const utrReports = pendingOrders.filter((order) => order.reportedUtr);
 
   return (
     <div className="page-enter">
-      <PageHeading eyebrow="Payment reconciliation" title="Needs matching" detail="Match an incoming transfer to the order with the same amount and payment window." />
+      <PageHeading eyebrow="Payment reconciliation" title="Needs matching" detail="Match incoming transfers by amount and payment window, or verify a reported UTR against your bank account." />
       {claimSuccess && <div className="mb-4"><Notice onClose={() => setClaimSuccess('')}>{claimSuccess}</Notice></div>}
       {claimError && <div className="mb-4"><Notice tone="error" onClose={() => setClaimError('')}>{claimError}</Notice></div>}
       <Panel className="overflow-hidden">
         <PanelTitle title="Unmatched transfers" detail={data ? `${data.total} waiting for a matching order` : 'Review each transfer before matching'} />
         {loading ? <TableLoading columns={4} /> : error ? <div className="p-5"><ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /></div> : !payments.length ? (
-          <EmptyState icon={CheckCircle2} title="Nothing needs matching" detail="When an allowed FamApp sender reports a transfer that does not match an order, it will be listed here." />
+          <EmptyState icon={CheckCircle2} title={utrReports.length ? 'No unmatched FamApp transfers' : 'Nothing needs matching'} detail={utrReports.length ? 'Customer UTR reports are listed below for bank-app verification.' : 'When an allowed FamApp sender reports a transfer that does not match an order, it will be listed here.'} />
         ) : (
           <div className="divide-y divide-[#edf0eb]">
             {payments.map((payment) => {
@@ -394,23 +447,71 @@ export function UnmatchedPage() {
       </Panel>
       {utrReports.length > 0 && (
         <Panel className="mt-5 overflow-hidden">
-          <PanelTitle title="Customer UTR reports" detail={`${utrReports.length} reference${utrReports.length === 1 ? '' : 's'} awaiting a verified payment alert`} />
+          <PanelTitle title="Customer UTR reports" detail={`${utrReports.length} reference${utrReports.length === 1 ? '' : 's'} awaiting bank verification or a FamApp alert`} />
           <div className="divide-y divide-[#edf0eb]">
             {utrReports.map((order) => (
-              <article key={order.order_id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <article key={order.order_id} className="grid gap-4 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,1.1fr)] lg:items-center sm:px-6">
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-[#294b40]">{order.receipt || order.order_id} · {formatMoney(order.payableAmount)}</p>
                   <p className="mt-1 break-all font-mono text-xs text-[#426b57]">UTR {order.reportedUtr}</p>
                   <p className="mt-1 break-all font-mono text-[10px] text-[#8a9890]">{order.order_id}</p>
+                  <p className="mt-2 text-[10px] text-[#8a9890]">Submitted {order.reportedUtrAt ? formatDate(order.reportedUtrAt, { time: true }) : 'recently'} · Not yet verified</p>
                 </div>
-                <p className="shrink-0 text-[10px] text-[#8a9890]">
-                  Submitted {order.reportedUtrAt ? formatDate(order.reportedUtrAt, { time: true }) : 'recently'} · Not verified
-                </p>
+                <form
+                  className="space-y-3 rounded-xl border border-[#e2eae0] bg-[#fbfcf9] p-3.5"
+                  onSubmit={(event) => { event.preventDefault(); confirmReportedPayment(order); }}
+                >
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-[10px] font-bold text-[#587266]">
+                      Amount shown in your account
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        maxLength={18}
+                        required
+                        value={bankConfirmations[order.order_id]?.amount || ''}
+                        onChange={(event) => updateBankConfirmation(order.order_id, { amount: event.target.value })}
+                        placeholder="0.00"
+                        className="mt-1.5 h-10 w-full rounded-lg border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                      />
+                    </label>
+                    <label className="block text-[10px] font-bold text-[#587266]">
+                      Transfer date and time (IST)
+                      <input
+                        type="datetime-local"
+                        step="60"
+                        required
+                        value={bankConfirmations[order.order_id]?.receivedAt || ''}
+                        onChange={(event) => updateBankConfirmation(order.order_id, { receivedAt: event.target.value })}
+                        className="mt-1.5 h-10 w-full rounded-lg border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                      />
+                    </label>
+                  </div>
+                  <label className="flex cursor-pointer items-start gap-2 text-[10px] leading-4 text-[#587266]">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={Boolean(bankConfirmations[order.order_id]?.verified)}
+                      onChange={(event) => updateBankConfirmation(order.order_id, { verified: event.target.checked })}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#126b58]"
+                    />
+                    <span>I checked my bank or UPI account and verified this exact UTR and transfer.</span>
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={confirmingUtr === order.order_id}
+                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#174e41] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {confirmingUtr === order.order_id ? <Spinner small /> : <ShieldCheck className="h-4 w-4" />}
+                    Confirm bank-verified payment
+                  </button>
+                </form>
               </article>
             ))}
           </div>
           <p className="border-t border-[#edf0eb] px-5 py-3 text-[10px] leading-5 text-[#89968e] sm:px-6">
-            Compare the UTR and exact amount with your bank or UPI account. A customer-entered UTR alone does not confirm payment; PopPay marks the order paid only after a trusted FamApp credit alert matches.
+            Confirm only after checking the UTR, exact amount, and transfer time in your bank or UPI account. The transfer time must fall within the order’s payment window. PopPay records this as merchant-verified.
           </p>
         </Panel>
       )}

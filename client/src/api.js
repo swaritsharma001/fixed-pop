@@ -98,6 +98,12 @@ export function claimUnmatched(id, orderId) {
   );
 }
 
+export function confirmReportedUtr(orderId, confirmation) {
+  return request(
+    `/api/v1/reported-utr/${encodeURIComponent(orderId)}/confirm`,
+    jsonPost(confirmation),
+  );
+}
 export function getWebhookLogs() {
   return request('/api/v1/webhooks/logs');
 }

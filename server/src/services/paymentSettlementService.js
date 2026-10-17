@@ -12,6 +12,7 @@ async function settleOrderFromVerifiedAlert({
   gmailMessageId,
   receivedAt,
   unmatchedPayment,
+  verificationMethod = 'FAMAPP_EMAIL',
 }) {
   const [payment] = await Payment.create(
     [
@@ -20,8 +21,11 @@ async function settleOrderFromVerifiedAlert({
         orderId: order.orderId,
         utr,
         amount,
-        gmailMessageId,
+        // Keep the existing globally unique message key populated for manual
+        // records; verificationMethod is the audit source of truth.
+        gmailMessageId: gmailMessageId || `merchant-manual:${utr}`,
         receivedAt,
+        verificationMethod,
       },
     ],
     { session },

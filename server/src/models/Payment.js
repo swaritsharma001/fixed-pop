@@ -12,6 +12,12 @@ const paymentSchema = new mongoose.Schema(
     amount: { type: mongoose.Schema.Types.Decimal128, required: true },
     gmailMessageId: { type: String, required: true, unique: true, trim: true },
     receivedAt: { type: Date, required: true },
+    verificationMethod: {
+      type: String,
+      enum: ['FAMAPP_EMAIL', 'MERCHANT_MANUAL'],
+      default: 'FAMAPP_EMAIL',
+      required: true,
+    },
   },
   { timestamps: true },
 );
