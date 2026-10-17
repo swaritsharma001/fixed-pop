@@ -3,11 +3,21 @@ require('dotenv').config();
 const crypto = require('crypto');
 const express = require('express');
 
-const a = "pp_live_14b2324b9be017aeadc154d426387b9719ba"
-const b = "pp_secret_459cb88fb739e09b67d798c4aee95efac1638ff1a476513cf0c15b17c09a02d6"
-const POPPAY_BASE_URL = "https://d4c86a66-f9ee-49ea-972b-c097102dabfd-00-2ilnlopo2bzm9.sisko.replit.dev"
-const POPPAY_SIGNING_SECRET = "pp_sign_2d8eef38e8d415aff6ac42b641ba741755fac63e65da964afc3a2b14080a125e"
-const hook = "whsec_1ff9a91bb3c5fee39dcb4489418055e28f2f26a49796a51e8c403f1bf7bbfc1e"
+const POPPAY_BASE_URL = process.env.POPPAY_BASE_URL;
+const POPPAY_PUBLIC_KEY = process.env.POPPAY_PUBLIC_KEY;
+const POPPAY_SECRET_KEY = process.env.POPPAY_SECRET_KEY;
+const POPPAY_SIGNING_SECRET = process.env.POPPAY_SIGNING_SECRET;
+const POPPAY_WEBHOOK_SECRET = process.env.POPPAY_WEBHOOK_SECRET;
+
+for (const [name, value] of Object.entries({
+  POPPAY_BASE_URL,
+  POPPAY_PUBLIC_KEY,
+  POPPAY_SECRET_KEY,
+  POPPAY_SIGNING_SECRET,
+  POPPAY_WEBHOOK_SECRET,
+})) {
+  if (!value) throw new Error(`Missing required environment variable: ${name}`);
+}
 
 const app = express();
 app.use(
@@ -22,7 +32,7 @@ app.use(express.static('public'));
 app.get('/config.js', (req, res) => {
   const baseUrl = POPPAY_BASE_URL.replace(/\/$/, '');
   res.type('application/javascript').send(
-    `window.POPPAY_PUBLIC_KEY=${a};window.POPPAY_BASE_URL=${JSON.stringify(baseUrl)};`,
+    `window.POPPAY_PUBLIC_KEY=${JSON.stringify(POPPAY_PUBLIC_KEY)};window.POPPAY_BASE_URL=${JSON.stringify(baseUrl)};`,
   );
 });
 
@@ -31,7 +41,7 @@ app.post('/create-order', async (req, res) => {
     const response = await fetch(`${POPPAY_BASE_URL.replace(/\/$/, '')}/api/v1/orders`, {
       method: 'POST',
       headers: {
-        authorization: `Bearer ${b}`,
+        authorization: `Bearer ${POPPAY_SECRET_KEY}`,
         'content-type': 'application/json',
       },
       body: JSON.stringify({
@@ -71,7 +81,7 @@ app.post('/verify-payment', (req, res) => {
 app.post('/webhook', (req, res) => {
   const signature = req.get('X-PopPay-Signature') || '';
   const expected = crypto
-    .createHmac('sha256', hook)
+    .createHmac('sha256', POPPAY_WEBHOOK_SECRET)
     .update(req.rawBody || Buffer.alloc(0))
     .digest();
   let supplied;

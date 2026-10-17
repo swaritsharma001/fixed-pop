@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
-const Merchant = require('../models/Merchant');
 const Order = require('../models/Order');
 const Payment = require('../models/Payment');
 const ProcessedEmail = require('../models/ProcessedEmail');
 const UnmatchedPayment = require('../models/UnmatchedPayment');
-const WebhookLog = require('../models/WebhookLog');
 const { parseRupeesToPaise, paiseToRupees } = require('../utils/money');
+const { settleOrderFromVerifiedAlert } = require('./paymentSettlementService');
 
 async function isDuplicateMessageOrUtr(gmailMessageId, utr) {
   const [processed, payment, unmatched] = await Promise.all([
@@ -68,7 +67,7 @@ async function matchIncomingPayment({
 
       const order = await Order.findOne({
         merchantId,
-        status: 'PENDING',
+        status: { $in: ['PENDING', 'EXPIRED'] },
         payableAmount: amountDecimal,
         createdAt: { $lte: receivedAt },
         expiresAt: { $gte: receivedAt },
@@ -92,48 +91,15 @@ async function matchIncomingPayment({
         return;
       }
 
-      const [payment] = await Payment.create(
-        [
-          {
-            merchantId,
-            orderId: order.orderId,
-            utr,
-            amount: amountDecimal,
-            gmailMessageId,
-            receivedAt,
-          },
-        ],
-        { session },
-      );
-      order.status = 'PAID';
-      order.paidAt = receivedAt;
-      order.utr = utr;
-      await order.save({ session });
-
-      const merchant = await Merchant.findById(merchantId)
-        .select('+webhookSecret')
-        .session(session);
-      if (merchant?.webhookUrl && merchant.webhookSecret) {
-        await WebhookLog.create(
-          [
-            {
-              merchantId,
-              orderId: order.orderId,
-              payload: {
-                event: 'payment.success',
-                order_id: order.orderId,
-                payment_id: payment.id,
-                utr,
-                amount: paiseToRupees(amountPaise),
-                paid_at: receivedAt.toISOString(),
-              },
-              attempts: 0,
-              nextRetryAt: new Date(),
-            },
-          ],
-          { session },
-        );
-      }
+      const payment = await settleOrderFromVerifiedAlert({
+        session,
+        merchantId,
+        order,
+        utr,
+        amount: amountDecimal,
+        gmailMessageId,
+        receivedAt,
+      });
 
       matchResult = { matched: true, orderId: order.orderId, paymentId: payment.id };
     });

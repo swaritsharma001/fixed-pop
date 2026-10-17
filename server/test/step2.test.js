@@ -7,6 +7,7 @@ const {
   webhookUrlSchema,
 } = require('../src/validators/merchantSchemas');
 const { callbackQuerySchema } = require('../src/validators/gmailSchemas');
+const { submitCheckoutUtrSchema } = require('../src/validators/orderSchemas');
 const { generateMerchantCredentials } = require('../src/services/credentialService');
 const { encryptText, decryptText } = require('../src/utils/encryption');
 const { signWebhookBody, retryDelayMs, MAX_ATTEMPTS } = require('../src/services/webhookService');
@@ -37,6 +38,12 @@ test('webhook URLs require HTTPS', () => {
   assert.equal(webhookUrlSchema.safeParse('https://merchant.example/hook').success, true);
   assert.equal(webhookUrlSchema.safeParse('http://merchant.example/hook').success, false);
   assert.equal(webhookUrlSchema.safeParse('https://user:pass@merchant.example/hook').success, false);
+});
+
+test('customer UTR reports accept exactly 12 digits and reject transaction IDs', () => {
+  assert.equal(submitCheckoutUtrSchema.parse({ utr: ' 123456789012 ' }).utr, '123456789012');
+  assert.equal(submitCheckoutUtrSchema.safeParse({ utr: '12345' }).success, false);
+  assert.equal(submitCheckoutUtrSchema.safeParse({ utr: 'FMPIB-123456' }).success, false);
 });
 
 test('Gmail OAuth callback accepts Google response parameters but rejects unknown fields', () => {
@@ -126,6 +133,13 @@ test('auth and merchant routes enforce validation and bearer authentication', as
       body: JSON.stringify({ email: 'invalid', password: '' }),
     });
     assert.equal(login.status, 400);
+
+    const invalidUtr = await fetch(`${baseUrl}/checkout/order_abcdefghijkl/utr`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ utr: 'FMPIB-123456' }),
+    });
+    assert.equal(invalidUtr.status, 400);
 
     const profile = await fetch(`${baseUrl}/me`);
     assert.equal(profile.status, 401);

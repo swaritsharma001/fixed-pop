@@ -47,10 +47,14 @@ const orderIdParamsSchema = z
 const checkoutOrderParamsSchema = z
   .object({ orderId: z.string().regex(/^order_[A-Za-z0-9_-]{12}$/) })
   .strict();
+const submitCheckoutUtrSchema = z
+  .object({ utr: z.string().trim().regex(/^\d{12}$/, 'UTR must contain exactly 12 digits') })
+  .strict();
 
 module.exports = {
   createOrderSchema,
   listOrdersQuerySchema,
   orderIdParamsSchema,
   checkoutOrderParamsSchema,
+  submitCheckoutUtrSchema,
 };

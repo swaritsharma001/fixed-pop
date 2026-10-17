@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { getCheckoutStatus, getPublicCheckout } from './api.js';
+import {
+  getCheckoutStatus,
+  getPublicCheckout,
+  submitCheckoutUtr,
+} from './api.js';
 
 function Icon({ name, className = '' }) {
   const common = {
@@ -94,6 +98,76 @@ function PaymentLoader() {
         </div>
       </div>
     </main>
+  );
+}
+
+function UtrSubmission({ orderId, alreadySubmitted, onConfirmed }) {
+  const [utr, setUtr] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(alreadySubmitted);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (alreadySubmitted) setSubmitted(true);
+  }, [alreadySubmitted]);
+
+  async function submit(event) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setSubmitting(true);
+    try {
+      const result = await submitCheckoutUtr(orderId, utr);
+      setSubmitted(true);
+      setUtr('');
+      if (result.confirmed) {
+        onConfirmed(await getCheckoutStatus(orderId));
+      } else {
+        setMessage('UTR received. We’ll check it against the merchant’s verified payment alert. This does not confirm payment by itself.');
+      }
+    } catch (requestError) {
+      setError(requestError.message || 'We could not submit this UTR. Please check it and try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="mt-6 rounded-2xl border border-[#e4eae2] bg-[#f9fbf6] p-4 sm:p-5">
+      <p className="text-xs font-bold text-[#294b40]">Paid but not confirmed?</p>
+      <p className="mt-1 text-[11px] leading-5 text-[#74867b]">
+        Enter the 12-digit UTR from your payment receipt (not the transaction ID). We’ll verify it with the merchant’s payment alert.
+      </p>
+      {submitted && (
+        <p className="mt-3 rounded-lg bg-[#eaf4e9] px-3 py-2 text-[11px] leading-5 text-[#416c54]" role="status">
+          A UTR has been submitted for this order. You can submit a corrected UTR if needed.
+        </p>
+      )}
+      {message && <p className="mt-3 text-[11px] leading-5 text-[#416c54]" role="status">{message}</p>}
+      {error && <p className="mt-3 text-[11px] leading-5 text-[#a34f40]" role="alert">{error}</p>}
+      <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <label className="sr-only" htmlFor={`utr-${orderId}`}>12-digit UTR</label>
+        <input
+          id={`utr-${orderId}`}
+          inputMode="numeric"
+          autoComplete="off"
+          pattern="[0-9]{12}"
+          maxLength={12}
+          value={utr}
+          onChange={(event) => setUtr(event.target.value.replace(/\D/g, '').slice(0, 12))}
+          placeholder="Enter 12-digit UTR"
+          className="h-11 min-w-0 flex-1 rounded-xl border border-[#dce5dc] bg-white px-3.5 font-mono text-sm text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+        />
+        <button
+          type="submit"
+          disabled={submitting || utr.length !== 12}
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting ? 'Checking…' : 'Submit UTR'}
+        </button>
+      </form>
+    </section>
   );
 }
 
@@ -229,6 +303,9 @@ export default function PayCheckout() {
         if (result?.expiresAt && !checkout.expiresAt) {
           setCheckout((current) => ({ ...current, expiresAt: result.expiresAt }));
         }
+        if (result?.utrSubmitted && !checkout.utrSubmitted) {
+          setCheckout((current) => ({ ...current, utrSubmitted: true }));
+        }
         if (outcomeFromStatus(result?.status) !== 'waiting') applyOutcome(result);
       } catch {
         // Keep the waiting state while transient network errors retry on the next interval.
@@ -336,6 +413,13 @@ export default function PayCheckout() {
               <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#84928a]">Order reference</p>
               <p className="mt-1 break-all font-mono text-sm text-[#33554c]">{orderId}</p>
             </div>
+            <div className="mx-auto max-w-md">
+              <UtrSubmission
+                orderId={orderId}
+                alreadySubmitted={checkout?.utrSubmitted}
+                onConfirmed={applyOutcome}
+              />
+            </div>
           </section>
         ) : viewState === 'success' ? (
           <section className="entrance rounded-[28px] border border-[#dce9dd] bg-[#fffefa] px-6 py-12 text-center shadow-[0_24px_70px_rgba(25,61,48,.08)] sm:px-12">
@@ -439,6 +523,11 @@ export default function PayCheckout() {
                   Your money goes directly to <span className="font-semibold text-[#426457]">{checkout?.merchantName || 'the merchant'}</span>. PopPay never holds your funds.
                 </p>
               </div>
+              <UtrSubmission
+                orderId={orderId}
+                alreadySubmitted={checkout?.utrSubmitted}
+                onConfirmed={applyOutcome}
+              />
             </section>
 
             <aside className="entrance-delay flex flex-col items-center bg-[#f5f8f1] px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-7">

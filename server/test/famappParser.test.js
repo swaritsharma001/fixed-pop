@@ -51,6 +51,25 @@ test('FamApp credit HTML fixture is parsed as credit after stripping markup', ()
   assert.equal(parsed.counterparty, 'Example Store');
 });
 
+test('FamApp received-credit receipt text with an amount below ten rupees parses correctly', () => {
+  const sample = `
+    Hey Customer,
+    You have successfully received
+    ₹5.88
+    from Example Sender
+    Transaction ID : FMP-TEST-001
+    Date : 09:51 PM IST, 17 October 2026
+    UTR : 123456789012
+  `;
+  const parsed = parseFamAppEmail(sample);
+  assert.ok(parsed);
+  assert.equal(parsed.type, 'credit');
+  assert.equal(parsed.amount, '5.88');
+  assert.equal(parsed.utr, '123456789012');
+  assert.equal(parsed.txnId, 'FMP-TEST-001');
+  assert.equal(parsed.paidAt.toISOString(), '2026-10-17T16:21:00.000Z');
+});
+
 test('FamApp parser rejects unrecognised messages and only trusts FamApp DKIM pass', () => {
   assert.equal(parseFamAppEmail('Your balance is now ₹100.00'), null);
   assert.equal(dkimPassForFamApp('mx.google.com; dkim=pass header.i=@famapp.in'), true);

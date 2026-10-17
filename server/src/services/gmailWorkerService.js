@@ -221,9 +221,16 @@ async function pollMerchant(merchant) {
 }
 
 async function pollPendingMerchants() {
+  const now = new Date();
   const activeMerchantIds = await Order.distinct('merchantId', {
-    status: 'PENDING',
-    expiresAt: { $gt: new Date() },
+    $or: [
+      { status: 'PENDING', expiresAt: { $gt: now } },
+      {
+        status: 'EXPIRED',
+        reportedUtr: { $type: 'string' },
+        expiresAt: { $gt: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+      },
+    ],
   });
   if (!activeMerchantIds.length) return;
   const merchants = await Merchant.find({

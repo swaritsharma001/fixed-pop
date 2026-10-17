@@ -44,7 +44,7 @@ The dashboard/checkout runs on port 5000 and proxies `/api` and `/checkout.js` t
 npm run test:poppay
 ```
 
-The server starts the Gmail poller, order expiry job, and webhook retry worker from one `setInterval` loop. It polls only merchants with active pending orders.
+The server starts the Gmail poller, order expiry job, and webhook retry worker from one `setInterval` loop. It polls merchants with active pending orders, and continues polling for up to 24 hours when an expired order has a customer-reported UTR awaiting verification.
 
 ## Google Cloud Gmail OAuth
 
@@ -97,6 +97,7 @@ Save the `secretKey`, `signingSecret`, and `webhookSecret` from signup or key re
 | `GET` | `/orders?status=&page=&limit=` | Secret key | List the merchant's own orders |
 | `GET` | `/checkout/:orderId` | public | Return merchant name, exact payable amount, status, expiry, and UPI intent |
 | `GET` | `/checkout/:orderId/status` | public | Poll status; paid responses include payment ID, UTR, signing signature, and optional redirect URL |
+| `POST` | `/checkout/:orderId/utr` | public, rate limited | Submit a 12-digit UTR for a payment that is not confirmed yet |
 | `POST` | `/dev/simulate-payment` | JWT, non-production only | Feed a fake credit alert through the matching engine |
 
 Create-order body:
@@ -124,6 +125,8 @@ The UPI intent is generated from the merchant UPI ID and contains the exact paya
 | `POST` | `/unmatched/:id/claim` | JWT | Claim a payment for a matching merchant order |
 
 The worker ignores recognized FamApp debit alerts. For credit alerts, it matches merchant, integer-paise amount, transaction time within the order window, unused UTR, and unused Gmail message ID. A match inserts the payment, marks the order paid, and queues the webhook in one MongoDB transaction. Emails that match no order are available for manual review.
+
+Customers can submit a 12-digit UTR from checkout when confirmation is delayed. A submitted UTR is never treated as proof by itself: PopPay waits for a trusted FamApp credit alert and still checks the merchant, exact payable amount, transaction time, and UTR uniqueness. The merchant's Gmail inbox is polled for up to 24 hours after an expired order has a UTR report, and a matching verified alert can still confirm that order.
 
 ### Webhooks
 

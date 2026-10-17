@@ -1,10 +1,8 @@
 const mongoose = require('mongoose');
 const { z } = require('zod');
-const Merchant = require('../models/Merchant');
 const Order = require('../models/Order');
 const Payment = require('../models/Payment');
 const UnmatchedPayment = require('../models/UnmatchedPayment');
-const WebhookLog = require('../models/WebhookLog');
 const { serializeOrder } = require('./orderController');
 const { validationError } = require('./authController');
 const {
@@ -13,6 +11,7 @@ const {
   claimUnmatchedParamsSchema,
 } = require('../validators/dashboardSchemas');
 const { decimalToPaise, paiseToRupees } = require('../utils/money');
+const { settleOrderFromVerifiedAlert } = require('../services/paymentSettlementService');
 
 function indiaDayBounds(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -151,7 +150,7 @@ async function listUnmatched(req, res, next) {
       })
         .sort({ createdAt: -1 })
         .limit(100)
-        .select('orderId payableAmount receipt expiresAt createdAt'),
+        .select('orderId payableAmount receipt expiresAt createdAt reportedUtr reportedUtrAt'),
     ]);
     return res.json({
       payments: payments.map((payment) => ({
@@ -166,6 +165,8 @@ async function listUnmatched(req, res, next) {
         receipt: order.receipt,
         expiresAt: order.expiresAt,
         createdAt: order.createdAt,
+        reportedUtr: order.reportedUtr || null,
+        reportedUtrAt: order.reportedUtrAt,
       })),
       page,
       limit,
@@ -225,50 +226,16 @@ async function claimUnmatched(req, res, next) {
         throw error;
       }
 
-      const [payment] = await Payment.create(
-        [
-          {
-            merchantId: req.merchantId,
-            orderId: order.orderId,
-            utr: unmatched.utr,
-            amount: unmatched.amount,
-            gmailMessageId: unmatched.gmailMessageId,
-            receivedAt: unmatched.receivedAt,
-          },
-        ],
-        { session },
-      );
-      order.status = 'PAID';
-      order.paidAt = unmatched.receivedAt;
-      order.utr = unmatched.utr;
-      await order.save({ session });
-      unmatched.status = 'CLAIMED';
-      await unmatched.save({ session });
-
-      const merchant = await Merchant.findById(req.merchantId)
-        .select('+webhookSecret')
-        .session(session);
-      if (merchant?.webhookUrl && merchant.webhookSecret) {
-        await WebhookLog.create(
-          [
-            {
-              merchantId: req.merchantId,
-              orderId: order.orderId,
-              payload: {
-                event: 'payment.success',
-                order_id: order.orderId,
-                payment_id: payment.id,
-                utr: unmatched.utr,
-                amount: paiseToRupees(decimalToPaise(unmatched.amount)),
-                paid_at: unmatched.receivedAt.toISOString(),
-              },
-              attempts: 0,
-              nextRetryAt: new Date(),
-            },
-          ],
-          { session },
-        );
-      }
+      const payment = await settleOrderFromVerifiedAlert({
+        session,
+        merchantId: req.merchantId,
+        order,
+        utr: unmatched.utr,
+        amount: unmatched.amount,
+        gmailMessageId: unmatched.gmailMessageId,
+        receivedAt: unmatched.receivedAt,
+        unmatchedPayment: unmatched,
+      });
       paymentId = payment.id;
       orderId = order.orderId;
     });

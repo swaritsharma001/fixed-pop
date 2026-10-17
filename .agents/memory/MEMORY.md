@@ -1,0 +1,1 @@
+- [UPI UTR verification](utr-verification.md) — A customer-supplied UTR is a claim, not proof; settle orders only from trusted payment evidence.

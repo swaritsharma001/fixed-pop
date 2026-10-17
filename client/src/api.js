@@ -25,6 +25,13 @@ export function getCheckoutStatus(orderId) {
   return request(`/api/v1/checkout/${encodeURIComponent(orderId)}/status`, { auth: false });
 }
 
+export function submitCheckoutUtr(orderId, utr) {
+  return request(
+    `/api/v1/checkout/${encodeURIComponent(orderId)}/utr`,
+    { ...jsonPost({ utr }), auth: false },
+  );
+}
+
 function jsonPost(body, method = 'POST') {
   return { method, body: JSON.stringify(body) };
 }

@@ -1,17 +1,24 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const Merchant = require('../models/Merchant');
 const Order = require('../models/Order');
 const Payment = require('../models/Payment');
+const ProcessedEmail = require('../models/ProcessedEmail');
+const UnmatchedPayment = require('../models/UnmatchedPayment');
 const { validationError } = require('./authController');
 const {
   createOrderSchema,
   listOrdersQuerySchema,
   orderIdParamsSchema,
   checkoutOrderParamsSchema,
+  submitCheckoutUtrSchema,
 } = require('../validators/orderSchemas');
 const { decimalToPaise, paiseToRupees } = require('../utils/money');
 const { createPendingOrder } = require('../services/orderService');
+const { settleOrderFromVerifiedAlert } = require('../services/paymentSettlementService');
 const { decryptText } = require('../utils/encryption');
+
+const UTR_REPORT_GRACE_MS = 24 * 60 * 60 * 1000;
 
 function serializeOrder(order) {
   return {
@@ -120,6 +127,7 @@ async function publicCheckout(req, res, next) {
       payableAmount,
       status: order.status,
       expiresAt: order.expiresAt,
+      utrSubmitted: Boolean(order.reportedUtr),
       upiLink: `upi://pay?${params.toString()}`,
     });
   } catch (error) {
@@ -137,7 +145,11 @@ async function checkoutStatus(req, res, next) {
       order.status = 'EXPIRED';
       await order.save();
     }
-    const result = { status: order.status, expiresAt: order.expiresAt };
+    const result = {
+      status: order.status,
+      expiresAt: order.expiresAt,
+      utrSubmitted: Boolean(order.reportedUtr),
+    };
     if (order.status === 'PAID') {
       const payment = await Payment.findOne({
         merchantId: order.merchantId,
@@ -165,11 +177,136 @@ async function checkoutStatus(req, res, next) {
   }
 }
 
+async function submitCheckoutUtr(req, res, next) {
+  const parsedParams = checkoutOrderParamsSchema.safeParse(req.params);
+  if (!parsedParams.success) return validationError(res, parsedParams.error);
+  const parsedBody = submitCheckoutUtrSchema.safeParse(req.body);
+  if (!parsedBody.success) return validationError(res, parsedBody.error);
+
+  const session = await mongoose.startSession();
+  let result;
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({ orderId: parsedParams.data.orderId }).session(session);
+      if (!order) {
+        const error = new Error('Order not found');
+        error.status = 404;
+        throw error;
+      }
+
+      const { utr } = parsedBody.data;
+      if (order.status === 'PAID') {
+        if (order.utr !== utr) {
+          const error = new Error('This order has already been confirmed with a different UTR');
+          error.status = 409;
+          throw error;
+        }
+        result = { submitted: true, confirmed: true, status: order.status };
+        return;
+      }
+      if (!['PENDING', 'EXPIRED'].includes(order.status)) {
+        const error = new Error('This payment request is no longer available');
+        error.status = 409;
+        throw error;
+      }
+
+      const now = new Date();
+      if (order.status === 'PENDING' && order.expiresAt <= now) {
+        order.status = 'EXPIRED';
+      }
+      if (now.getTime() - order.expiresAt.getTime() > UTR_REPORT_GRACE_MS) {
+        const error = new Error('This payment request is too old to verify');
+        error.status = 410;
+        throw error;
+      }
+
+      const existingPayment = await Payment.findOne({ utr }).session(session);
+      if (existingPayment) {
+        if (
+          String(existingPayment.merchantId) === String(order.merchantId) &&
+          existingPayment.orderId === order.orderId
+        ) {
+          result = { submitted: true, confirmed: true, status: 'PAID' };
+          return;
+        }
+        const error = new Error('This UTR cannot be applied to this payment request');
+        error.status = 409;
+        throw error;
+      }
+
+      const unmatched = await UnmatchedPayment.findOne({ utr }).session(session);
+      if (unmatched) {
+        const isEligible =
+          String(unmatched.merchantId) === String(order.merchantId) &&
+          unmatched.status === 'UNMATCHED' &&
+          decimalToPaise(unmatched.amount) === decimalToPaise(order.payableAmount) &&
+          unmatched.receivedAt >= order.createdAt &&
+          unmatched.receivedAt <= order.expiresAt;
+        if (!isEligible) {
+          const error = new Error('This UTR cannot be applied to this payment request');
+          error.status = 409;
+          throw error;
+        }
+
+        const payment = await settleOrderFromVerifiedAlert({
+          session,
+          merchantId: order.merchantId,
+          order,
+          utr,
+          amount: unmatched.amount,
+          gmailMessageId: unmatched.gmailMessageId,
+          receivedAt: unmatched.receivedAt,
+          unmatchedPayment: unmatched,
+        });
+        result = {
+          submitted: true,
+          confirmed: true,
+          status: 'PAID',
+          payment_id: payment.id,
+        };
+        return;
+      }
+
+      if (await ProcessedEmail.exists({ utr }).session(session)) {
+        const error = new Error('This UTR cannot be applied to this payment request');
+        error.status = 409;
+        throw error;
+      }
+
+      const otherReport = await Order.exists({
+        reportedUtr: utr,
+        orderId: { $ne: order.orderId },
+      }).session(session);
+      if (otherReport) {
+        const error = new Error('This UTR has already been submitted for another payment request');
+        error.status = 409;
+        throw error;
+      }
+
+      order.reportedUtr = utr;
+      order.reportedUtrAt = now;
+      await order.save({ session });
+      result = { submitted: true, confirmed: false, status: order.status };
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: 'This UTR has already been submitted or used' });
+    }
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    return next(error);
+  } finally {
+    await session.endSession();
+  }
+
+  return res.status(result.confirmed ? 200 : 202).json(result);
+}
+
 module.exports = {
   createOrder,
   getOrder,
   listOrders,
   publicCheckout,
   checkoutStatus,
+  submitCheckoutUtr,
   serializeOrder,
 };

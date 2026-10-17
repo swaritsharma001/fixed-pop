@@ -352,6 +352,7 @@ export function UnmatchedPage() {
 
   const payments = data?.payments || [];
   const pendingOrders = data?.pendingOrders || [];
+  const utrReports = pendingOrders.filter((order) => order.reportedUtr);
 
   return (
     <div className="page-enter">
@@ -391,6 +392,28 @@ export function UnmatchedPage() {
           </div>
         )}
       </Panel>
+      {utrReports.length > 0 && (
+        <Panel className="mt-5 overflow-hidden">
+          <PanelTitle title="Customer UTR reports" detail={`${utrReports.length} reference${utrReports.length === 1 ? '' : 's'} awaiting a verified payment alert`} />
+          <div className="divide-y divide-[#edf0eb]">
+            {utrReports.map((order) => (
+              <article key={order.order_id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#294b40]">{order.receipt || order.order_id} · {formatMoney(order.payableAmount)}</p>
+                  <p className="mt-1 break-all font-mono text-xs text-[#426b57]">UTR {order.reportedUtr}</p>
+                  <p className="mt-1 break-all font-mono text-[10px] text-[#8a9890]">{order.order_id}</p>
+                </div>
+                <p className="shrink-0 text-[10px] text-[#8a9890]">
+                  Submitted {order.reportedUtrAt ? formatDate(order.reportedUtrAt, { time: true }) : 'recently'} · Not verified
+                </p>
+              </article>
+            ))}
+          </div>
+          <p className="border-t border-[#edf0eb] px-5 py-3 text-[10px] leading-5 text-[#89968e] sm:px-6">
+            Compare the UTR and exact amount with your bank or UPI account. A customer-entered UTR alone does not confirm payment; PopPay marks the order paid only after a trusted FamApp credit alert matches.
+          </p>
+        </Panel>
+      )}
       {data && data.payments?.length > 0 && <p className="mt-3 flex items-center gap-2 px-1 text-[10px] leading-5 text-[#89968e]"><Clock3 className="h-3.5 w-3.5 shrink-0" />A successful match confirms the order and can queue your configured webhook.</p>}
     </div>
   );

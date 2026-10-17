@@ -22,10 +22,16 @@ const orderSchema = new mongoose.Schema(
     expiresAt: { type: Date, required: true },
     paidAt: { type: Date, default: null },
     utr: { type: String, default: null, trim: true, maxlength: 32 },
+    reportedUtr: { type: String, trim: true, minlength: 12, maxlength: 12 },
+    reportedUtrAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
 
+orderSchema.index(
+  { reportedUtr: 1 },
+  { unique: true, partialFilterExpression: { reportedUtr: { $type: 'string' } } },
+);
 orderSchema.index(
   { merchantId: 1, payableAmount: 1 },
   { unique: true, partialFilterExpression: { status: 'PENDING' } },
