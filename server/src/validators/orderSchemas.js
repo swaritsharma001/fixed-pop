@@ -49,7 +49,12 @@ const checkoutOrderParamsSchema = z
   .object({ orderId: z.string().regex(/^order_[A-Za-z0-9_-]{12}$/) })
   .strict();
 const submitCheckoutUtrSchema = z
-  .object({ utr: z.string().trim().regex(/^\d{12}$/, 'UTR must contain exactly 12 digits') })
+  .object({
+    utr: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9_-]{6,64}$/, 'Enter a valid 12-digit UTR or FamApp Transaction ID'),
+  })
   .strict();
 
 module.exports = {

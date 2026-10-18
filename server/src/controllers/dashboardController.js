@@ -217,7 +217,10 @@ async function claimUnmatched(req, res, next) {
         merchantId: req.merchantId,
         orderId: parsed.data.order_id,
         status: { $in: ['PENDING', 'EXPIRED'] },
-        payableAmount: unmatched.amount,
+        $or: [
+          { payableAmount: unmatched.amount },
+          { baseAmount: unmatched.amount },
+        ],
         createdAt: { $lte: new Date(unmatched.receivedAt.getTime() + minuteTolerance) },
         expiresAt: { $gte: paymentExpirySearchLowerBound(unmatched.receivedAt) },
       }).session(session);
@@ -291,7 +294,10 @@ async function confirmReportedUtr(req, res, next) {
       }
 
       const { amount, received_at: receivedAt } = parsed.data;
-      if (decimalToPaise(order.payableAmount) !== amount) {
+      if (
+        decimalToPaise(order.payableAmount) !== amount &&
+        decimalToPaise(order.baseAmount) !== amount
+      ) {
         const error = new Error('The verified transfer amount does not match this order');
         error.status = 409;
         throw error;
@@ -310,7 +316,7 @@ async function confirmReportedUtr(req, res, next) {
       }
 
       const utr = order.reportedUtr;
-      if (!/^\d{12}$/.test(utr)) {
+      if (!utr || !/^[A-Za-z0-9_-]{6,64}$/.test(utr)) {
         const error = new Error('The reported UTR is invalid and cannot be confirmed');
         error.status = 409;
         throw error;

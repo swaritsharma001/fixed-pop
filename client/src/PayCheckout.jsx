@@ -214,34 +214,32 @@ function UtrSubmission({ orderId, alreadySubmitted, onConfirmed }) {
     <section className="mt-6 rounded-2xl border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] p-4 sm:p-5 transition-colors">
       <p className="text-xs font-bold text-[var(--pulse-ink)]">Paid but not confirmed?</p>
       <p className="mt-1 text-[11px] sm:text-xs leading-relaxed text-[var(--pulse-muted)]">
-        Enter the 12-digit UTR from your payment receipt (not the transaction ID). We’ll verify it with the merchant’s payment alert.
+        Enter the 12-digit UTR or FamApp / UPI Transaction ID from your payment receipt. We’ll verify it with the merchant’s payment alert.
       </p>
       {submitted && (
         <p className="mt-3 rounded-xl bg-[var(--pulse-mint)]/10 border border-[var(--pulse-mint)]/20 px-3 py-2 text-[11px] sm:text-xs leading-relaxed text-[var(--pulse-mint)] font-medium" role="status">
-          A UTR has been submitted for this order. You can submit a corrected UTR if needed.
+          A UTR or Transaction ID has been submitted for this order. You can submit a corrected reference if needed.
         </p>
       )}
       {message && <p className="mt-3 text-[11px] sm:text-xs leading-relaxed text-[var(--pulse-mint)] font-medium" role="status">{message}</p>}
       {error && <p className="mt-3 text-[11px] sm:text-xs leading-relaxed text-[var(--pulse-critical)] font-medium" role="alert">{error}</p>}
       <form onSubmit={submit} className="mt-3 flex flex-col gap-2.5 sm:flex-row">
-        <label className="sr-only" htmlFor={`utr-${orderId}`}>12-digit UTR</label>
+        <label className="sr-only" htmlFor={`utr-${orderId}`}>UTR or Transaction ID</label>
         <input
           id={`utr-${orderId}`}
-          inputMode="numeric"
           autoComplete="off"
-          pattern="[0-9]{12}"
-          maxLength={12}
+          maxLength={64}
           value={utr}
-          onChange={(event) => setUtr(event.target.value.replace(/\D/g, '').slice(0, 12))}
-          placeholder="Enter 12-digit UTR"
+          onChange={(event) => setUtr(event.target.value.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64))}
+          placeholder="Enter 12-digit UTR or FamApp Txn ID"
           className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--pulse-line)] bg-[var(--pulse-panel)] text-[var(--pulse-ink)] placeholder:text-[var(--pulse-muted)] px-3.5 font-mono text-sm outline-none transition focus:border-[var(--pulse-mint)] focus:ring-2 focus:ring-[var(--pulse-mint)]"
         />
         <button
           type="submit"
-          disabled={submitting || utr.length !== 12}
+          disabled={submitting || utr.trim().length < 6}
           className="btn-secondary-pulse inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl px-5 text-xs font-bold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? 'Checking…' : 'Submit UTR'}
+          {submitting ? 'Checking…' : 'Submit Reference'}
         </button>
       </form>
     </section>

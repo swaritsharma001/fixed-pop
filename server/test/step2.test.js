@@ -40,10 +40,11 @@ test('webhook URLs require HTTPS', () => {
   assert.equal(webhookUrlSchema.safeParse('https://user:pass@merchant.example/hook').success, false);
 });
 
-test('customer UTR reports accept exactly 12 digits and reject transaction IDs', () => {
+test('customer UTR reports accept 12-digit UTRs and FamApp transaction IDs', () => {
   assert.equal(submitCheckoutUtrSchema.parse({ utr: ' 123456789012 ' }).utr, '123456789012');
-  assert.equal(submitCheckoutUtrSchema.safeParse({ utr: '12345' }).success, false);
-  assert.equal(submitCheckoutUtrSchema.safeParse({ utr: 'FMPIB-123456' }).success, false);
+  assert.equal(submitCheckoutUtrSchema.parse({ utr: 'FMPIB-123456' }).utr, 'FMPIB-123456');
+  assert.equal(submitCheckoutUtrSchema.parse({ utr: 'FMPU01a14a01-335b-7488-916c-160083a6400a' }).utr, 'FMPU01a14a01-335b-7488-916c-160083a6400a');
+  assert.equal(submitCheckoutUtrSchema.safeParse({ utr: '123' }).success, false);
 });
 
 test('Gmail OAuth callback accepts Google response parameters but rejects unknown fields', () => {
@@ -137,7 +138,7 @@ test('auth and merchant routes enforce validation and bearer authentication', as
     const invalidUtr = await fetch(`${baseUrl}/checkout/order_abcdefghijkl/utr`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ utr: 'FMPIB-123456' }),
+      body: JSON.stringify({ utr: '123' }),
     });
     assert.equal(invalidUtr.status, 400);
 

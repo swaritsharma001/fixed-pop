@@ -251,7 +251,8 @@ async function submitCheckoutUtr(req, res, next) {
         const isEligible =
           String(unmatched.merchantId) === String(order.merchantId) &&
           unmatched.status === 'UNMATCHED' &&
-          decimalToPaise(unmatched.amount) === decimalToPaise(order.payableAmount) &&
+          (decimalToPaise(unmatched.amount) === decimalToPaise(order.payableAmount) ||
+           decimalToPaise(unmatched.amount) === decimalToPaise(order.baseAmount)) &&
           (isWithinPaymentWindow({
             createdAt: order.createdAt,
             expiresAt: order.expiresAt,
