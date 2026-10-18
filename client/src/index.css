@@ -158,12 +158,20 @@ html.dark table tbody tr:hover {
 
 .merchant-shell {
   background:
-    radial-gradient(ellipse at 92% 0%, rgba(199, 232, 168, .12), transparent 34rem),
-    #f3f5ef;
+    radial-gradient(ellipse at 90% 0%, rgba(18, 107, 88, .04), transparent 36rem),
+    radial-gradient(ellipse at 10% 100%, rgba(16, 185, 129, .03), transparent 30rem),
+    #f8fafc;
+}
+
+html.dark .merchant-shell {
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(30, 168, 138, .08), transparent 36rem),
+    radial-gradient(ellipse at 10% 100%, rgba(16, 185, 129, .04), transparent 30rem),
+    #090f0e !important;
 }
 
 .sidebar-link {
-  transition: background-color .18s ease, color .18s ease, transform .18s ease;
+  transition: all .16s ease;
 }
 
 .sidebar-link:hover {
@@ -175,7 +183,11 @@ html.dark table tbody tr:hover {
 }
 
 .panel-shadow {
-  box-shadow: 0 16px 40px rgba(20, 46, 43, .05), 0 2px 6px rgba(20, 46, 43, .02);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .03), 0 10px 24px -4px rgba(15, 23, 42, .03);
+}
+
+html.dark .panel-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3), 0 14px 34px -4px rgba(0, 0, 0, .4);
 }
 
 .radar-sweep {

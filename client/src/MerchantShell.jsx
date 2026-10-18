@@ -64,35 +64,47 @@ export function useMerchant() {
 
 const navGroups = [
   {
-    label: 'Workspace',
+    label: 'Overview',
     links: [
-      { to: '/dashboard', label: 'Overview', icon: Gauge, end: true },
+      { to: '/dashboard', label: 'Dashboard', icon: Gauge, end: true },
       { to: '/payment-links', label: 'Payment Links', icon: Link2 },
+    ],
+  },
+  {
+    label: 'Ledger & Finance',
+    links: [
       { to: '/orders', label: 'Orders', icon: Clipboard },
       { to: '/payments', label: 'Payments', icon: WalletCards },
       { to: '/unmatched', label: 'Needs matching', icon: Activity },
     ],
   },
   {
-    label: 'Manage',
+    label: 'Store & Developer',
     links: [
       { to: '/branding', label: 'Checkout & Branding', icon: Palette },
       { to: '/settings', label: 'Settings', icon: Settings2 },
-      { to: '/integration', label: 'Developer guide', icon: Code2 },
+      { to: '/integration', label: 'Developer API', icon: Code2 },
     ],
   },
 ];
 
 function BrandMark({ light = false }) {
   return (
-    <Link to="/dashboard" className="flex items-center gap-2.5" aria-label="PopPay home">
-      <span className={`grid h-9 w-9 place-items-center rounded-[12px] ${light ? 'bg-[#c7e8a8] text-[#123b32]' : 'bg-[#126b58] text-[#eff9e8]'}`}>
+    <Link to="/dashboard" className="flex items-center gap-2.5 group" aria-label="PopPay home">
+      <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-sm transition-transform group-hover:scale-105">
         <svg viewBox="0 0 24 24" className="h-[21px] w-[21px]" fill="none" aria-hidden="true">
           <path d="M5 7.5h14M5 12h14M5 16.5h8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-          <circle cx="18" cy="17" r="3" fill={light ? '#126b58' : '#c7e8a8'} />
+          <circle cx="18" cy="17" r="3" fill="#a7f3d0" />
         </svg>
       </span>
-      <span className={`font-[var(--font-display)] text-[21px] font-bold tracking-[-1.2px] ${light ? 'text-white' : 'text-[#142e2b]'}`}>poppay</span>
+      <div className="flex items-center gap-1.5">
+        <span className={`font-[var(--font-display)] text-[22px] font-bold tracking-[-1.2px] ${light ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+          poppay
+        </span>
+        <span className="rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+          PRO
+        </span>
+      </div>
     </Link>
   );
 }
@@ -113,10 +125,10 @@ function NavItems({ onNavigate }) {
     : navGroups;
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-6">
       {groups.map((group) => (
         <div key={group.label}>
-          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[.17em] text-[#82978e]">{group.label}</p>
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[.18em] text-[#6e8a7f]">{group.label}</p>
           <nav className="space-y-1" aria-label={group.label}>
             {group.links.map(({ to, label, icon: Icon, end }) => (
               <NavLink
@@ -124,15 +136,19 @@ function NavItems({ onNavigate }) {
                 to={to}
                 end={end}
                 onClick={onNavigate}
-                className={({ isActive }) => `sidebar-link flex min-h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-semibold ${
-                  isActive ? 'bg-[#24564a] text-[#eff9e8] shadow-[inset_3px_0_0_#c7e8a8]' : 'text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white'
+                className={({ isActive }) => `sidebar-link flex min-h-[42px] items-center gap-3 rounded-xl px-3 text-[13px] font-semibold transition-all ${
+                  isActive
+                    ? 'bg-emerald-500/15 text-emerald-300 shadow-[inset_3px_0_0_#34d399] font-bold'
+                    : 'text-[#9cb3a8] hover:bg-white/[.07] hover:text-white'
                 }`}
               >
-                <Icon className="h-[17px] w-[17px]" strokeWidth={1.8} />
-                {label}
-                {label === 'Needs matching' && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#c7e8a8]" />}
+                <Icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.8} />
+                <span className="truncate">{label}</span>
+                {label === 'Needs matching' && (
+                  <span className="ml-auto flex h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                )}
                 {label === 'Universal Admin' && (
-                  <span className="ml-auto rounded-md bg-[#c7e8a8] px-1.5 py-0.5 text-[9px] font-bold text-[#123b32]">
+                  <span className="ml-auto rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
                     ADMIN
                   </span>
                 )}
@@ -301,79 +317,102 @@ export function PrivateArea() {
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       <MerchantContext.Provider value={contextValue}>
         <div className="merchant-shell min-h-[100dvh]">
-          <aside className="fixed inset-y-0 left-0 z-40 hidden w-[246px] flex-col justify-between overflow-y-auto bg-[#123b32] px-4 pb-6 pt-6 custom-scrollbar overscroll-contain lg:flex">
+          <aside className="fixed inset-y-0 left-0 z-40 hidden w-[260px] flex-col justify-between overflow-y-auto bg-[#091310] border-r border-[#152721] px-4 pb-6 pt-5 custom-scrollbar overscroll-contain lg:flex">
             <div className="flex flex-col">
-              <div className="px-2"><BrandMark light /></div>
-              <div className="mt-7 rounded-2xl border border-white/10 bg-white/[.055] px-3.5 py-3">
-                <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#9bb7a9]">Merchant space</p>
-                <p className="mt-1 truncate text-sm font-semibold text-white">{merchant.name}</p>
+              <div className="px-2 pt-1"><BrandMark light /></div>
+              
+              {/* Merchant Workspace Profile Card */}
+              <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[.04] p-3 transition-colors hover:bg-white/[.07]">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-[var(--font-display)] text-sm font-bold shadow-xs">
+                  {merchant.name ? merchant.name.trim().charAt(0).toUpperCase() : 'M'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <p className="truncate text-xs font-bold text-white">{merchant.name}</p>
+                  </div>
+                  <p className="truncate text-[10px] text-[#8ca499]">{merchant.email || 'Verified Merchant'}</p>
+                </div>
               </div>
-              <div className="mt-7"><NavItems /></div>
+
+              <div className="mt-6"><NavItems /></div>
             </div>
-            <div className="mt-8 shrink-0 border-t border-white/10 pt-4">
+
+            <div className="mt-8 shrink-0 border-t border-white/10 pt-4 space-y-1">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="sidebar-link mb-2 flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white"
+                className="sidebar-link flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#a0b6ac] hover:bg-white/[.07] hover:text-white"
               >
-                {theme === 'dark' ? <Sun className="h-4 w-4 text-[#fbbf24]" /> : <Moon className="h-4 w-4 text-[#c7e8a8]" />}
-                {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                {theme === 'dark' ? <Sun className="h-4 w-4 text-[#fbbf24]" /> : <Moon className="h-4 w-4 text-[#34d399]" />}
+                <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
               </button>
-              <Link to="/privacy" className="sidebar-link mb-2 flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white">
-                <ShieldCheck className="h-4 w-4" />Privacy & data
+              <Link to="/privacy" className="sidebar-link flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#a0b6ac] hover:bg-white/[.07] hover:text-white">
+                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                <span>Privacy & compliance</span>
               </Link>
-              <button type="button" onClick={signOut} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] transition-colors hover:bg-[#1b493e] hover:text-white">
-                <LogOut className="h-4 w-4" />Sign out
+              <button type="button" onClick={signOut} className="sidebar-link flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#a0b6ac] transition-colors hover:bg-red-500/10 hover:text-red-400">
+                <LogOut className="h-4 w-4" />
+                <span>Sign out</span>
               </button>
             </div>
           </aside>
 
-          <header className="sticky top-0 z-30 flex h-[62px] items-center justify-between border-b border-[#e1e8e1] dark:border-[#1c2e29] bg-[#f7f8f3]/95 dark:bg-[#0e1614]/95 px-4 backdrop-blur lg:hidden">
+          {/* Mobile Top Header */}
+          <header className="sticky top-0 z-30 flex h-[62px] items-center justify-between border-b border-slate-200 dark:border-[#1a2d26] bg-white/95 dark:bg-[#091310]/95 px-4 backdrop-blur lg:hidden">
             <BrandMark />
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                <span>LIVE</span>
+              </div>
               <button
                 type="button"
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="grid h-10 w-10 place-items-center rounded-xl text-[#244b40] dark:text-[#cbe3d7] hover:bg-[#e8eee5] dark:hover:bg-white/10"
+                className="grid h-9 w-9 place-items-center rounded-xl text-slate-700 dark:text-[#cbe3d7] hover:bg-slate-100 dark:hover:bg-white/10"
               >
-                {theme === 'dark' ? <Sun className="h-4 w-4 text-[#fbbf24]" /> : <Moon className="h-4 w-4 text-[#126b58]" />}
+                {theme === 'dark' ? <Sun className="h-4 w-4 text-[#fbbf24]" /> : <Moon className="h-4 w-4 text-emerald-700" />}
               </button>
-              <button type="button" onClick={() => setMobileOpen((open) => !open)} aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} className="grid h-10 w-10 place-items-center rounded-xl text-[#244b40] dark:text-[#cbe3d7] hover:bg-[#e8eee5] dark:hover:bg-white/10">
+              <button type="button" onClick={() => setMobileOpen((open) => !open)} aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} className="grid h-9 w-9 place-items-center rounded-xl text-slate-700 dark:text-[#cbe3d7] hover:bg-slate-100 dark:hover:bg-white/10">
                 {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
             </div>
           </header>
 
           {mobileOpen && (
-            <div className="fixed inset-0 z-50 bg-[#102d27]/60 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
-              <div className="h-full w-[min(320px,86vw)] flex flex-col justify-between overflow-y-auto bg-[#123b32] px-4 pb-8 pt-6 shadow-2xl custom-scrollbar overscroll-contain" onClick={(event) => event.stopPropagation()}>
+            <div className="fixed inset-0 z-50 bg-[#06100d]/70 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
+              <div className="h-full w-[min(300px,84vw)] flex flex-col justify-between overflow-y-auto bg-[#091310] border-r border-[#152721] px-4 pb-8 pt-6 shadow-2xl custom-scrollbar overscroll-contain" onClick={(event) => event.stopPropagation()}>
                 <div>
-                  <div className="mb-7 flex items-center justify-between px-2">
+                  <div className="mb-6 flex items-center justify-between px-2">
                     <BrandMark light />
-                    <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="grid h-9 w-9 place-items-center rounded-lg text-white hover:bg-white/10">
-                      <X className="h-5 w-5" />
+                    <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="grid h-8 w-8 place-items-center rounded-lg text-white hover:bg-white/10">
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="mb-6 rounded-2xl border border-white/10 bg-white/[.055] px-3.5 py-3">
-                    <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#9bb7a9]">Merchant space</p>
-                    <p className="mt-1 truncate text-sm font-semibold text-white">{merchant.name}</p>
+                  <div className="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[.04] p-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-[var(--font-display)] text-xs font-bold">
+                      {merchant.name ? merchant.name.trim().charAt(0).toUpperCase() : 'M'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold text-white">{merchant.name}</p>
+                      <p className="truncate text-[10px] text-[#8ca499]">{merchant.email || 'Verified Merchant'}</p>
+                    </div>
                   </div>
                   <NavItems onNavigate={() => setMobileOpen(false)} />
                 </div>
-                <div className="mt-8 shrink-0 border-t border-white/10 pt-4">
+                <div className="mt-8 shrink-0 border-t border-white/10 pt-4 space-y-1">
                   <button
                     type="button"
                     onClick={toggleTheme}
-                    className="sidebar-link mb-2 flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white"
+                    className="sidebar-link flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#a0b6ac] hover:bg-white/[.07] hover:text-white"
                   >
-                    {theme === 'dark' ? <Sun className="h-4 w-4 text-[#fbbf24]" /> : <Moon className="h-4 w-4 text-[#c7e8a8]" />}
-                    {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                    {theme === 'dark' ? <Sun className="h-4 w-4 text-[#fbbf24]" /> : <Moon className="h-4 w-4 text-[#34d399]" />}
+                    <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
                   </button>
-                  <Link to="/privacy" onClick={() => setMobileOpen(false)} className="mb-2 flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white">
-                    <ShieldCheck className="h-4 w-4" />Privacy & data
+                  <Link to="/privacy" onClick={() => setMobileOpen(false)} className="flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#a0b6ac] hover:bg-white/[.07] hover:text-white">
+                    <ShieldCheck className="h-4 w-4 text-emerald-500" />Privacy & compliance
                   </Link>
-                  <button type="button" onClick={signOut} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] transition-colors hover:bg-[#1b493e] hover:text-white">
+                  <button type="button" onClick={signOut} className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#a0b6ac] transition-colors hover:bg-red-500/10 hover:text-red-400">
                     <LogOut className="h-4 w-4" />Sign out
                   </button>
                 </div>
@@ -381,51 +420,69 @@ export function PrivateArea() {
             </div>
           )}
 
-          <main className="min-h-[calc(100dvh-62px)] lg:pl-[246px] lg:min-h-[100dvh]">
-            {/* Desktop Topbar with Theme Switcher & Status */}
-            <div className="hidden h-14 items-center justify-between border-b border-[#e1e8e1] dark:border-[#1c2e29] bg-[#fffefa]/75 dark:bg-[#111a18]/75 px-8 backdrop-blur-md lg:flex">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
-                <span className="text-[11px] font-bold tracking-wider uppercase text-[#557367] dark:text-[#52b788]">
-                  FamApp Bank Sync Active
-                </span>
+          <main className="min-h-[calc(100dvh-62px)] lg:pl-[260px] lg:min-h-[100dvh]">
+            {/* Desktop Topbar with Realtime Sync Status & Quick Actions */}
+            <div className="hidden h-[62px] items-center justify-between border-b border-slate-200/90 dark:border-[#172b24] bg-white/85 dark:bg-[#091310]/85 px-8 backdrop-blur-md lg:flex">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                  </span>
+                  <span>FamApp Bank Sync Active</span>
+                </div>
+                <span className="text-slate-300 dark:text-[#1c3029]">|</span>
+                <span className="text-[11px] font-medium text-slate-500 dark:text-[#7f978c]">Instant UPI listener active</span>
               </div>
               <div className="flex items-center gap-3">
+                <Link
+                  to="/payment-links"
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold shadow-2xs transition active:scale-95"
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                  <span>Create Link</span>
+                </Link>
+                <Link
+                  to="/integration"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-[#cbe3d7] transition hover:bg-slate-50 dark:hover:bg-white/10"
+                >
+                  <Code2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>API Docs</span>
+                </Link>
                 <button
                   type="button"
                   onClick={toggleTheme}
                   title={theme === 'dark' ? 'Switch to Light theme' : 'Switch to Dark theme'}
-                  className="flex items-center gap-2 rounded-xl border border-[#dce5dc] dark:border-white/10 bg-white dark:bg-white/[.06] px-3.5 py-1.5 text-xs font-semibold text-[#294b40] dark:text-[#cbe3d7] transition hover:bg-[#edf4ec] dark:hover:bg-white/10 shadow-2xs"
+                  className="grid h-8 w-8 place-items-center rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] text-slate-700 dark:text-[#cbe3d7] transition hover:bg-slate-50 dark:hover:bg-white/10 shadow-2xs"
                 >
-                  {theme === 'dark' ? <Sun className="h-3.5 w-3.5 text-[#fbbf24]" /> : <Moon className="h-3.5 w-3.5 text-[#126b58]" />}
-                  <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+                  {theme === 'dark' ? <Sun className="h-3.5 w-3.5 text-[#fbbf24]" /> : <Moon className="h-3.5 w-3.5 text-emerald-700" />}
                 </button>
               </div>
             </div>
 
-            <div className="mx-auto w-full max-w-[1440px] px-4 pb-8 pt-5 sm:px-7 sm:pt-8 lg:px-10 lg:pt-8">
+            <div className="mx-auto w-full max-w-[1440px] px-4 pb-12 pt-6 sm:px-7 sm:pt-8 lg:px-9 lg:pt-8">
               <Outlet />
             </div>
           </main>
-          <nav className="fixed inset-x-0 bottom-0 z-30 flex h-[66px] items-center justify-start gap-1 overflow-x-auto border-t border-[#dfe7de] dark:border-[#1c2e29] bg-[#fffefa]/95 dark:bg-[#111a18]/95 px-3 pb-[env(safe-area-inset-bottom)] backdrop-blur no-scrollbar sm:justify-around lg:hidden" aria-label="Primary navigation">
+
+          {/* Clean Mobile Bottom Navigation */}
+          <nav className="fixed inset-x-0 bottom-0 z-30 flex h-[64px] items-center justify-around border-t border-slate-200/90 dark:border-[#172b24] bg-white/95 dark:bg-[#091310]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Primary navigation">
             {[
               ['/dashboard', 'Home', Gauge],
+              ['/payment-links', 'Links', Link2],
               ['/orders', 'Orders', Clipboard],
               ['/payments', 'Paid', WalletCards],
-              ['/unmatched', 'Match', Activity],
-              ['/branding', 'Look', Palette],
               ['/settings', 'Settings', Settings2],
-              ['/integration', 'Guide', Code2],
             ].map(([to, label, Icon]) => (
               <NavLink
                 key={to}
                 to={to}
                 end={to === '/dashboard'}
-                className={({ isActive }) => `flex shrink-0 min-w-[56px] flex-col items-center justify-center gap-1 px-2 py-1 text-[9px] font-bold transition-colors ${
-                  isActive ? 'text-[#126b58] dark:text-[#34d399]' : 'text-[#87968d] hover:text-[#126b58] dark:hover:text-[#34d399]'
+                className={({ isActive }) => `flex shrink-0 min-w-[56px] flex-col items-center justify-center gap-1 px-2 py-1 text-[10px] font-bold transition-all ${
+                  isActive ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : 'text-slate-500 dark:text-[#82998e] hover:text-emerald-600'
                 }`}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
+                <Icon className="h-[19px] w-[19px]" strokeWidth={2} />
                 <span className="whitespace-nowrap">{label}</span>
               </NavLink>
             ))}
@@ -439,38 +496,41 @@ export function PrivateArea() {
 
 export function PageHeading({ eyebrow, title, detail, action }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        {eyebrow && <p className="mb-2 text-[10px] font-bold uppercase tracking-[.16em] text-[#68867a] dark:text-[#34d399]">{eyebrow}</p>}
-        <h1 className="font-[var(--font-display)] text-[29px] font-semibold leading-[1.1] tracking-[-1.3px] text-[#142e2b] dark:text-[#f0f7f3] sm:text-[34px]">{title}</h1>
-        {detail && <p className="mt-2 max-w-2xl text-sm leading-6 text-[#71817b] dark:text-[#8ea299]">{detail}</p>}
+        {eyebrow && <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[.16em] text-emerald-600 dark:text-emerald-400">{eyebrow}</p>}
+        <h1 className="font-[var(--font-display)] text-[28px] sm:text-[34px] font-bold leading-tight tracking-[-1.3px] text-slate-900 dark:text-white">{title}</h1>
+        {detail && <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-[#9bb2a8]">{detail}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
 
 export function Panel({ children, className = '' }) {
-  return <section className={`rounded-[20px] border border-[#e1e8e1] dark:border-[#1c2e29] bg-[#fffefa] dark:bg-[#111a18] panel-shadow ${className}`}>{children}</section>;
+  return <section className={`rounded-[22px] border border-slate-200/90 dark:border-[#1a2d26] bg-white dark:bg-[#0e1714] panel-shadow overflow-hidden transition-colors ${className}`}>{children}</section>;
 }
 
 export function PanelTitle({ title, detail, action }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0eb] dark:border-[#1c2e29] px-5 py-4 sm:px-6">
-      <div><h2 className="text-sm font-bold text-[#203d36] dark:text-[#e2eee9]">{title}</h2>{detail && <p className="mt-1 text-xs text-[#84928a] dark:text-[#8ba097]">{detail}</p>}</div>
-      {action}
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-[#172b24] px-5 sm:px-6 py-4">
+      <div>
+        <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">{title}</h2>
+        {detail && <p className="mt-0.5 text-xs text-slate-500 dark:text-[#8ba097]">{detail}</p>}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
 
 export function Notice({ tone = 'success', children, onClose }) {
   const tones = {
-    success: 'border-[#cfe2d1] dark:border-[#1e4438] bg-[#edf6eb] dark:bg-[#132b24] text-[#315f4e] dark:text-[#7ee2be]',
-    error: 'border-[#efd6ce] dark:border-[#4d231b] bg-[#fff2ed] dark:bg-[#2b130f] text-[#984d3c] dark:text-[#f87171]',
-    warning: 'border-[#f0dfb7] dark:border-[#4d3a1a] bg-[#fff8e8] dark:bg-[#2b210e] text-[#80612d] dark:text-[#facc15]',
-    info: 'border-[#d7e3dc] dark:border-[#1d352c] bg-[#f2f7f2] dark:bg-[#12241e] text-[#47675a] dark:text-[#6ee7b7]',
+    success: 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300',
+    error: 'border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-300',
+    warning: 'border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300',
+    info: 'border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300',
   };
-  return <div role="status" className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-xs leading-5 ${tones[tone]}`}>
+  return <div role="status" className={`flex items-start gap-3 rounded-2xl border px-4 py-3 text-xs leading-5 font-medium ${tones[tone]}`}>
     <span className="min-w-0 flex-1">{children}</span>
     {onClose && <button type="button" onClick={onClose} aria-label="Dismiss message" className="shrink-0 rounded p-0.5 opacity-70 hover:opacity-100"><X className="h-4 w-4" /></button>}
   </div>;
@@ -479,9 +539,11 @@ export function Notice({ tone = 'success', children, onClose }) {
 export function EmptyState({ icon: Icon = Store, title, detail, action }) {
   return (
     <div className="px-5 py-12 text-center sm:py-16">
-      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-[16px] bg-[#edf4eb] dark:bg-[#172723] text-[#52796a] dark:text-[#34d399]"><Icon className="h-5 w-5" strokeWidth={1.8} /></div>
-      <h3 className="font-[var(--font-display)] text-lg font-semibold tracking-[-.4px] text-[#24443b] dark:text-[#eaf3ee]">{title}</h3>
-      <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-[#819087] dark:text-[#8ea299]">{detail}</p>
+      <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 dark:bg-[#152520] text-emerald-600 dark:text-emerald-400 shadow-2xs">
+        <Icon className="h-6 w-6" strokeWidth={1.8} />
+      </div>
+      <h3 className="font-[var(--font-display)] text-lg font-semibold tracking-[-.4px] text-slate-900 dark:text-white">{title}</h3>
+      <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-slate-500 dark:text-[#8ea299]">{detail}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -489,21 +551,34 @@ export function EmptyState({ icon: Icon = Store, title, detail, action }) {
 
 export function ErrorState({ message, onRetry }) {
   return (
-    <div className="rounded-2xl border border-[#efd6ce] dark:border-[#4d231b] bg-[#fff6f2] dark:bg-[#2b130f] p-5">
-      <p className="text-sm font-semibold text-[#984d3c] dark:text-[#f87171]">We couldn’t load this data</p>
-      <p className="mt-1 text-xs leading-5 text-[#956d61] dark:text-[#fca5a5]">{message || 'Please try again.'}</p>
-      <button type="button" onClick={onRetry} className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#9a503d] dark:text-[#f87171] hover:underline"><Activity className="h-3.5 w-3.5" />Try again</button>
+    <div className="rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/20 p-5">
+      <p className="text-sm font-bold text-red-700 dark:text-red-400">We couldn’t load this data</p>
+      <p className="mt-1 text-xs leading-5 text-red-600/90 dark:text-red-300">{message || 'Please try again.'}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-red-700 dark:text-red-400 hover:underline">
+          <Activity className="h-3.5 w-3.5" />Try again
+        </button>
+      )}
     </div>
   );
 }
 
 export function StatusBadge({ status }) {
   const value = String(status || 'unknown').toUpperCase();
-  const tone = value === 'PAID' || value === 'SUCCESS' ? 'bg-[#e5f3e5] text-[#25644f]'
-    : value === 'PENDING' || value === 'CREATED' ? 'bg-[#fff4dd] text-[#916c2f]'
-      : value === 'EXPIRED' || value === 'FAILED' ? 'bg-[#f8e9e5] text-[#a25040]'
-        : 'bg-[#eef1ed] text-[#697970]';
-  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-bold tracking-[.08em] ${tone}`}>{value}</span>;
+  const tone = value === 'PAID' || value === 'SUCCESS' 
+    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25'
+    : value === 'PENDING' || value === 'CREATED' 
+      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25'
+      : value === 'EXPIRED' || value === 'FAILED' 
+        ? 'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/25'
+        : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20';
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider ${tone}`}>
+      {(value === 'PAID' || value === 'SUCCESS') && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+      {(value === 'PENDING' || value === 'CREATED') && <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />}
+      {value}
+    </span>
+  );
 }
 
 export function formatMoney(value) {

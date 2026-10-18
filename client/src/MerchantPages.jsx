@@ -80,47 +80,118 @@ function TableLoading({ columns = 4 }) {
   );
 }
 
-function StatTile({ label, value, caption, icon: Icon, accent = false }) {
+function StatTile({ label, value, caption, icon: Icon, accent = false, progress = null, badge = null }) {
   return (
-    <div className={`relative overflow-hidden rounded-[20px] border p-5 sm:p-6 ${accent ? 'border-[#174e41] bg-[#174e41] text-white' : 'border-[#e1e8e1] bg-[#fffefa] text-[#142e2b]'} panel-shadow`}>
+    <div className={`relative overflow-hidden rounded-2xl border p-5 sm:p-6 transition-all ${
+      accent
+        ? 'border-emerald-600/40 bg-gradient-to-br from-[#0c2f24] via-[#0b2820] to-[#071a15] text-white shadow-md'
+        : 'border-slate-200/90 dark:border-[#1a2d26] bg-white dark:bg-[#0e1714] text-slate-900 dark:text-white panel-shadow hover:border-slate-300 dark:hover:border-[#243d34]'
+    }`}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className={`text-xs font-semibold ${accent ? 'text-[#bdd2c5]' : 'text-[#7b8b82]'}`}>{label}</p>
-          <p className={`mt-3 font-[var(--font-display)] text-[30px] font-semibold leading-none tracking-[-1.4px] tabular-nums sm:text-[34px] ${accent ? 'text-white' : 'text-[#173a31]'}`}>{value}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className={`text-[11px] font-bold uppercase tracking-wider ${accent ? 'text-emerald-300' : 'text-slate-500 dark:text-[#8aa096]'}`}>
+              {label}
+            </p>
+            {badge && (
+              <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
+                accent ? 'bg-white/20 text-white' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+              }`}>
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className={`mt-2.5 font-[var(--font-display)] text-[28px] xs:text-[32px] sm:text-[34px] font-bold leading-none tracking-[-1.5px] tabular-nums truncate ${
+            accent ? 'text-white' : 'text-slate-900 dark:text-white'
+          }`}>
+            {value}
+          </p>
         </div>
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[13px] ${accent ? 'bg-[#c7e8a8] text-[#174e41]' : 'bg-[#edf4eb] text-[#4b8068]'}`}><Icon className="h-[18px] w-[18px]" strokeWidth={1.8} /></span>
+        <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl shadow-2xs ${
+          accent ? 'bg-emerald-500 text-white' : 'bg-emerald-50 dark:bg-[#142621] text-emerald-600 dark:text-emerald-400'
+        }`}>
+          <Icon className="h-5 w-5" strokeWidth={2} />
+        </span>
       </div>
-      <p className={`mt-4 text-[11px] ${accent ? 'text-[#bdd2c5]' : 'text-[#8a9890]'}`}>{caption}</p>
-      {accent && <div className="absolute -bottom-10 -right-4 h-32 w-32 rounded-full border border-white/10" />}
+
+      {progress !== null && (
+        <div className="mt-3.5 w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+          <div
+            className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          />
+        </div>
+      )}
+
+      <p className={`mt-3.5 text-xs font-medium leading-relaxed ${accent ? 'text-emerald-200/80' : 'text-slate-500 dark:text-[#8aa096]'}`}>
+        {caption}
+      </p>
+
+      {accent && (
+        <div className="absolute -bottom-8 -right-8 h-28 w-28 rounded-full bg-emerald-500/10 blur-xl pointer-events-none" />
+      )}
     </div>
   );
 }
 
 function OnboardingCard({ merchant }) {
   const tasks = [
-    { label: 'Add your receiving UPI ID', done: Boolean(merchant.upiId), to: '/settings', icon: Store },
-    { label: 'Connect a FamApp payment inbox', done: Boolean(merchant.gmail?.connected), to: '/settings', icon: Mail },
-    { label: 'Add an allowed sender', done: Boolean(merchant.allowedSenders?.length), to: '/settings', icon: ShieldCheck },
+    { label: 'Add receiving UPI ID', detail: 'Set UPI handle to receive direct bank credits', done: Boolean(merchant.upiId), to: '/settings', icon: Store },
+    { label: 'Connect FamApp inbox', detail: 'Real-time bank credit alert synchronization', done: Boolean(merchant.gmail?.connected), to: '/settings', icon: Mail },
+    { label: 'Configure allowed sender', detail: 'Whitelist bank notifications for instant matching', done: Boolean(merchant.allowedSenders?.length), to: '/settings', icon: ShieldCheck },
   ];
   const complete = tasks.filter((task) => task.done).length;
   if (complete === tasks.length) return null;
+  const percentage = Math.round((complete / tasks.length) * 100);
+
   return (
-    <Panel className="overflow-hidden">
-      <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
+    <Panel className="border-emerald-200/70 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50/40 via-white to-transparent dark:from-emerald-950/20 dark:via-[#0e1714] dark:to-[#0e1714]">
+      <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_360px] lg:items-center">
         <div>
           <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#eaf3e5] text-[#568265]"><CheckCircle2 className="h-4 w-4" /></span>
-            <p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#668275]">First steps · {complete} of {tasks.length}</p>
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+            </span>
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">
+              Setup Guide · {complete} of {tasks.length} Completed ({percentage}%)
+            </p>
           </div>
-          <h2 className="mt-3 font-[var(--font-display)] text-[20px] font-semibold tracking-[-.7px] text-[#183a31]">Let’s get your collection flow ready.</h2>
-          <p className="mt-1 text-xs text-[#809087]">Complete these essentials before sending your first payment request.</p>
+          <h2 className="mt-2.5 font-[var(--font-display)] text-[20px] font-bold tracking-[-.6px] text-slate-900 dark:text-white">
+            Get your instant UPI collection engine ready
+          </h2>
+          <p className="mt-1 text-xs text-slate-600 dark:text-[#95ab9f] leading-relaxed">
+            Complete these essential steps so incoming customer payments match and settle directly to your bank account with zero delay.
+          </p>
+          <div className="mt-3.5 max-w-xs w-full bg-slate-200 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />
+          </div>
         </div>
-        <div className="flex flex-col gap-1.5 sm:min-w-[280px]">
-          {tasks.map(({ label, done, to, icon: Icon }) => (
-            <Link key={label} to={to} className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs hover:bg-[#f4f7f1]">
-              <span className={`grid h-6 w-6 place-items-center rounded-lg ${done ? 'bg-[#e4f1e2] text-[#397458]' : 'bg-[#f0f2ed] text-[#8c9991]'}`}>{done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}</span>
-              <span className={`flex-1 font-semibold ${done ? 'text-[#87958c] line-through decoration-[#bac7bd]' : 'text-[#38594d]'}`}>{label}</span>
-              {!done && <ArrowRight className="h-3.5 w-3.5 text-[#9aa89f] transition group-hover:translate-x-0.5 group-hover:text-[#126b58]" />}
+
+        <div className="flex flex-col gap-2">
+          {tasks.map(({ label, detail, done, to, icon: Icon }) => (
+            <Link
+              key={label}
+              to={to}
+              className={`group flex items-center gap-3 rounded-xl border p-2.5 transition ${
+                done
+                  ? 'border-emerald-200/60 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-950/10'
+                  : 'border-slate-200 dark:border-[#1f342c] bg-white dark:bg-[#12201b] hover:border-emerald-400 dark:hover:border-emerald-500 shadow-2xs'
+              }`}
+            >
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+                done ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-[#192b25] text-slate-600 dark:text-[#8ea299]'
+              }`}>
+                {done ? <Check className="h-4 w-4 stroke-[2.5]" /> : <Icon className="h-4 w-4" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={`text-xs font-bold ${done ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-white'}`}>
+                  {label}
+                </p>
+                <p className="truncate text-[10px] text-slate-500 dark:text-[#7f9589]">{detail}</p>
+              </div>
+              {!done && (
+                <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-emerald-600" />
+              )}
             </Link>
           ))}
         </div>
@@ -134,9 +205,17 @@ export function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedUpi, setCopiedUpi] = useState(false);
   const connected = searchParams.get('gmail') === 'connected';
+
+  function refresh() {
+    setRefreshing(true);
+    setRetryKey((k) => k + 1);
+  }
 
   useEffect(() => {
     let active = true;
@@ -145,7 +224,12 @@ export function DashboardPage() {
     getDashboardStats()
       .then((result) => { if (active) setStats(result); })
       .catch((requestError) => { if (active) setError(requestError.message || 'Dashboard statistics could not be loaded.'); })
-      .finally(() => { if (active) setLoading(false); });
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      });
     return () => { active = false; };
   }, [retryKey]);
 
@@ -156,42 +240,287 @@ export function DashboardPage() {
     setSearchParams(next, { replace: true });
   }, [connected, searchParams, setSearchParams]);
 
-  const dateLabel = useMemo(() => new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()), []);
+  const dateLabel = useMemo(() => new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()), []);
   const recent = stats?.recentPayments || [];
+  const successRate = Number(stats?.successRate || 0);
+
+  function copyUpi() {
+    if (!merchant?.upiId) return;
+    navigator.clipboard.writeText(merchant.upiId);
+    setCopiedUpi(true);
+    setTimeout(() => setCopiedUpi(false), 2000);
+  }
+
+  function copyPublicKey() {
+    if (!merchant?.publicKey) return;
+    navigator.clipboard.writeText(merchant.publicKey);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  }
 
   return (
-    <div className="page-enter">
-      {connected && <Notice>Gmail is connected. You can edit the allowed sender list in settings.</Notice>}
-      <PageHeading eyebrow={dateLabel} title={`Good day, ${merchant.name.split(' ')[0]}.`} detail="Your collection desk, clear at a glance." action={<Link to="/integration" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#126b58] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42]"><FileCode2 className="h-4 w-4" />Developer guide</Link>} />
-      <div className="space-y-5">
-        <OnboardingCard merchant={merchant} />
-        {error ? <ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /> : loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><div className="skeleton h-[145px] rounded-[20px]" /><div className="skeleton h-[145px] rounded-[20px]" /><div className="skeleton h-[145px] rounded-[20px]" /></div>
-        ) : stats ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <StatTile accent label="Collected today" value={formatMoney(stats.todayCollection)} caption={`${Number(stats.todayPaymentCount || 0)} confirmed ${Number(stats.todayPaymentCount || 0) === 1 ? 'payment' : 'payments'} today`} icon={ArrowDownRight} />
-            <StatTile label="Success rate today" value={`${Number(stats.successRate || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}%`} caption="Paid orders compared with orders created today" icon={Activity} />
-            <StatTile label="Payments received" value={String(Number(stats.todayPaymentCount || 0))} caption="FamApp alerts and bank-app confirmations" icon={CheckCircle2} />
-          </div>
-        ) : null}
+    <div className="page-enter space-y-6">
+      {connected && (
+        <Notice>
+          FamApp payment inbox successfully linked. Real-time bank notification listener is active.
+        </Notice>
+      )}
 
-        <Panel className="overflow-hidden">
-          <PanelTitle title="Recent payments" detail="Latest confirmed transfers to your UPI account" action={<Link to="/payments" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#126b58] hover:underline">All payments <ArrowUpRight className="h-3.5 w-3.5" /></Link>} />
-          {loading ? <TableLoading columns={4} /> : error ? <div className="p-5"><p className="text-xs text-[#8b7770]">Recent payments are unavailable until the dashboard refresh succeeds.</p></div> : recent.length ? (
-            <div className="divide-y divide-[#edf0eb]">
-              {recent.map((payment) => (
-                <div key={payment.payment_id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4 sm:px-6">
-                  <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#e8f3e6] text-[#3f795e]"><CheckCircle2 className="h-4 w-4" /></span>
-                  <div className="min-w-[130px] flex-1"><p className="font-mono text-xs font-semibold text-[#294b40]">{payment.order_id}</p><p className="mt-1 text-[10px] text-[#8a9890]">UTR {payment.utr || '—'} · {formatDate(payment.receivedAt, { time: true })}</p><p className="mt-1 text-[10px] font-semibold text-[#648071]">{payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant verified in bank app' : 'FamApp credit alert'}</p></div>
-                  <p className="font-[var(--font-display)] text-sm font-bold tabular-nums text-[#1e493a]">{formatMoney(payment.amount)}</p>
-                </div>
-              ))}
+      {/* Top Greeting & Action Header */}
+      <PageHeading
+        eyebrow={dateLabel}
+        title={`Good day, ${merchant.name.split(' ')[0]} 👋`}
+        detail="Direct UPI collection desk, bank verification stream, and live transaction ledger."
+        action={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={refreshing}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 text-xs font-semibold text-slate-700 dark:text-[#cbe3d7] shadow-2xs hover:bg-slate-50 dark:hover:bg-white/10 transition active:scale-95 disabled:opacity-60"
+              title="Refresh dashboard stats"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 ${refreshing ? 'animate-spin' : ''}`} />
+              <span>{refreshing ? 'Refreshing…' : 'Refresh'}</span>
+            </button>
+            <Link
+              to="/payment-links"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white shadow-2xs transition active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create Payment Link</span>
+            </Link>
+          </div>
+        }
+      />
+
+      {/* Setup Guide */}
+      <OnboardingCard merchant={merchant} />
+
+      {/* 4 Financial KPI Stat Tiles */}
+      {error ? (
+        <ErrorState message={error} onRetry={refresh} />
+      ) : loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="skeleton h-[145px] rounded-2xl" />
+          <div className="skeleton h-[145px] rounded-2xl" />
+          <div className="skeleton h-[145px] rounded-2xl" />
+          <div className="skeleton h-[145px] rounded-2xl" />
+        </div>
+      ) : stats ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile
+            accent
+            label="Collected Today"
+            value={formatMoney(stats.todayCollection)}
+            caption={`${Number(stats.todayPaymentCount || 0)} confirmed ${Number(stats.todayPaymentCount || 0) === 1 ? 'payment' : 'payments'} today`}
+            icon={ArrowDownRight}
+            badge="LIVE"
+          />
+          <StatTile
+            label="Success Rate"
+            value={`${successRate.toLocaleString('en-IN', { maximumFractionDigits: 1 })}%`}
+            caption="Paid orders vs total attempts today"
+            icon={Activity}
+            progress={successRate}
+          />
+          <StatTile
+            label="Verified Payments"
+            value={String(Number(stats.todayPaymentCount || 0))}
+            caption="Instant FamApp bank credit alerts"
+            icon={CheckCircle2}
+          />
+          <StatTile
+            label="Receiving UPI"
+            value={merchant.upiId || 'Not Configured'}
+            caption="Direct instant bank settlement"
+            icon={Store}
+          />
+        </div>
+      ) : null}
+
+      {/* Quick Action & Snapshot Cards */}
+      <div className="grid gap-5 md:grid-cols-2">
+        {/* Instant Tools Card */}
+        <Panel className="p-5 sm:p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                Direct UPI Collection
+              </span>
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                0% Gateway Fee
+              </span>
             </div>
-          ) : (
-            <EmptyState icon={WalletCards} title="No payments received yet" detail="Once a UPI transfer matches an order, it will appear here. Your confirmed collection total is available above." action={<Link to="/integration" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#126b58]">Set up an integration <ArrowRight className="h-3.5 w-3.5" /></Link>} />
-          )}
+            <h3 className="mt-2 font-[var(--font-display)] text-lg font-bold text-slate-900 dark:text-white">
+              Instant Payment Links & QR
+            </h3>
+            <p className="mt-1 text-xs text-slate-600 dark:text-[#91a79c] leading-relaxed">
+              Generate customizable payment links with exact amounts and dynamic QR codes for 1-tap mobile UPI checkout.
+            </p>
+            {merchant.upiId && (
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 dark:border-[#1a2d26] bg-slate-50/70 dark:bg-[#12201b] p-3">
+                <div className="min-w-0 flex-1 pr-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#7f9589]">Your Active UPI Handle</p>
+                  <p className="truncate font-mono text-xs font-bold text-slate-900 dark:text-[#34d399]">{merchant.upiId}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyUpi}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-white hover:bg-slate-50"
+                >
+                  {copiedUpi ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span>{copiedUpi ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2.5">
+            <Link
+              to="/payment-links"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold shadow-2xs hover:bg-slate-800 transition"
+            >
+              <Link2 className="h-3.5 w-3.5" />
+              <span>Create Payment Link</span>
+            </Link>
+            <Link
+              to="/branding"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-4 py-2 text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-50 transition"
+            >
+              <Palette className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Brand Checkout</span>
+            </Link>
+          </div>
+        </Panel>
+
+        {/* Developer & Listener Snapshot */}
+        <Panel className="p-5 sm:p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                Developer Integration
+              </span>
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>API Ready</span>
+              </div>
+            </div>
+            <h3 className="mt-2 font-[var(--font-display)] text-lg font-bold text-slate-900 dark:text-white">
+              REST API & Webhooks
+            </h3>
+            <p className="mt-1 text-xs text-slate-600 dark:text-[#91a79c] leading-relaxed">
+              Integrate PopPay into your website, app, or server with simple JSON endpoints and signed webhook notifications.
+            </p>
+            {merchant.publicKey && (
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 dark:border-[#1a2d26] bg-slate-50/70 dark:bg-[#12201b] p-3">
+                <div className="min-w-0 flex-1 pr-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#7f9589]">Public API Key</p>
+                  <p className="truncate font-mono text-xs font-bold text-slate-900 dark:text-[#34d399]">{merchant.publicKey}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyPublicKey}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-white hover:bg-slate-50"
+                >
+                  {copiedKey ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span>{copiedKey ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2.5">
+            <Link
+              to="/integration"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold shadow-2xs hover:bg-slate-800 transition"
+            >
+              <FileCode2 className="h-3.5 w-3.5" />
+              <span>View API Documentation</span>
+            </Link>
+            <Link
+              to="/settings"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-4 py-2 text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-50 transition"
+            >
+              <Webhook className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Configure Webhook</span>
+            </Link>
+          </div>
         </Panel>
       </div>
+
+      {/* Recent Payments Feed */}
+      <Panel className="overflow-hidden">
+        <PanelTitle
+          title="Recent Payments"
+          detail="Live ledger of verified customer transfers directly to your UPI ID"
+          action={
+            <Link
+              to="/payments"
+              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+            >
+              <span>View all payments</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          }
+        />
+        {loading ? (
+          <TableLoading columns={4} />
+        ) : error ? (
+          <div className="p-5">
+            <p className="text-xs text-slate-500">Recent payments unavailable until dashboard refresh succeeds.</p>
+          </div>
+        ) : recent.length ? (
+          <div className="divide-y divide-slate-100 dark:divide-[#172b24]">
+            {recent.map((payment) => (
+              <div
+                key={payment.payment_id}
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4 sm:px-6 hover:bg-slate-50/70 dark:hover:bg-white/[.02] transition"
+              >
+                <div className="flex items-center gap-3.5 min-w-[200px]">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                      {payment.order_id}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8aa096]">
+                      UTR: <span className="font-mono font-semibold">{payment.utr || '—'}</span> · {formatDate(payment.receivedAt, { time: true })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                    payment.verificationMethod === 'MERCHANT_MANUAL'
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                  }`}>
+                    {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit Alert'}
+                  </span>
+                  <p className="font-[var(--font-display)] text-base font-bold tabular-nums text-emerald-700 dark:text-emerald-400 text-right">
+                    +{formatMoney(payment.amount)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={WalletCards}
+            title="No payments confirmed yet"
+            detail="When a customer pays your UPI ID, PopPay’s real-time bank listener matches the transaction and records it here instantly."
+            action={
+              <Link
+                to="/payment-links"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold shadow-2xs transition"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Create your first payment link</span>
+              </Link>
+            }
+          />
+        )}
+      </Panel>
     </div>
   );
 }
