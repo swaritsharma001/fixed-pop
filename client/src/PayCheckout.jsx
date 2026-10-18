@@ -104,6 +104,65 @@ function PaymentLoader({ checkoutDark }) {
   );
 }
 
+function playSuccessChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (delightful fintech chord)
+    notes.forEach((freq, index) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.08);
+      gain.gain.setValueAtTime(0, ctx.currentTime + index * 0.08);
+      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + index * 0.08 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + index * 0.08 + 0.65);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + index * 0.08);
+      osc.stop(ctx.currentTime + index * 0.08 + 0.7);
+    });
+  } catch {}
+}
+
+function ConfettiShower() {
+  const particles = useMemo(() => {
+    const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#eab308', '#06b6d4', '#14b8a6'];
+    return Array.from({ length: 48 }, (_, i) => ({
+      id: i,
+      color: colors[i % colors.length],
+      left: `${(i * 2.1 + (i % 7) * 3) % 96}%`,
+      delay: `${(i % 14) * 0.07}s`,
+      size: `${6 + (i % 5) * 2}px`,
+      shape: i % 3 === 0 ? '50%' : i % 3 === 1 ? '2px' : '0',
+    }));
+  }, []);
+
+  return (
+    <div className="confetti-container" aria-hidden="true">
+      {particles.map((p) => (
+        <span
+          key={p.id}
+          className="confetti-particle"
+          style={{
+            backgroundColor: p.color,
+            left: p.left,
+            top: '-15px',
+            width: p.size,
+            height: p.size,
+            borderRadius: p.shape,
+            animationDelay: p.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function UtrSubmission({ orderId, alreadySubmitted, onConfirmed }) {
   const [utr, setUtr] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -241,6 +300,7 @@ function PayCheckoutInner() {
   const applyOutcome = useCallback((result) => {
     const outcome = outcomeFromStatus(result?.status);
     if (outcome === 'success') {
+      playSuccessChime();
       setPayment(result);
       setViewState('success');
       notifyParent('payment.success', result);
@@ -553,22 +613,43 @@ function PayCheckoutInner() {
             </div>
           </section>
         ) : viewState === 'success' ? (
-          <section className={`entrance rounded-[28px] border px-6 py-12 text-center shadow-xl sm:px-12 ${
+          <section className={`entrance relative overflow-hidden rounded-[28px] border px-6 py-12 text-center shadow-2xl sm:px-12 ${
             checkoutDark ? 'border-[#1b3d30] bg-[#101b17] text-[#eaf3ee]' : 'border-[#dce9dd] bg-[#fffefa]'
           }`}>
-            <div className={`mx-auto mb-5 grid h-16 w-16 place-items-center rounded-[22px] ${
-              checkoutDark ? 'bg-[#15342a] text-[#34d399]' : 'bg-[#dff3e9] text-[#126b58]'
-            }`}>
-              <Icon name="check" className="h-8 w-8" />
+            {/* Celebratory confetti burst */}
+            <ConfettiShower />
+
+            {/* 3D Golden Rupee Coin Flip */}
+            <div className="coin-stage">
+              <div className="success-shockwave" />
+              <div className="coin">
+                {/* Front: Golden Rupee Coin */}
+                <div className="coin-face coin-front">
+                  <span className="font-[var(--font-display)] text-[44px] font-bold text-[#78350f] drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)] select-none">
+                    ₹
+                  </span>
+                </div>
+                {/* Back: Verified Green Checkmark */}
+                <div className="coin-face coin-back">
+                  <Icon name="check" className="h-12 w-12 text-white stroke-[2.8] drop-shadow-md" />
+                </div>
+              </div>
             </div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#34d399]">Payment confirmed</p>
-            <h1 className={`font-[var(--font-display)] text-[30px] font-semibold tracking-[-1.3px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>You’re all set.</h1>
+
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[.14em] text-[#16a34a] shimmer-badge mb-3">
+              <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
+              <span>Payment confirmed</span>
+            </div>
+            <h1 className={`font-[var(--font-display)] text-[32px] font-bold tracking-[-1.3px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>You’re all set!</h1>
             <p className="mt-2 text-sm text-[#84928a]">Your payment was sent directly to {merchantName}.</p>
-            <p className={`mt-6 font-[var(--font-display)] text-[36px] font-bold tracking-[-1.8px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>₹{formatAmount(checkout?.payableAmount)}</p>
+            <div className="mt-6 inline-block rounded-2xl bg-gradient-to-b from-[#10b981]/15 to-transparent px-8 py-3 border border-[#10b981]/25">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#10b981]">Amount Paid</span>
+              <p className={`font-[var(--font-display)] text-[42px] font-bold tracking-[-1.8px] leading-tight ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>₹{formatAmount(checkout?.payableAmount)}</p>
+            </div>
             {payment?.utr && (
-              <div className={`mx-auto mt-6 max-w-sm rounded-2xl px-5 py-4 text-left ${checkoutDark ? 'bg-[#152420]' : 'bg-[#f6f8f2]'}`}>
-                <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#84928a]">UPI reference number</p>
-                <p className={`mt-1 break-all font-mono text-sm ${checkoutDark ? 'text-[#34d399]' : 'text-[#33554c]'}`}>{payment.utr}</p>
+              <div className={`mx-auto mt-6 max-w-sm rounded-2xl px-5 py-4 text-left border ${checkoutDark ? 'bg-[#152420] border-[#1e342c]' : 'bg-[#f6f8f2] border-[#e2eae1]'}`}>
+                <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#84928a]">UPI reference number (UTR)</p>
+                <p className={`mt-1 break-all font-mono text-sm font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-[#126b58]'}`}>{payment.utr}</p>
               </div>
             )}
             {payment?.redirectUrl && <p className="mt-6 text-xs text-[#71817b]">Taking you back in {redirectIn} seconds…</p>}
@@ -674,7 +755,7 @@ function PayCheckoutInner() {
                     backgroundColor: brandColor,
                     boxShadow: `0 8px 24px ${brandColor}40`
                   } : undefined}
-                  className={`group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-2xl px-5 text-sm font-bold shadow-md transition-all ${
+                  className={`group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-2xl px-5 text-sm font-bold shadow-md transition-all btn-sheen ${
                     checkout?.upiLink
                       ? 'text-white hover:brightness-105 hover:shadow-lg active:scale-[0.99]'
                       : 'cursor-not-allowed bg-[#a8b8af] text-white'
@@ -751,11 +832,14 @@ function PayCheckoutInner() {
                   checkoutDark ? 'border-[#1f362e] bg-[#13221d] text-[#8ca097]' : 'border-[#dfe9dd] bg-[#fbfcf8] text-[#678477]'
                 }`}>UPI</span>
               </div>
-              <div className={`qr-frame grid aspect-square w-full max-w-[272px] place-items-center rounded-[22px] border p-3.5 ${
+              <div className={`qr-frame qr-scanner-box grid aspect-square w-full max-w-[272px] place-items-center rounded-[22px] border p-3.5 ${
                 checkoutDark ? 'border-[#1f362e] bg-white' : 'border-[#e9eee7] bg-[#fffefa]'
               }`}>
                 {qrImage ? (
-                  <img src={qrImage} alt="UPI payment QR code" className="h-full w-full object-contain select-none" />
+                  <>
+                    <img src={qrImage} alt="UPI payment QR code" className="h-full w-full object-contain select-none" />
+                    <div className="qr-scanner-line" />
+                  </>
                 ) : (
                   <div className="flex flex-col items-center px-5 text-center">
                     <div className="mb-3 h-8 w-8 rounded-lg border-2 border-[#c5d7c7] border-t-[#126b58] animate-spin" />
@@ -767,7 +851,9 @@ function PayCheckoutInner() {
                 <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 shadow-xs ${
                   checkoutDark ? 'border-[#1e3a30] bg-[#132620] text-[#34d399]' : 'border-[#d6e5d5] bg-white text-[#1a5b4c]'
                 }`}>
-                  <span className="radar-sweep h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span className="radar-sonar h-2.5 w-2.5">
+                    <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                  </span>
                   <span className="text-[11px] font-bold">Live Bank Alert Listener Active</span>
                 </span>
                 <span className={`text-[11px] font-medium ${checkoutDark ? 'text-[#7e9288]' : 'text-[#678073]'}`}>Scan via PhonePe, GPay, Paytm or BHIM</span>
