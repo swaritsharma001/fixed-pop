@@ -2124,7 +2124,31 @@ const payment = await response.json();
 if (payment.status === "PAID") {
   // Verify payment.signature on your server before fulfillment.
   // Do not trust a browser redirect or postMessage as proof.
-}`;
+}
+`;
+
+const CHECKOUT_MODAL_SNIPPET = `<!-- 1. Include PopPay SDK in your HTML -->
+<script src="https://poppay.tech/checkout.js"></script>
+
+<script>
+// 2. Open popup modal using your Public Key and order_id
+const pop = new PopPay({
+  key: "pp_live_YOUR_PUBLIC_KEY",  // Public key from Merchant Settings
+  order_id: order.order_id,          // Order ID from POST /api/v1/orders
+  name: "My Store",
+  handler: function (response) {
+    // Called when payment is confirmed!
+    console.log("Payment Confirmed!", response);
+    // response: { order_id, payment_id, utr, signature }
+    window.location.href = "/success?order_id=" + response.order_id;
+  },
+  onDismiss: function () {
+    console.log("Customer closed the checkout modal");
+  }
+});
+
+pop.open();
+</script>`;
 
 const VERIFY_SNIPPET = `import { createHmac, timingSafeEqual } from "node:crypto";
 
@@ -2405,18 +2429,22 @@ export function IntegrationPage({ isPublic = false }) {
             <div className="rounded-xl border border-[#dce8dc] bg-[#edf5eb] px-4 py-3 text-[10px] leading-5 text-[#557866]"><strong className="font-bold text-[#315f4e]">Example response shape:</strong> <code className="break-all font-mono">{"{ order_id, baseAmount, payableAmount, status: 'PENDING', expiresAt, checkoutUrl }"}</code>. The checkout URL is returned as a path (for example <code className="font-mono">/pay/order_…</code>); resolve it against the PopPay origin before redirecting.</div>
           </GuideSection>
 
-          <GuideSection id="hosted-checkout" number="04" eyebrow="Customer experience" title="Send the hosted checkout link">
+          <GuideSection id="hosted-checkout" number="04" eyebrow="Customer experience" title="Customer Checkout (Modal SDK & Hosted Link)">
             <Panel className="overflow-hidden">
-              <PanelTitle title="PopPay handles the payment screen" detail="No payment form or UPI credential belongs in your storefront." />
+              <PanelTitle title="Two flexible checkout options" detail="Popup modal using checkout.js SDK or direct hosted URL redirection." />
               <div className="grid gap-4 p-5 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">
-                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">1 · Create on server</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">POST /api/v1/orders with your bearer key.</p></div>
+                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">1 · Create on server</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">POST /api/v1/orders with your secret key.</p></div>
                 <ArrowRight className="hidden h-4 w-4 text-[#90a99a] sm:block" />
-                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">2 · Share checkoutUrl</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">Redirect, link, or send the hosted URL.</p></div>
+                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">2 · Modal or Redirect</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">Open checkout.js modal with Public Key OR redirect to checkoutUrl.</p></div>
                 <ArrowRight className="hidden h-4 w-4 text-[#90a99a] sm:block" />
-                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">3 · Customer pays</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">The hosted page presents the UPI payment instructions.</p></div>
+                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">3 · Customer pays</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">1-click UPI app switch on phone or QR code on desktop.</p></div>
+              </div>
+              <div className="border-t border-[#edf0eb] p-5">
+                <p className="mb-2 text-xs font-bold text-[#2d5848]">Option A: In-Page Checkout Modal (Recommended)</p>
+                <GuideCode label="Frontend HTML / JS · checkout.js SDK" code={CHECKOUT_MODAL_SNIPPET} copied={copied === 'modal'} onCopy={() => copy(CHECKOUT_MODAL_SNIPPET, 'modal')} compact />
               </div>
               <div className="border-t border-[#edf0eb] px-5 py-4 text-[11px] leading-5 text-[#718279]">
-                The order starts as <code className="rounded bg-[#f0f4ee] px-1 py-0.5 font-mono text-[10px]">PENDING</code> and the checkout window is 10 minutes. The hosted page can collect a 12-digit UTR report; a report is not proof of payment. PopPay will verify/match the transfer and move the order to <code className="rounded bg-[#f0f4ee] px-1 py-0.5 font-mono text-[10px]">PAID</code> only after confirmation.
+                <strong className="text-[#355a4d]">Option B: Hosted Redirect</strong> — You can also directly redirect the customer's browser to <code className="rounded bg-[#f0f4ee] px-1 py-0.5 font-mono text-[10px]">https://poppay.tech/pay/order_...</code>. PopPay manages the 10-minute dynamic UPI collection window and automatically triggers bank reconciliation.
               </div>
             </Panel>
           </GuideSection>

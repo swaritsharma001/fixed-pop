@@ -456,15 +456,16 @@
         <a href="#quickstart" class="nav-link">⚡ Quick Start</a>
         <a href="#ai-prompt" class="nav-link">🤖 AI Prompt for Cursor / Claude</a>
         <a href="#base-url" class="nav-link">🌐 Base URLs & Endpoints</a>
-        <a href="#authentication" class="nav-link">🔑 Authentication</a>
+        <a href="#authentication" class="nav-link">🔑 API Keys (Public vs Secret)</a>
       </div>
 
       <div class="nav-group">
-        <p class="nav-title">Core APIs</p>
-        <a href="#create-order" class="nav-link">POST /api/v1/orders</a>
-        <a href="#checkout-flow" class="nav-link">Hosted Checkout Redirection</a>
-        <a href="#check-status" class="nav-link">GET /api/v1/checkout/:id/status</a>
-        <a href="#webhooks" class="nav-link">Webhooks & HMAC Verification</a>
+        <p class="nav-title">Core Integration</p>
+        <a href="#create-order" class="nav-link">1. POST /api/v1/orders</a>
+        <a href="#checkout-flow" class="nav-link">2. Checkout SDK & Popup (checkout.js)</a>
+        <a href="#hosted-redirect" class="nav-link">↳ Hosted Checkout URL Redirect</a>
+        <a href="#webhooks" class="nav-link">3. Webhooks & HMAC Verification</a>
+        <a href="#check-status" class="nav-link">4. GET /api/v1/checkout/:id/status</a>
       </div>
 
       <div class="nav-group">
@@ -520,58 +521,110 @@
               <button class="copy-btn" onclick="copySnippet('prompt-text', this)">Copy AI Prompt</button>
             </div>
             <pre id="prompt-text"><code>I want to integrate PopPay payment gateway into my application.
-Here is the official API specification:
+Here is the official specification:
 
 Base URL: https://poppay.tech
-API Endpoint: POST https://poppay.tech/api/v1/orders
-Authentication Header: Authorization: Bearer <POPPAY_SECRET_KEY>
+Order API: POST https://poppay.tech/api/v1/orders
+Header: Authorization: Bearer <POPPAY_SECRET_KEY>
 Content-Type: application/json
 
+1. Backend: Create Order
 Request Payload:
 {
-  "amount": "249.00",                     // Required: Amount in INR (string or number)
-  "receipt": "order_rcpt_1001",           // Optional: Internal order/invoice reference
-  "redirectUrl": "https://myshop.com/success" // Optional: URL to redirect customer after payment
+  "amount": "499.00",                         // Required: Amount in INR
+  "receipt": "order_rcpt_1001",               // Optional: Internal order reference
+  "redirectUrl": "https://myshop.com/success" // Optional: Redirect URL
 }
 
-Response Payload:
+Response (201 Created):
 {
-  "order_id": "pop_ord_...",              // Unique PopPay order ID
-  "checkoutUrl": "https://poppay.tech/pay/pop_ord_...", // Customer payment link
-  "payableAmount": "249.00",
-  "status": "CREATED",
-  "expiresAt": "2026-10-18T11:00:00.000Z"
+  "order_id": "order_abcdef123456",
+  "baseAmount": "499.00",
+  "payableAmount": "499.00",
+  "checkoutUrl": "https://poppay.tech/pay/order_abcdef123456",
+  "status": "PENDING"
 }
 
-Payment Flow:
-1. When user initiates checkout on my site, make a POST request to https://poppay.tech/api/v1/orders from server-side.
-2. Redirect user to order.checkoutUrl (opens branded PopPay checkout with 1-tap UPI apps like PhonePe, GPay, Paytm, and QR code).
-3. Set up a Webhook endpoint at POST /webhooks/poppay.
-   PopPay sends a POST request with header X-PopPay-Signature when payment is confirmed.
-   Verify the signature using HMAC-SHA256(raw_body, POPPAY_WEBHOOK_SECRET) === X-PopPay-Signature.
-   When valid and event === "payment.success", fulfill the order using event.order_id and event.utr.
-4. Provide a frontend poll/status check by calling GET https://poppay.tech/api/v1/checkout/<order_id>/status if needed.
+2. Frontend: Open PopPay Checkout
+Include the script in HTML:
+<script src="https://poppay.tech/checkout.js"></script>
 
-Please write clean, production-ready backend code to implement this flow.</code></pre>
+Trigger Checkout Modal using the Public Key & order_id:
+const pop = new PopPay({
+  key: "pp_live_YOUR_PUBLIC_KEY",  // Public Key from PopPay Dashboard
+  order_id: data.order_id,          // Order ID from backend
+  name: "My Store",
+  handler: function (response) {
+    // response: { order_id, payment_id, utr, signature }
+    window.location.href = "/success?order_id=" + response.order_id;
+  },
+  onDismiss: function () {
+    console.log("Customer closed the checkout modal");
+  }
+});
+pop.open();
+
+(Alternatively, redirect customer directly: window.location.href = data.checkoutUrl;)
+
+3. Webhook: Payment Confirmation
+Endpoint: POST /webhooks/poppay
+Verify HMAC-SHA256 signature using POPPAY_WEBHOOK_SECRET and header X-PopPay-Signature.
+When valid and event === "payment.success", fulfill the order.
+
+Please write clean, production-ready frontend and backend code to implement this flow.</code></pre>
           </div>
         </div>
       </section>
 
       <!-- Authentication -->
       <section id="authentication">
-        <h2>🔑 Authentication</h2>
+        <h2>🔑 API Keys: Public Key vs Secret Key</h2>
         <p>
-          PopPay authenticates API requests using Bearer tokens. Send your <code>POPPAY_SECRET_KEY</code> in the <code>Authorization</code> HTTP header.
+          PopPay uses a two-key architecture similar to Stripe and Razorpay to ensure zero client-side credential exposure:
         </p>
+
+        <div class="table-box" style="margin: 1.5rem 0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Key Type</th>
+                <th>Prefix</th>
+                <th>Where to Use</th>
+                <th>Security Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Public Key</strong></td>
+                <td><code>pp_live_...</code></td>
+                <td>Frontend JavaScript & <code>checkout.js</code> SDK. Identifies your merchant profile, logo, and brand theme.</td>
+                <td><span style="color: #34d399; font-weight: bold;">Client-Safe</span></td>
+              </tr>
+              <tr>
+                <td><strong>Secret Key</strong></td>
+                <td><code>pp_secret_...</code> or <code>pop_sec_...</code></td>
+                <td>Backend server only. Passed in <code>Authorization: Bearer &lt;SECRET_KEY&gt;</code> to create orders.</td>
+                <td><span style="color: #ef4444; font-weight: bold;">Server-Only (Private)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Webhook Secret</strong></td>
+                <td><code>whsec_...</code></td>
+                <td>Backend webhook listener. Used to verify HMAC-SHA256 signatures in <code>X-PopPay-Signature</code>.</td>
+                <td><span style="color: #ef4444; font-weight: bold;">Server-Only (Private)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div class="code-container">
           <div class="code-header">
-            <span class="code-title">HTTP Header</span>
-            <button class="copy-btn" onclick="copyText('Authorization: Bearer pop_sec_your_secret_key', this)">Copy</button>
+            <span class="code-title">Backend API Authorization Header</span>
+            <button class="copy-btn" onclick="copyText('Authorization: Bearer pp_secret_your_secret_key', this)">Copy</button>
           </div>
-          <pre><code>Authorization: Bearer pop_sec_live_abcdef1234567890</code></pre>
+          <pre><code>Authorization: Bearer pp_secret_your_actual_key_here</code></pre>
         </div>
         <p style="font-size: 0.85rem; color: #fbbf24;">
-          ⚠️ <strong>Security Note:</strong> Always keep your Secret Key on your backend server. Never expose it in client-side HTML, JavaScript or mobile app binaries.
+          ⚠️ <strong>Security Rule:</strong> Always keep your Secret Key and Webhook Secret in backend environment variables (<code>.env</code>). Never commit them to Git or expose them in browser bundles.
         </p>
       </section>
 
@@ -644,14 +697,110 @@ Please write clean, production-ready backend code to implement this flow.</code>
       <section id="checkout-flow">
         <h2>2. Customer Checkout Experience</h2>
         <p>
-          Once your server receives the response, redirect your customer's browser to <code>order.checkoutUrl</code>:
+          PopPay offers two flexible ways to present the checkout to your customers: an <strong>in-page popup modal (Recommended)</strong> using our lightweight SDK, or a <strong>direct hosted page redirect</strong>.
         </p>
-        <div class="code-container">
-          <pre><code>// Example Node.js redirect
-res.redirect(order.checkoutUrl);</code></pre>
+
+        <!-- Method A: SDK Modal -->
+        <div style="margin-top: 1.5rem; padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border-accent); background: var(--bg-card);">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary-light);">
+              Option A: In-Page Checkout Modal (Recommended)
+            </h3>
+            <span style="font-size: 0.75rem; font-weight: bold; padding: 0.2rem 0.6rem; border-radius: 9999px; background: var(--primary-glow); color: var(--primary-light); border: 1px solid var(--border-accent);">
+              Modern & Fast
+            </span>
+          </div>
+          <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            Customers never leave your website. Include our <code>checkout.js</code> script on your frontend, pass your <strong>Public Key (<code>pp_live_...</code>)</strong> and the <code>order_id</code> from your backend order creation call.
+          </p>
+
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">Frontend HTML & JavaScript Integration</span>
+              <button class="copy-btn" onclick="copySnippet('sdk-code', this)">Copy Code</button>
+            </div>
+            <pre id="sdk-code"><code>&lt;!-- 1. Include PopPay SDK in your frontend HTML --&gt;
+&lt;script src="https://poppay.tech/checkout.js"&gt;&lt;/script&gt;
+
+&lt;!-- 2. Your checkout button --&gt;
+&lt;button id="pay-button"&gt;Pay Now &middot; &#8377;499&lt;/button&gt;
+
+&lt;script&gt;
+document.getElementById('pay-button').addEventListener('click', async () =&gt; {
+  try {
+    // Step 1: Call your own backend endpoint to create a PopPay order
+    const res = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: '499.00' })
+    });
+    const order = await res.json(); // returns { order_id: "order_..." }
+
+    // Step 2: Initialize PopPay with your PUBLIC KEY and order_id
+    const pop = new PopPay({
+      key: 'pp_live_YOUR_PUBLIC_KEY', // Public Key from PopPay Dashboard
+      order_id: order.order_id,         // Order ID from your backend
+      name: 'Acme Store',              // Store name displayed on modal
+      handler: function (response) {
+        // Called the moment payment is verified!
+        console.log('Payment Successful!', response);
+        // response object contains:
+        // {
+        //   order_id: "order_...",
+        //   payment_id: "pop_pay_...",
+        //   utr: "428910284729",
+        //   signature: "a3f5..."
+        // }
+        window.location.href = '/order-success?order_id=' + response.order_id;
+      },
+      onDismiss: function () {
+        console.log('Customer closed checkout modal');
+      }
+    });
+
+    // Step 3: Open the checkout modal
+    pop.open();
+  } catch (err) {
+    console.error('Checkout failed:', err);
+    alert('Unable to initiate payment. Please try again.');
+  }
+});
+&lt;/script&gt;</code></pre>
+          </div>
         </div>
-        <p>
-          On mobile devices, the customer can tap <strong>"Pay with UPI App"</strong> to launch <strong>PhonePe, Google Pay, Paytm, Cred, or BHIM</strong> in 1 click, or scan the dynamic QR code on desktop. PopPay automatically listens for bank credit alerts and verifies payment instantly.
+
+        <!-- Method B: Hosted URL Redirect -->
+        <div id="hosted-redirect" style="margin-top: 1.5rem; padding: 1.25rem; border-radius: 16px; border: 1px solid var(--border); background: var(--bg-card);">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: #f1f5f9;">
+              Option B: Direct Hosted Page Redirect (Zero-JS)
+            </h3>
+            <span style="font-size: 0.75rem; font-weight: bold; padding: 0.2rem 0.6rem; border-radius: 9999px; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid var(--border);">
+              Simple Link
+            </span>
+          </div>
+          <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            If you do not want to use client-side JavaScript, simply redirect the customer's browser directly to the <code>checkoutUrl</code> returned by <code>POST /api/v1/orders</code>.
+          </p>
+
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">Server-side Redirect (Node.js / Express Example)</span>
+              <button class="copy-btn" onclick="copySnippet('redirect-code', this)">Copy Code</button>
+            </div>
+            <pre id="redirect-code"><code>// Example: In your backend checkout route
+app.post('/checkout', async (req, res) =&gt; {
+  const order = await poppay.createOrder({ amount: '499.00', redirectUrl: 'https://myshop.com/thanks' });
+  
+  // Directly redirect customer to PopPay hosted payment page
+  res.redirect(order.checkoutUrl);
+  // order.checkoutUrl format: "https://poppay.tech/pay/order_8f4b23e198a2c10b"
+});</code></pre>
+          </div>
+        </div>
+
+        <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted); line-height: 1.6;">
+          On mobile phones, both options provide 1-tap app switching to <strong>PhonePe, Google Pay, Paytm, Cred, and BHIM</strong>. On desktops, a high-contrast dynamic UPI QR code is displayed with instant real-time bank reconciliation.
         </p>
       </section>
 
