@@ -2468,7 +2468,12 @@ export function IntegrationPage({ isPublic = false }) {
                 <GuideCode label="Poll status · server-side" code={POLL_SNIPPET} copied={copied === 'poll'} onCopy={() => copy(POLL_SNIPPET, 'poll')} compact />
               </div>
               <div className="border-t border-[#edf0eb] p-5">
-                <div className="mb-3"><h3 className="text-xs font-bold text-[#294b40]">Verify the paid response</h3><p className="mt-1 text-[10px] leading-4 text-[#84928a]">PopPay signs the UTF-8 message <code className="font-mono text-[#355a4d]">order_id|payment_id</code> with HMAC-SHA256 and your signing secret. Compare in constant time on your server.</p></div>
+                <div className="mb-3">
+                  <h3 className="text-xs font-bold text-[#294b40]">Verify the paid response (Why Signing Secret is needed)</h3>
+                  <p className="mt-1 text-[10px] leading-4 text-[#84928a]">
+                    Frontend DevTools (<kbd className="font-mono text-[9px] bg-slate-100 dark:bg-white/10 px-1 py-0.5 rounded">F12</kbd>) allow users to tamper with JavaScript callbacks or trigger fake redirect URLs. PopPay prevents client-side bypass by generating an unforgeable HMAC-SHA256 signature using your private <code className="font-mono text-[#355a4d]">POPPAY_SIGNING_SECRET</code> over <code className="font-mono text-[#355a4d]">order_id|payment_id</code>. Your backend must recalculate and compare this signature before releasing digital goods.
+                  </p>
+                </div>
                 <GuideCode label="HMAC-SHA256 · signing secret stays in env" code={VERIFY_SNIPPET} copied={copied === 'verify'} onCopy={() => copy(VERIFY_SNIPPET, 'verify')} compact />
               </div>
             </Panel>

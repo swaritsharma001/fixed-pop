@@ -623,41 +623,98 @@
               <tr>
                 <th>Credential</th>
                 <th>Prefix</th>
-                <th>Purpose</th>
-                <th>Environment</th>
+                <th>Role &amp; Direction</th>
+                <th>Where It Lives</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><strong>Public Key</strong></td>
                 <td><code>pp_live_...</code></td>
-                <td>Merchant identifier for frontend <code>checkout.js</code> SDK modal</td>
-                <td><span style="color: #34d399; font-weight: bold;">Client-side Safe</span></td>
+                <td>Client SDK initialization identifier for <code>checkout.js</code> modal</td>
+                <td><span style="color: #34d399; font-weight: bold;">Client-side Safe (Browser/App)</span></td>
               </tr>
               <tr>
                 <td><strong>Secret Key</strong></td>
                 <td><code>pp_secret_...</code></td>
-                <td>Authenticates <code>/api/v1/orders</code> backend requests</td>
-                <td><span style="color: #ef4444; font-weight: bold;">Server-only (Private)</span></td>
+                <td>Bearer token to authenticate order creation (<code>POST /api/v1/orders</code>)</td>
+                <td><span style="color: #ef4444; font-weight: bold;">Merchant Server Only (Never Client)</span></td>
               </tr>
               <tr>
                 <td><strong>Signing Secret</strong></td>
                 <td><code>pp_sign_...</code></td>
-                <td>Validates payment status signatures: <code>HMAC(order_id|payment_id)</code></td>
-                <td><span style="color: #ef4444; font-weight: bold;">Server-only (Private)</span></td>
+                <td>Cryptographic proof validating frontend payment callback integrity</td>
+                <td><span style="color: #ef4444; font-weight: bold;">Merchant Server Only (Never Client)</span></td>
               </tr>
               <tr>
                 <td><strong>Webhook Secret</strong></td>
                 <td><code>whsec_...</code></td>
-                <td>Verifies <code>X-PopPay-Signature</code> on incoming webhooks</td>
-                <td><span style="color: #ef4444; font-weight: bold;">Server-only (Private)</span></td>
+                <td>Verifies <code>X-PopPay-Signature</code> header on background server-to-server webhooks</td>
+                <td><span style="color: #ef4444; font-weight: bold;">Merchant Server Only (Never Client)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Deep Dive: Why Do You Need a Signing Secret (<code>pp_sign_...</code>)?</h3>
+        <p>
+          Developers often ask: <em>"Why can't my frontend just tell my server that the user paid, or why can't my server just use my Secret Key for everything?"</em>
+        </p>
+        <p>
+          The <strong>Signing Secret</strong> prevents the classic <strong>Client-Side Bypass / DevTools Spoofing Attack</strong>:
+        </p>
+
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; padding: 1.25rem; margin: 1.25rem 0;">
+          <h4 style="color: #f87171; margin: 0 0 0.5rem 0; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🚨 The Client-Side Tampering Vulnerability (Without Signing Secret)</span>
+          </h4>
+          <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 0.75rem; line-height: 1.6;">
+            1. An attacker clicks "Buy ₹10,000 Product" on your website.<br>
+            2. The checkout popup opens. Instead of paying with UPI, the attacker presses <code>F12</code> (Chrome DevTools).<br>
+            3. In the Console, the attacker runs: <code>checkout.options.handler({ order_id: "order_123", status: "PAID" })</code> or navigates to <code>/order-confirmed?order_id=order_123</code>.<br>
+            4. If your server blindly fulfills orders when told by the browser, the attacker gets free goods without spending a single rupee!
+          </p>
+          <div style="font-size: 0.85rem; color: #a7f3d0; font-weight: 600;">
+            🛡️ How PopPay Fixes This: PopPay never allows the browser to invent confirmation. When payment is confirmed at the bank, PopPay generates an unforgeable HMAC-SHA256 signature using your private Signing Secret. Your server independently recalculates the signature. Because only PopPay and your backend know this secret, DevTools manipulation is mathematically impossible.
+          </div>
+        </div>
+
+        <h3>Comparing The 3 Private Secrets</h3>
+        <div class="table-box">
+          <table>
+            <thead>
+              <tr>
+                <th>Secret</th>
+                <th>Who Generates Signature</th>
+                <th>Who Verifies Signature</th>
+                <th>Communication Channel Protected</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Secret Key (<code>pp_secret_</code>)</strong></td>
+                <td>Merchant Server</td>
+                <td>PopPay Core API</td>
+                <td>Direct REST API calls (<code>Authorization: Bearer pp_secret_...</code>)</td>
+              </tr>
+              <tr>
+                <td><strong>Signing Secret (<code>pp_sign_</code>)</strong></td>
+                <td>PopPay Gateway</td>
+                <td>Merchant Server</td>
+                <td>Frontend Client ➔ Merchant Server redirect / callback validation</td>
+              </tr>
+              <tr>
+                <td><strong>Webhook Secret (<code>whsec_</code>)</strong></td>
+                <td>PopPay Gateway</td>
+                <td>Merchant Server</td>
+                <td>PopPay Background Worker ➔ Merchant Webhook Endpoint (raw JSON body)</td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div class="alert-box warning">
-          ⚠️ <strong>Security Rule:</strong> Never expose <code>POPPAY_SECRET_KEY</code>, <code>POPPAY_SIGNING_SECRET</code>, or <code>POPPAY_WEBHOOK_SECRET</code> in client-side code, git repositories, or mobile bundles. Store them in your server’s environment variables.
+          ⚠️ <strong>Security Rule:</strong> Never expose <code>POPPAY_SECRET_KEY</code>, <code>POPPAY_SIGNING_SECRET</code>, or <code>POPPAY_WEBHOOK_SECRET</code> in client-side code, git repositories, or mobile bundles. Store them exclusively in your server’s environment variables.
         </div>
       </section>
 
@@ -879,24 +936,24 @@ app.post('/checkout', async (req, res) => {
           <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab(this, 'verify-node')">Node.js (Crypto)</button>
             <button class="tab-btn" onclick="switchTab(this, 'verify-py')">Python (hmac)</button>
+            <button class="tab-btn" onclick="switchTab(this, 'verify-endpoint')">Complete Express Route (/api/verify-payment)</button>
           </div>
           <div id="verify-node" class="tab-panel active">
             <div class="code-container" style="margin-top: 0; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">
               <pre><code>const crypto = require('crypto');
 
 function verifyPayment(orderId, paymentId, signature) {
+  // 1. Sanitize signature format (must be 64-hex chars)
+  if (!/^[a-f0-9]{64}$/i.test(signature || '')) return false;
+
+  // 2. Re-compute HMAC using your server-only POPPAY_SIGNING_SECRET
   const expected = crypto
     .createHmac('sha256', process.env.POPPAY_SIGNING_SECRET)
     .update(`${orderId}|${paymentId}`, 'utf8')
     .digest();
 
-  let supplied;
-  try {
-    supplied = Buffer.from(signature, 'hex');
-  } catch {
-    return false;
-  }
-
+  // 3. Timing-safe constant time comparison (protects against timing attacks)
+  const supplied = Buffer.from(signature, 'hex');
   return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
 }</code></pre>
             </div>
@@ -907,11 +964,39 @@ function verifyPayment(orderId, paymentId, signature) {
 import hashlib
 
 def verify_payment(order_id: str, payment_id: str, signature: str, secret: str) -> bool:
+    """Verifies PopPay frontend payment signature in constant time."""
     message = f"{order_id}|{payment_id}".encode("utf-8")
     expected = hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
     return hmac.compare_digest(signature.lower(), expected.lower())</code></pre>
             </div>
           </div>
+          <div id="verify-endpoint" class="tab-panel">
+            <div class="code-container" style="margin-top: 0; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">
+              <pre><code>// POST /api/verify-payment
+// Called by your frontend checkout.js handler()
+app.post('/api/verify-payment', express.json(), async (req, res) => {
+  const { order_id, payment_id, utr, signature } = req.body;
+
+  // 1. Cryptographically verify that PopPay issued this confirmation
+  const isValid = verifyPayment(order_id, payment_id, signature);
+  if (!isValid) {
+    return res.status(400).json({ verified: false, error: 'Signature verification failed (tampering detected)' });
+  }
+
+  // 2. Safe to fulfill! Update your database
+  await db.orders.update({
+    where: { orderId: order_id },
+    data: { status: 'PAID', paymentId: payment_id, utr, paidAt: new Date() }
+  });
+
+  return res.json({ verified: true, order_id });
+});</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert-box success" style="margin-top: 1.5rem;">
+          💡 <strong>Best Practice: Two-Layer Security:</strong> Use both <strong>Client Verification (Signing Secret)</strong> for immediate UI transition and <strong>Server Webhooks (Webhook Secret)</strong> for background delivery guarantees if the customer's phone disconnects or browser closes before the redirect.
         </div>
       </section>
 
