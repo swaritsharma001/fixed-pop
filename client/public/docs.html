@@ -215,29 +215,6 @@
       color: #fff;
     }
 
-    /* AI Prompt Callout */
-    .ai-prompt-box {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.09) 0%, rgba(6, 78, 59, 0.12) 100%);
-      border: 1px solid rgba(52, 211, 153, 0.35);
-      border-radius: 16px;
-      padding: 1.5rem;
-      margin: 2rem 0;
-      position: relative;
-      overflow: hidden;
-    }
-    .ai-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--primary-light);
-      background: rgba(16, 185, 129, 0.2);
-      padding: 0.2rem 0.6rem;
-      border-radius: 6px;
-      margin-bottom: 0.75rem;
-    }
-
     /* Headings */
     h2 {
       font-family: var(--font-display);
@@ -520,7 +497,6 @@
       <div class="nav-group">
         <p class="nav-title">Overview</p>
         <a href="#quickstart" class="nav-link">⚡ Quickstart in 3 Minutes</a>
-        <a href="#ai-prompt" class="nav-link">🤖 AI Prompt for Cursor / Claude</a>
         <a href="#architecture" class="nav-link">1. Architecture & Flow</a>
         <a href="#credentials" class="nav-link">2. Credentials & Security</a>
       </div>
@@ -573,77 +549,6 @@
           </div>
         </div>
       </div>
-
-      <!-- AI Prompt Callout -->
-      <section id="ai-prompt">
-        <div class="ai-prompt-box">
-          <div class="ai-badge">🤖 AI Agent / Cursor / Claude Prompt</div>
-          <h2 style="font-size: 1.25rem; margin-top: 0; padding-top: 0; border: none; margin-bottom: 0.5rem;">Give This Prompt to AI to Build Your Integration Instantly</h2>
-          <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1rem;">
-            Copy this snippet and paste it directly into Cursor, Claude 3.5 Sonnet, ChatGPT, or your favorite AI coding assistant. It contains everything the AI needs to integrate PopPay seamlessly into your app.
-          </p>
-
-          <div class="code-container">
-            <div class="code-header">
-              <span class="code-title">Copy & Paste Into Cursor / ChatGPT / Claude</span>
-              <button class="copy-btn" onclick="copySnippet('prompt-text', this)">Copy AI Prompt</button>
-            </div>
-            <pre id="prompt-text"><code>I want to integrate PopPay payment gateway into my application.
-Here is the official specification:
-
-Base URL: https://poppay.tech
-Order API: POST https://poppay.tech/api/v1/orders
-Header: Authorization: Bearer <POPPAY_SECRET_KEY>
-Content-Type: application/json
-
-1. Backend: Create Order
-Request Payload:
-{
-  "amount": "499.00",                         // Required: Amount in INR
-  "receipt": "order_rcpt_1001",               // Optional: Internal order/invoice reference
-  "redirectUrl": "https://myshop.com/success" // Optional: Redirect URL
-}
-
-Response (201 Created):
-{
-  "order_id": "order_abcdef123456",
-  "baseAmount": "499.00",
-  "payableAmount": "499.18",
-  "checkoutUrl": "https://poppay.tech/pay/order_abcdef123456",
-  "status": "PENDING",
-  "expiresAt": "2026-10-18T12:00:00.000Z"
-}
-
-2. Frontend: Open PopPay Checkout
-Include the script in HTML:
-&lt;script src="https://poppay.tech/checkout.js"&gt;&lt;/script&gt;
-
-Trigger Checkout Modal using the Public Key & order_id:
-const pop = new PopPay({
-  key: "pp_live_YOUR_PUBLIC_KEY",  // Public Key from PopPay Dashboard
-  order_id: data.order_id,          // Order ID from backend
-  name: "My Store",
-  handler: function (response) {
-    // response: { order_id, payment_id, utr, signature }
-    window.location.href = "/success?order_id=" + response.order_id;
-  },
-  onDismiss: function () {
-    console.log("Customer closed the checkout modal");
-  }
-});
-pop.open();
-
-(Alternatively, redirect customer directly: window.location.href = data.checkoutUrl;)
-
-3. Webhook: Payment Confirmation
-Endpoint: POST /webhooks/poppay
-Verify HMAC-SHA256 signature using POPPAY_WEBHOOK_SECRET and header X-PopPay-Signature.
-When valid and event === "payment.success", fulfill the order.
-
-Please write clean, production-ready frontend and backend code to implement this flow.</code></pre>
-          </div>
-        </div>
-      </section>
 
       <!-- 1. Architecture & Flow -->
       <section id="architecture">
