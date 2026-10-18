@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
@@ -78,23 +78,25 @@ function getUpiId(upiLink) {
   }
 }
 
-function PaymentLoader() {
+function PaymentLoader({ checkoutDark }) {
   return (
-    <main className="checkout-shell min-h-[100dvh] px-4 py-6 sm:px-6 sm:py-10">
+    <main className={`checkout-shell min-h-[100dvh] px-4 py-6 sm:px-6 sm:py-10 ${checkoutDark ? 'bg-[#080e0c]' : ''}`}>
       <div className="mx-auto max-w-[920px]">
         <div className="mb-7 flex items-center justify-between">
-          <div className="h-8 w-28 animate-pulse rounded-lg bg-[#dce5dc]" />
-          <div className="h-8 w-24 animate-pulse rounded-full bg-[#e4ebe3]" />
+          <div className={`h-8 w-28 animate-pulse rounded-lg ${checkoutDark ? 'bg-[#152520]' : 'bg-[#dce5dc]'}`} />
+          <div className={`h-8 w-24 animate-pulse rounded-full ${checkoutDark ? 'bg-[#152520]' : 'bg-[#e4ebe3]'}`} />
         </div>
-        <div className="grid overflow-hidden rounded-[28px] border border-[#e1e8e1] bg-[#fffefa] shadow-[0_24px_70px_rgba(25,61,48,.08)] md:grid-cols-[1fr_360px]">
+        <div className={`grid overflow-hidden rounded-[28px] border shadow-[0_24px_70px_rgba(25,61,48,.08)] md:grid-cols-[1fr_360px] ${
+          checkoutDark ? 'border-[#1e332c] bg-[#111a18]' : 'border-[#e1e8e1] bg-[#fffefa]'
+        }`}>
           <div className="space-y-5 p-6 sm:p-10">
-            <div className="h-4 w-32 animate-pulse rounded bg-[#e4ebe3]" />
-            <div className="h-10 w-52 animate-pulse rounded bg-[#e4ebe3]" />
-            <div className="h-24 w-full animate-pulse rounded-2xl bg-[#f0f3ed]" />
-            <div className="h-14 w-full animate-pulse rounded-xl bg-[#e4ebe3]" />
+            <div className={`h-4 w-32 animate-pulse rounded ${checkoutDark ? 'bg-[#182b25]' : 'bg-[#e4ebe3]'}`} />
+            <div className={`h-10 w-52 animate-pulse rounded ${checkoutDark ? 'bg-[#182b25]' : 'bg-[#e4ebe3]'}`} />
+            <div className={`h-24 w-full animate-pulse rounded-2xl ${checkoutDark ? 'bg-[#14231f]' : 'bg-[#f0f3ed]'}`} />
+            <div className={`h-14 w-full animate-pulse rounded-xl ${checkoutDark ? 'bg-[#182b25]' : 'bg-[#e4ebe3]'}`} />
           </div>
-          <div className="flex min-h-[360px] items-center justify-center bg-[#f6f8f2] p-8">
-            <div className="h-56 w-56 animate-pulse rounded-2xl bg-[#e4ebe3]" />
+          <div className={`flex min-h-[360px] items-center justify-center p-8 ${checkoutDark ? 'bg-[#0d1614]' : 'bg-[#f6f8f2]'}`}>
+            <div className={`h-56 w-56 animate-pulse rounded-2xl ${checkoutDark ? 'bg-[#152520]' : 'bg-[#e4ebe3]'}`} />
           </div>
         </div>
       </div>
@@ -172,7 +174,7 @@ function UtrSubmission({ orderId, alreadySubmitted, onConfirmed }) {
   );
 }
 
-export default function PayCheckout() {
+function PayCheckoutInner() {
   const { orderId = '' } = useParams();
   const [checkout, setCheckout] = useState(null);
   const [viewState, setViewState] = useState('loading');
@@ -184,6 +186,21 @@ export default function PayCheckout() {
   const [payment, setPayment] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [redirectIn, setRedirectIn] = useState(3);
+  const [checkoutDark, setCheckoutDark] = useState(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (checkout?.branding?.checkoutTheme === 'dark') {
+      setCheckoutDark(true);
+    } else if (checkout?.branding?.checkoutTheme === 'light') {
+      setCheckoutDark(false);
+    }
+  }, [checkout?.branding?.checkoutTheme]);
+
   const notifiedRef = useRef(false);
   const copiedTimerRef = useRef(null);
   const amountTimerRef = useRef(null);
@@ -431,7 +448,7 @@ export default function PayCheckout() {
     }
   }
 
-  if (viewState === 'loading') return <PaymentLoader />;
+  if (viewState === 'loading') return <PaymentLoader checkoutDark={checkoutDark} />;
 
   const minutes = remainingMs === null ? null : Math.floor(remainingMs / 60000);
   const seconds = remainingMs === null ? null : Math.floor((remainingMs % 60000) / 1000);
@@ -444,18 +461,6 @@ export default function PayCheckout() {
   const tagline = checkout?.branding?.tagline;
   const supportEmail = checkout?.branding?.supportEmail;
   const merchantName = checkout?.merchantName || checkout?.branding?.displayName || 'Merchant';
-
-  const [checkoutDark, setCheckoutDark] = useState(() => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  useEffect(() => {
-    if (checkout?.branding?.checkoutTheme === 'dark') {
-      setCheckoutDark(true);
-    } else if (checkout?.branding?.checkoutTheme === 'light') {
-      setCheckoutDark(false);
-    }
-  }, [checkout?.branding?.checkoutTheme]);
 
   return (
     <main
@@ -804,5 +809,53 @@ export default function PayCheckout() {
         </footer>
       </div>
     </main>
+  );
+}
+
+class CheckoutErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Checkout error caught by boundary:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <main className="checkout-shell min-h-[100dvh] px-4 py-8 bg-[#090f0e] text-[#eaf3ee] flex items-center justify-center">
+          <div className="max-w-md w-full rounded-3xl border border-[#2d1b18] bg-[#141b18] p-8 text-center shadow-2xl">
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#3f1f1a] text-[#f87171]">
+              <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-white">Could not load checkout</h1>
+            <p className="mt-2 text-sm text-[#8ca097]">
+              {this.state.error?.message || 'An unexpected error occurred while loading this page.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1ea88a] px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-[#188c73]"
+            >
+              Reload checkout
+            </button>
+          </div>
+        </main>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function PayCheckout() {
+  return (
+    <CheckoutErrorBoundary>
+      <PayCheckoutInner />
+    </CheckoutErrorBoundary>
   );
 }
