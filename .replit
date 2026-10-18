@@ -10,7 +10,7 @@ channel = "stable-25_05"
 packages = ["jellyfin-ffmpeg", "vite", "np", "codespelunker"]
 
 [deployment]
-run = ["node", "index.js"]
+run = ["node", "server/src/index.js"]
 deploymentTarget = "autoscale"
 ignorePorts = false
 
