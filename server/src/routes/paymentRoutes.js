@@ -5,6 +5,7 @@ const {
   listUnmatched,
   claimUnmatched,
   confirmReportedUtr,
+  clearReportedUtr,
 } = require('../controllers/dashboardController');
 
 const router = express.Router();
@@ -13,5 +14,6 @@ router.get('/payments', listPayments);
 router.get('/unmatched', listUnmatched);
 router.post('/unmatched/:id/claim', claimUnmatched);
 router.post('/reported-utr/:orderId/confirm', confirmReportedUtr);
+router.delete('/reported-utr/:orderId', clearReportedUtr);
 
 module.exports = router;

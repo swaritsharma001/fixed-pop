@@ -5,6 +5,7 @@ const {
   completeOAuth,
   disconnectGmail,
 } = require('../services/gmailOAuthService');
+const { fetchLatestPaymentAlerts } = require('../services/gmailWorkerService');
 const {
   allowedSendersSchema,
   callbackQuerySchema,
@@ -80,4 +81,22 @@ async function updateAllowedSenders(req, res, next) {
   }
 }
 
-module.exports = { connect, callback, disconnect, updateAllowedSenders };
+async function fetchLatest(req, res, next) {
+  try {
+    const merchant = await Merchant.findById(req.merchantId)
+      .select('+gmail.encryptedRefreshToken');
+    if (!merchant) return res.status(404).json({ error: 'Merchant account not found' });
+    const result = await fetchLatestPaymentAlerts(merchant);
+    return res.json(result);
+  } catch (error) {
+    if ([401, 403].includes(error?.response?.status)) {
+      return res.status(409).json({
+        error: 'Gmail authorization expired. Disconnect and reconnect Gmail, then try again.',
+      });
+    }
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    return next(error);
+  }
+}
+
+module.exports = { connect, callback, disconnect, updateAllowedSenders, fetchLatest };

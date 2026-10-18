@@ -7,6 +7,7 @@ const {
 const {
   dkimPassForFamApp,
   historyMessageIds,
+  latestAllowedMessageIds,
 } = require('../src/services/gmailWorkerService');
 
 const debitSample = `
@@ -104,4 +105,31 @@ test('Gmail history results are filtered through allowed-sender search before me
   const result = await historyMessageIds(gmail, 'history-1', ['no-reply@famapp.in']);
   assert.deepEqual(result.messageIds, ['allowed-message']);
   assert.equal(result.latestHistoryId, 'history-2');
+});
+
+test('manual Gmail fetch requests at most the two newest allowed-sender messages', async () => {
+  let request;
+  const gmail = {
+    users: {
+      messages: {
+        list: async (params) => {
+          request = params;
+          return {
+            data: {
+              messages: [
+                { id: 'latest-message' },
+                { id: 'second-message' },
+                { id: 'older-message' },
+              ],
+            },
+          };
+        },
+      },
+    },
+  };
+  const ids = await latestAllowedMessageIds(gmail, ['alerts@famapp.in', 'settlements@famapp.in']);
+  assert.equal(request.userId, 'me');
+  assert.equal(request.q, '{from:alerts@famapp.in from:settlements@famapp.in}');
+  assert.equal(request.maxResults, 2);
+  assert.deepEqual(ids, ['latest-message', 'second-message']);
 });

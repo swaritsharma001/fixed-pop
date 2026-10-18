@@ -75,6 +75,7 @@ All API routes are under `/api/v1`. JSON request bodies use `Content-Type: appli
 | `GET` | `/merchant/gmail/callback` | OAuth state | Exchange the callback code and store the encrypted refresh token |
 | `POST` | `/merchant/gmail/disconnect` | JWT | Revoke when possible and delete Gmail token data |
 | `PUT` | `/merchant/gmail/allowed-senders` | JWT | Set one or more allowed sender email addresses |
+| `POST` | `/merchant/gmail/fetch-latest` | JWT | Safely fetch and process the two newest messages from allowed senders |
 | `POST` | `/merchant/keys/regenerate` | JWT | Replace public/secret/signing/webhook credentials; returns new secrets once |
 | `PUT` | `/merchant/webhook` | JWT | Set an HTTPS merchant webhook URL |
 
@@ -123,6 +124,8 @@ The UPI intent is generated from the merchant UPI ID and contains the exact paya
 | `GET` | `/payments?page=&limit=` | JWT | Payment history |
 | `GET` | `/unmatched?page=&limit=` | JWT | Unmatched payments and claimable orders |
 | `POST` | `/unmatched/:id/claim` | JWT | Claim a payment for a matching merchant order |
+| `POST` | `/reported-utr/:orderId/confirm` | JWT | Confirm a customer UTR after bank-app verification |
+| `DELETE` | `/reported-utr/:orderId` | JWT | Clear an incorrect customer UTR report without paying the order |
 
 The worker ignores recognized FamApp debit alerts. For credit alerts, it matches merchant, integer-paise amount, transaction time within the order window, unused UTR, and unused Gmail message ID. A match inserts the payment, marks the order paid, and queues the webhook in one MongoDB transaction. Emails that match no order are available for manual review.
 

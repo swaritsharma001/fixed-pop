@@ -348,6 +348,37 @@ async function confirmReportedUtr(req, res, next) {
   });
 }
 
+async function clearReportedUtr(req, res, next) {
+  const params = reportedUtrParamsSchema.safeParse(req.params);
+  if (!params.success) return validationError(res, params.error);
+  try {
+    const order = await Order.findOneAndUpdate(
+      {
+        merchantId: req.merchantId,
+        orderId: params.data.orderId,
+        status: { $in: ['PENDING', 'EXPIRED'] },
+        reportedUtr: { $type: 'string' },
+      },
+      {
+        $unset: { reportedUtr: 1 },
+        $set: { reportedUtrAt: null },
+      },
+      { new: true },
+    ).select('orderId');
+    if (!order) {
+      const exists = await Order.exists({
+        merchantId: req.merchantId,
+        orderId: params.data.orderId,
+      });
+      if (!exists) return res.status(404).json({ error: 'Order not found' });
+      return res.status(409).json({ error: 'This order has no UTR report to clear' });
+    }
+    return res.json({ cleared: true, order_id: order.orderId });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   indiaDayBounds,
   paymentSummary,
@@ -357,4 +388,5 @@ module.exports = {
   listUnmatched,
   claimUnmatched,
   confirmReportedUtr,
+  clearReportedUtr,
 };

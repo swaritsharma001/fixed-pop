@@ -150,6 +150,7 @@ test('auth and merchant routes enforce validation and bearer authentication', as
       ['/merchant/webhook', 'PUT', { webhookUrl: 'https://merchant.example/hook' }],
       ['/merchant/gmail/connect', 'GET', undefined],
       ['/merchant/gmail/disconnect', 'POST', {}],
+      ['/merchant/gmail/fetch-latest', 'POST', {}],
       ['/dashboard/stats', 'GET', undefined],
       ['/dashboard/orders', 'GET', undefined],
       ['/payments', 'GET', undefined],
@@ -159,6 +160,7 @@ test('auth and merchant routes enforce validation and bearer authentication', as
         received_at: '2026-10-17T12:00:00.000Z',
         verified_in_bank: true,
       }],
+      ['/reported-utr/order_abcdefghijkl', 'DELETE', undefined],
       ['/webhooks/logs', 'GET', undefined],
       ['/dev/simulate-payment', 'POST', {}],
     ]) {

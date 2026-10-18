@@ -41,7 +41,7 @@ expertMode = true
 [userenv]
 
 [userenv.shared]
-GMAIL_REDIRECT_URI = "https://d4c86a66-f9ee-49ea-972b-c097102dabfd-00-2ilnlopo2bzm9.sisko.replit.dev/api/v1/merchant/gmail/callback"
+GMAIL_REDIRECT_URI = "https://8e940b42-8477-4eb4-be4d-bdcf0ab42dba-00-31uq9ahd8svan.pike.replit.dev/api/v1/merchant/gmail/callback"
 
 [workflows]
 runButton = "Project"
@@ -66,3 +66,7 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000

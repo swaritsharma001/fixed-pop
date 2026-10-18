@@ -24,8 +24,10 @@ import {
 } from 'lucide-react';
 import {
   claimUnmatched,
+  clearReportedUtr,
   confirmReportedUtr,
   disconnectGmail,
+  fetchLatestGmailEmails,
   getDashboardOrders,
   getDashboardStats,
   getGmailConnectUrl,
@@ -313,6 +315,7 @@ export function UnmatchedPage() {
   const [claimSuccess, setClaimSuccess] = useState('');
   const [bankConfirmations, setBankConfirmations] = useState({});
   const [confirmingUtr, setConfirmingUtr] = useState('');
+  const [clearingUtr, setClearingUtr] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -400,6 +403,37 @@ export function UnmatchedPage() {
       setClaimError(requestError.message || 'This reported UTR could not be confirmed.');
     } finally {
       setConfirmingUtr('');
+    }
+  }
+
+  async function clearReportedPayment(order) {
+    const confirmed = window.confirm(
+      `Remove the reported UTR for ${order.order_id}? The order will remain unpaid.`,
+    );
+    if (!confirmed) return;
+    setClearingUtr(order.order_id);
+    setClaimError('');
+    setClaimSuccess('');
+    try {
+      await clearReportedUtr(order.order_id);
+      setClaimSuccess(`UTR report cleared for ${order.order_id}. The order is still unpaid.`);
+      setData((current) => current ? {
+        ...current,
+        pendingOrders: current.pendingOrders.map((item) => (
+          item.order_id === order.order_id
+            ? { ...item, reportedUtr: null, reportedUtrAt: null }
+            : item
+        )),
+      } : current);
+      setBankConfirmations((current) => {
+        const next = { ...current };
+        delete next[order.order_id];
+        return next;
+      });
+    } catch (requestError) {
+      setClaimError(requestError.message || 'This UTR report could not be cleared.');
+    } finally {
+      setClearingUtr('');
     }
   }
 
@@ -506,6 +540,14 @@ export function UnmatchedPage() {
                     {confirmingUtr === order.order_id ? <Spinner small /> : <ShieldCheck className="h-4 w-4" />}
                     Confirm bank-verified payment
                   </button>
+                  <button
+                    type="button"
+                    disabled={clearingUtr === order.order_id}
+                    onClick={() => clearReportedPayment(order)}
+                    className="min-h-9 w-full rounded-lg border border-[#e4d6d1] px-3 text-[11px] font-bold text-[#985746] hover:bg-[#fff3ef] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {clearingUtr === order.order_id ? 'Clearing…' : 'Clear incorrect UTR'}
+                  </button>
                 </form>
               </article>
             ))}
@@ -579,6 +621,8 @@ export function SettingsPage() {
   const [senderInput, setSenderInput] = useState('');
   const [webhookUrl, setWebhookUrl] = useState(merchant.webhookUrl || '');
   const [busy, setBusy] = useState('');
+  const [fetchingGmail, setFetchingGmail] = useState(false);
+  const [gmailFetchResult, setGmailFetchResult] = useState(null);
   const [message, setMessage] = useState(null);
   const [logs, setLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(true);
@@ -637,6 +681,24 @@ export function SettingsPage() {
       setMessage({ tone: 'success', text: 'Gmail disconnected. The stored authorization token has been removed.' });
     } catch (error) { setMessage({ tone: 'error', text: error.message || 'Could not disconnect Gmail.' }); }
     finally { setBusy(''); }
+  }
+
+  async function fetchLatestEmails() {
+    setFetchingGmail(true);
+    setGmailFetchResult(null);
+    setMessage(null);
+    try {
+      const result = await fetchLatestGmailEmails();
+      setGmailFetchResult(result);
+      setMessage({
+        tone: result.failed ? 'warning' : 'success',
+        text: `Checked ${result.fetched} ${result.fetched === 1 ? 'email' : 'emails'}: ${result.matched} confirmed, ${result.unmatched} need matching, ${result.skipped} skipped${result.failed ? `, ${result.failed} need retry` : ''}.`,
+      });
+    } catch (error) {
+      setMessage({ tone: 'error', text: error.message || 'Could not fetch Gmail payment emails.' });
+    } finally {
+      setFetchingGmail(false);
+    }
   }
 
   function addSender(event) {
@@ -728,6 +790,32 @@ export function SettingsPage() {
             {merchant.gmail?.connected ? <button type="button" disabled={busy === 'gmail'} onClick={disconnect} className="min-h-10 rounded-lg border border-[#e4d6d1] px-3.5 text-xs font-bold text-[#985746] hover:bg-[#fff3ef] disabled:opacity-50">{busy === 'gmail' ? 'Disconnecting…' : 'Disconnect'}</button> : <button type="button" disabled={busy === 'gmail'} onClick={connectGmail} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50">{busy === 'gmail' ? <Spinner small /> : <ExternalLink className="h-3.5 w-3.5" />}Connect Gmail</button>}
           </div>
           <p className="mt-4 rounded-lg bg-[#f5f7f2] px-3 py-2.5 text-[10px] leading-4 text-[#829087]">PopPay checks sender and Authentication-Results first. Message bodies are retrieved only for allowed senders with FamApp DKIM pass.</p>
+          {merchant.gmail?.connected && (
+            <div className="mt-4 rounded-xl border border-[#e2eae0] bg-[#fbfcf9] p-3.5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="max-w-sm text-[10px] leading-4 text-[#829087]">
+                  Fetch and verify the two latest emails from your saved allowed senders.
+                </p>
+                <button
+                  type="button"
+                  onClick={fetchLatestEmails}
+                  disabled={fetchingGmail || !merchant.allowedSenders?.length}
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {fetchingGmail ? <Spinner small /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  {fetchingGmail ? 'Fetching emails…' : 'Fetch latest 2 emails'}
+                </button>
+              </div>
+              {!merchant.allowedSenders?.length && (
+                <p className="mt-2 text-[10px] text-[#9a6b43]">Add and save an allowed FamApp sender below to enable fetching.</p>
+              )}
+              {gmailFetchResult?.unmatched > 0 && (
+                <Link to="/unmatched" className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-[#126b58] hover:underline">
+                  Review unmatched transfers <ArrowRight className="h-3 w-3" />
+                </Link>
+              )}
+            </div>
+          )}
         </SettingsCard>
 
         <SettingsCard title="Allowed senders" detail="Only these sender addresses can be considered for payment matching. Up to 10." icon={ShieldCheck}>

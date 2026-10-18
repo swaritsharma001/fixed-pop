@@ -60,6 +60,10 @@ export function disconnectGmail() {
   return request('/api/v1/merchant/gmail/disconnect', jsonPost({}));
 }
 
+export function fetchLatestGmailEmails() {
+  return request('/api/v1/merchant/gmail/fetch-latest', jsonPost({}));
+}
+
 export function updateAllowedSenders(allowedSenders) {
   return request(
     '/api/v1/merchant/gmail/allowed-senders',
@@ -102,6 +106,13 @@ export function confirmReportedUtr(orderId, confirmation) {
   return request(
     `/api/v1/reported-utr/${encodeURIComponent(orderId)}/confirm`,
     jsonPost(confirmation),
+  );
+}
+
+export function clearReportedUtr(orderId) {
+  return request(
+    `/api/v1/reported-utr/${encodeURIComponent(orderId)}`,
+    { method: 'DELETE' },
   );
 }
 export function getWebhookLogs() {
