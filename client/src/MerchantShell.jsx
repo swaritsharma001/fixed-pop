@@ -3,6 +3,8 @@ import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react
 import {
   Activity,
   Check,
+  ChevronLeft,
+  ChevronRight,
   CircleHelp,
   Clipboard,
   Code2,
@@ -181,33 +183,35 @@ function CredentialDialog({ credentials, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-[#102d27]/65 p-0 backdrop-blur-[3px] sm:items-center sm:p-5" role="presentation">
-      <section role="dialog" aria-modal="true" aria-labelledby="credentials-title" className="max-h-[92dvh] w-full max-w-[600px] overflow-y-auto rounded-t-[26px] bg-[#fffefa] p-5 shadow-2xl sm:rounded-[26px] sm:p-7">
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="presentation">
+      <section role="dialog" aria-modal="true" aria-labelledby="credentials-title" className="max-h-[92dvh] w-full max-w-[600px] overflow-y-auto rounded-t-[26px] bg-white dark:bg-[#0e1714] border border-slate-200/90 dark:border-white/10 p-5 shadow-2xl sm:rounded-[26px] sm:p-7">
         <div className="mb-5 flex items-start gap-4">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#fbefdc] text-[#8b672d]"><KeyRound className="h-5 w-5" /></div>
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <KeyRound className="h-5 w-5" />
+          </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#9a712d]">Save these now</p>
-            <h2 id="credentials-title" className="mt-1 font-[var(--font-display)] text-[23px] font-semibold tracking-[-.8px] text-[#142e2b]">Your credentials appear once</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-amber-600 dark:text-amber-400">Save these now</p>
+            <h2 id="credentials-title" className="mt-1 font-[var(--font-display)] text-[22px] font-bold tracking-[-.8px] text-slate-900 dark:text-white">Your credentials appear once</h2>
           </div>
         </div>
-        <div className="mb-5 rounded-xl border border-[#f0d7ac] bg-[#fff8e8] px-4 py-3 text-xs leading-5 text-[#7b602e]">
+        <div className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs leading-5 text-amber-800 dark:text-amber-300">
           Keep these values private. PopPay will not show the secret key, signing secret, or webhook secret again. This copy is held only in this browser tab until you dismiss it.
         </div>
         <div className="space-y-2.5">
           {fields.map(([label, value]) => (
-            <div key={label} className="rounded-xl border border-[#e3eae2] bg-[#f8faf5] p-3">
+            <div key={label} className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[.03] p-3">
               <div className="mb-1.5 flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-[.12em] text-[#87968d]">{label}</span>
-                <button type="button" onClick={() => copyValue(label, value)} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold text-[#126b58] hover:bg-[#e9f3e8]">
+                <span className="text-[10px] font-bold uppercase tracking-[.12em] text-slate-500 dark:text-slate-400">{label}</span>
+                <button type="button" onClick={() => copyValue(label, value)} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
                   {copied === label ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
-                  {copied === label ? 'Copied' : 'Copy'}
+                  <span>{copied === label ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <code className="block break-all font-mono text-xs leading-5 text-[#31564b]">{value}</code>
+              <code className="block break-all font-mono text-xs leading-5 text-slate-800 dark:text-[#a7f3d0]">{value}</code>
             </div>
           ))}
         </div>
-        <button type="button" onClick={onClose} className="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-[#126b58] px-5 text-sm font-bold text-white transition-colors hover:bg-[#0b4f42]">
+        <button type="button" onClick={onClose} className="mt-5 flex min-h-12 w-full items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 text-sm font-bold text-white transition active:scale-[0.99] shadow-2xs">
           I’ve saved my credentials
         </button>
       </section>
@@ -603,13 +607,37 @@ export function formatDate(value, options = {}) {
 }
 
 export function Pagination({ page, pages, total, onChange }) {
-  if (!pages || pages < 2) return <div className="border-t border-[#edf0eb] px-5 py-3 text-[11px] text-[#84928a]">{total ?? 0} records</div>;
+  if (!pages || pages < 2) {
+    return (
+      <div className="border-t border-slate-100 dark:border-white/10 px-5 py-3 text-xs text-slate-500 dark:text-slate-400 font-medium">
+        {total ?? 0} {total === 1 ? 'record' : 'records'} total
+      </div>
+    );
+  }
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf0eb] px-5 py-3">
-      <p className="text-[11px] text-[#84928a]">{total} records · Page {page} of {pages}</p>
-      <div className="flex gap-2">
-        <button type="button" disabled={page <= 1} onClick={() => onChange(page - 1)} className="rounded-lg border border-[#e1e8e1] px-3 py-2 text-xs font-semibold text-[#426357] disabled:opacity-40">Previous</button>
-        <button type="button" disabled={page >= pages} onClick={() => onChange(page + 1)} className="rounded-lg border border-[#e1e8e1] px-3 py-2 text-xs font-semibold text-[#426357] disabled:opacity-40">Next</button>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-white/10 px-5 sm:px-6 py-3.5">
+      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+        Showing <span className="font-bold text-slate-900 dark:text-white">{total}</span> records · Page <span className="font-bold text-slate-900 dark:text-white">{page}</span> of {pages}
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.04] px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[.08] disabled:opacity-40 disabled:pointer-events-none transition shadow-2xs"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          <span>Previous</span>
+        </button>
+        <button
+          type="button"
+          disabled={page >= pages}
+          onClick={() => onChange(page + 1)}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.04] px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[.08] disabled:opacity-40 disabled:pointer-events-none transition shadow-2xs"
+        >
+          <span>Next</span>
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );

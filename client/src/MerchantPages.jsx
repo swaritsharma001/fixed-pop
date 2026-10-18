@@ -7,6 +7,9 @@ import {
   ArrowUpRight,
   Check,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clipboard,
   Clock3,
   Copy,
   ExternalLink,
@@ -77,6 +80,32 @@ function TableLoading({ columns = 4 }) {
         {Array.from({ length: columns }, (_, col) => <div key={col} className="skeleton h-9 rounded-lg" />)}
       </div>)}
     </div>
+  );
+}
+
+function CopyButton({ text, label = 'Copy', className = '' }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
+        copied
+          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
+          : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[.08]'
+      } ${className}`}
+      title={copied ? 'Copied to clipboard!' : `Copy ${label}`}
+    >
+      {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+      <span>{copied ? 'Copied' : label}</span>
+    </button>
   );
 }
 
@@ -283,20 +312,20 @@ export function DashboardPage() {
         title={`Good day, ${merchant.name.split(' ')[0]} 👋`}
         detail="Direct UPI collection desk, bank verification stream, and live transaction ledger."
         action={
-          <div className="flex flex-col xs:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
             <button
               type="button"
               onClick={refresh}
               disabled={refreshing}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-4 text-xs font-semibold text-slate-800 dark:text-[#cbe3d7] shadow-2xs hover:bg-slate-50 dark:hover:bg-white/10 transition active:scale-95 disabled:opacity-60 flex-1 sm:flex-initial"
+              className="inline-flex min-h-[48px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-5 text-sm sm:text-xs font-semibold text-slate-800 dark:text-[#cbe3d7] shadow-2xs hover:bg-slate-50 dark:hover:bg-white/10 transition active:scale-95 disabled:opacity-60"
               title="Refresh dashboard stats"
             >
-              <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 sm:h-3.5 sm:w-3.5 text-emerald-600 dark:text-emerald-400 ${refreshing ? 'animate-spin' : ''}`} />
               <span>{refreshing ? 'Refreshing…' : 'Refresh'}</span>
             </button>
             <Link
               to="/payment-links"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white shadow-2xs transition active:scale-95 flex-1 sm:flex-initial"
+              className="inline-flex min-h-[48px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 text-sm sm:text-xs font-bold text-white shadow-2xs transition active:scale-95"
             >
               <Plus className="h-4 w-4" />
               <span>Create Payment Link</span>
@@ -574,56 +603,145 @@ export function OrdersPage() {
   const orders = result?.orders || [];
 
   return (
-    <div className="page-enter">
-      <PageHeading eyebrow="Collection activity" title="Orders" detail="A live ledger of the payment requests created for your business." />
+    <div className="page-enter space-y-6">
+      <PageHeading
+        eyebrow="Collection activity"
+        title="Orders"
+        detail="A live, synchronized ledger of customer payment requests generated across all integrations."
+        action={
+          <Link
+            to="/payment-links"
+            className="inline-flex min-h-[44px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white shadow-2xs transition active:scale-95 w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Payment Link</span>
+          </Link>
+        }
+      />
       <Panel className="overflow-hidden">
-        <PanelTitle title="Order ledger" detail={result ? `${result.total} ${result.total === 1 ? 'order' : 'orders'} in this view` : 'Most recent payment requests'} />
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 dark:border-white/10 px-4 py-3 sm:px-5">
+        <PanelTitle
+          title="Order ledger"
+          detail={result ? `${result.total} ${result.total === 1 ? 'order' : 'orders'} in this view` : 'Most recent payment requests'}
+        />
+        {/* Filter Pills with Horizontal Scroll on Mobile */}
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 dark:border-white/10 px-4 py-3 sm:px-6 custom-scrollbar">
           {ORDER_FILTERS.map(([value, label]) => (
             <button
               key={value}
               type="button"
               onClick={() => changeFilter(value)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+              className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition active:scale-95 ${
                 filter === value
-                  ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-2xs'
-                  : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-slate-100 dark:bg-white/[.04] text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-white/[.08] hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {label}
             </button>
           ))}
         </div>
-        {loading ? <TableLoading columns={5} /> : error ? <div className="p-5"><ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /></div> : !orders.length ? (
-          <EmptyState icon={Clipboard} title={filter === 'ALL' ? 'No orders yet' : `No ${filter.toLowerCase()} orders`} detail={filter === 'ALL' ? 'Orders created with your PopPay secret key will show up here.' : 'Try another status filter to see a different set of orders.'} />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-left">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-white/[0.03] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
-                  <th className="px-5 py-3.5">Order / receipt</th>
-                  <th className="px-4 py-3.5">Base amount</th>
-                  <th className="px-4 py-3.5">Payable</th>
-                  <th className="px-4 py-3.5">Expires</th>
-                  <th className="px-5 py-3.5">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
-                {orders.map((order) => (
-                  <tr key={order.order_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
-                    <td className="px-5 py-4">
-                      <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">{order.order_id}</p>
-                      <p className="mt-0.5 break-words text-[11px] text-slate-500 dark:text-slate-400">{order.receipt || 'No receipt reference'}</p>
-                    </td>
-                    <td className="px-4 py-4 text-xs tabular-nums text-slate-500 dark:text-slate-400">{formatMoney(order.baseAmount)}</td>
-                    <td className="px-4 py-4 text-xs font-bold tabular-nums text-slate-900 dark:text-white">{formatMoney(order.payableAmount)}</td>
-                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(order.expiresAt, { time: true })}</td>
-                    <td className="px-5 py-4"><StatusBadge status={order.status} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+        {loading ? (
+          <TableLoading columns={5} />
+        ) : error ? (
+          <div className="p-5 sm:p-6">
+            <ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} />
           </div>
+        ) : !orders.length ? (
+          <EmptyState
+            icon={Clipboard}
+            title={filter === 'ALL' ? 'No orders yet' : `No ${filter.toLowerCase()} orders`}
+            detail={
+              filter === 'ALL'
+                ? 'Orders created through the API or your payment links will appear here instantly.'
+                : 'No orders match this status filter. Select "All orders" or create a new checkout.'
+            }
+          />
+        ) : (
+          <>
+            {/* Mobile Card View (< sm screens) */}
+            <div className="divide-y divide-slate-100 dark:divide-white/[.06] sm:hidden">
+              {orders.map((order) => (
+                <div key={order.order_id} className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-white/[.02] transition">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {order.order_id}
+                        </span>
+                        <CopyButton text={order.order_id} label="" />
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        {order.receipt ? `Receipt: ${order.receipt}` : 'No receipt reference'}
+                      </p>
+                    </div>
+                    <StatusBadge status={order.status} />
+                  </div>
+
+                  <div className="flex items-baseline justify-between rounded-xl bg-slate-50/70 dark:bg-white/[.03] p-2.5">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Payable</p>
+                      <p className="font-[var(--font-display)] text-base font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                        {formatMoney(order.payableAmount)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Base Amount</p>
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
+                        {formatMoney(order.baseAmount)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                    <span className="flex items-center gap-1">
+                      <Clock3 className="h-3 w-3 text-slate-400" />
+                      Expires: {formatDate(order.expiresAt, { time: true })}
+                    </span>
+                    {order.redirectUrl && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold truncate max-w-[140px]">
+                        Redirect configured
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View (>= sm screens) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-left">
+                <thead>
+                  <tr className="bg-slate-50/70 dark:bg-white/[0.02] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
+                    <th className="px-6 py-3.5">Order / receipt</th>
+                    <th className="px-4 py-3.5">Base amount</th>
+                    <th className="px-4 py-3.5">Payable amount</th>
+                    <th className="px-4 py-3.5">Expires</th>
+                    <th className="px-6 py-3.5 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                  {orders.map((order) => (
+                    <tr key={order.order_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">{order.order_id}</span>
+                          <CopyButton text={order.order_id} label="" />
+                        </div>
+                        <p className="mt-0.5 break-words text-[11px] text-slate-500 dark:text-slate-400">
+                          {order.receipt || 'No receipt reference'}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 text-xs tabular-nums text-slate-500 dark:text-slate-400">{formatMoney(order.baseAmount)}</td>
+                      <td className="px-4 py-4 text-xs font-bold tabular-nums text-slate-900 dark:text-white">{formatMoney(order.payableAmount)}</td>
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(order.expiresAt, { time: true })}</td>
+                      <td className="px-6 py-4 text-right"><StatusBadge status={order.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
         {!loading && !error && result && <Pagination page={result.page || page} pages={result.pages} total={result.total} onChange={setPage} />}
       </Panel>
@@ -651,43 +769,130 @@ export function PaymentsPage() {
 
   const payments = result?.payments || [];
   return (
-    <div className="page-enter">
-      <PageHeading eyebrow="Confirmed transfers" title="Payments" detail="Payments are recorded after a verified transfer matches an order." />
+    <div className="page-enter space-y-6">
+      <PageHeading
+        eyebrow="Confirmed transfers"
+        title="Payments"
+        detail="Direct bank credits reconciled automatically via cryptographically verified UPI push alerts."
+      />
       <Panel className="overflow-hidden">
-        <PanelTitle title="Payment history" detail={result ? `${result.total} confirmed ${result.total === 1 ? 'payment' : 'payments'}` : 'Most recent first'} />
-        {loading ? <TableLoading columns={4} /> : error ? <div className="p-5"><ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /></div> : !payments.length ? (
-          <EmptyState icon={WalletCards} title="No confirmed payments" detail="A payment will appear here after a matching UPI transfer is confirmed." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[780px] border-collapse text-left">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-white/[0.03] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
-                  <th className="px-5 py-3.5">Payment</th>
-                  <th className="px-4 py-3.5">Order</th>
-                  <th className="px-4 py-3.5">UTR</th>
-                  <th className="px-4 py-3.5">Verified by</th>
-                  <th className="px-4 py-3.5">Received</th>
-                  <th className="px-5 py-3.5 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
-                {payments.map((payment) => (
-                  <tr key={payment.payment_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
-                    <td className="px-5 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">{payment.payment_id}</td>
-                    <td className="px-4 py-4 font-mono text-xs font-bold text-slate-900 dark:text-white">{payment.order_id}</td>
-                    <td className="px-4 py-4 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">{payment.utr || '—'}</td>
-                    <td className="px-4 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit Alert'}
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(payment.receivedAt, { time: true })}</td>
-                    <td className="px-5 py-4 text-right text-xs font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                      +{formatMoney(payment.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <PanelTitle
+          title="Payment history"
+          detail={result ? `${result.total} confirmed ${result.total === 1 ? 'payment' : 'payments'}` : 'Most recent first'}
+        />
+        {loading ? (
+          <TableLoading columns={4} />
+        ) : error ? (
+          <div className="p-5 sm:p-6">
+            <ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} />
           </div>
+        ) : !payments.length ? (
+          <EmptyState
+            icon={WalletCards}
+            title="No confirmed payments yet"
+            detail="Payments will appear here the moment customer UPI transfers match your active orders in real time."
+          />
+        ) : (
+          <>
+            {/* Mobile Card View (< sm screens) */}
+            <div className="divide-y divide-slate-100 dark:divide-white/[.06] sm:hidden">
+              {payments.map((payment) => (
+                <div key={payment.payment_id} className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-white/[.02] transition">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-[var(--font-display)] text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                        +{formatMoney(payment.amount)}
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        {formatDate(payment.receivedAt, { time: true })}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        payment.verificationMethod === 'MERCHANT_MANUAL'
+                          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                          : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                      }`}
+                    >
+                      {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 rounded-xl bg-slate-50/70 dark:bg-white/[.03] p-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Order</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono font-bold text-slate-900 dark:text-white">{payment.order_id}</span>
+                        <CopyButton text={payment.order_id} label="" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">UTR / Ref</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{payment.utr || '—'}</span>
+                        {payment.utr && <CopyButton text={payment.utr} label="" />}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View (>= sm screens) */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full min-w-[780px] border-collapse text-left">
+                <thead>
+                  <tr className="bg-slate-50/70 dark:bg-white/[0.02] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
+                    <th className="px-6 py-3.5">Payment ID</th>
+                    <th className="px-4 py-3.5">Matched Order</th>
+                    <th className="px-4 py-3.5">Bank UTR</th>
+                    <th className="px-4 py-3.5">Verification</th>
+                    <th className="px-4 py-3.5">Received</th>
+                    <th className="px-6 py-3.5 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                  {payments.map((payment) => (
+                    <tr key={payment.payment_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
+                      <td className="px-6 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1">
+                          <span>{payment.payment_id}</span>
+                          <CopyButton text={payment.payment_id} label="" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 font-mono text-xs font-bold text-slate-900 dark:text-white">
+                        <div className="flex items-center gap-1">
+                          <span>{payment.order_id}</span>
+                          <CopyButton text={payment.order_id} label="" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        <div className="flex items-center gap-1">
+                          <span>{payment.utr || '—'}</span>
+                          {payment.utr && <CopyButton text={payment.utr} label="" />}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            payment.verificationMethod === 'MERCHANT_MANUAL'
+                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                              : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                          }`}
+                        >
+                          {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit Alert'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(payment.receivedAt, { time: true })}</td>
+                      <td className="px-6 py-4 text-right text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                        +{formatMoney(payment.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
         {!loading && !error && result && <Pagination page={result.page || page} pages={result.pages} total={result.total} onChange={setPage} />}
       </Panel>
@@ -849,38 +1054,100 @@ export function UnmatchedPage() {
   const utrReports = pendingOrders.filter((order) => order.reportedUtr);
 
   return (
-    <div className="page-enter">
-      <PageHeading eyebrow="Payment reconciliation" title="Needs matching" detail="Match incoming transfers by amount and payment window, or verify a reported UTR against your bank account." />
-      {claimSuccess && <div className="mb-4"><Notice onClose={() => setClaimSuccess('')}>{claimSuccess}</Notice></div>}
-      {claimError && <div className="mb-4"><Notice tone="error" onClose={() => setClaimError('')}>{claimError}</Notice></div>}
+    <div className="page-enter space-y-6">
+      <PageHeading
+        eyebrow="Payment reconciliation"
+        title="Needs matching"
+        detail="Match incoming bank transfers by amount and payment window, or verify a reported customer UTR."
+      />
+      {claimSuccess && <Notice onClose={() => setClaimSuccess('')}>{claimSuccess}</Notice>}
+      {claimError && <Notice tone="error" onClose={() => setClaimError('')}>{claimError}</Notice>}
+
       <Panel className="overflow-hidden">
-        <PanelTitle title="Unmatched transfers" detail={data ? `${data.total} waiting for a matching order` : 'Review each transfer before matching'} />
-        {loading ? <TableLoading columns={4} /> : error ? <div className="p-5"><ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /></div> : !payments.length ? (
-          <EmptyState icon={CheckCircle2} title={utrReports.length ? 'No unmatched FamApp transfers' : 'Nothing needs matching'} detail={utrReports.length ? 'Customer UTR reports are listed below for bank-app verification.' : 'When an allowed FamApp sender reports a transfer that does not match an order, it will be listed here.'} />
+        <PanelTitle
+          title="Unmatched transfers"
+          detail={data ? `${data.total} waiting for a matching order` : 'Review each transfer before matching'}
+        />
+        {loading ? (
+          <TableLoading columns={4} />
+        ) : error ? (
+          <div className="p-5 sm:p-6">
+            <ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} />
+          </div>
+        ) : !payments.length ? (
+          <EmptyState
+            icon={CheckCircle2}
+            title={utrReports.length ? 'No unmatched FamApp transfers' : 'All transfers matched'}
+            detail={
+              utrReports.length
+                ? 'Customer UTR reports are listed below for direct bank account verification.'
+                : 'All incoming customer transfers have been automatically matched and settled.'
+            }
+          />
         ) : (
-          <div className="divide-y divide-[#edf0eb]">
+          <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
             {payments.map((payment) => {
               const candidates = pendingOrders.filter((order) => (
                 orderFitsPayment(order, payment, data?.verificationGraceMs)
               ));
               const selected = selections[payment.id] || '';
               return (
-                <article key={payment.id} className="grid gap-4 px-5 py-5 sm:grid-cols-[minmax(170px,1fr)_minmax(270px,1.1fr)_auto] sm:items-center sm:px-6">
+                <article
+                  key={payment.id}
+                  className="grid gap-4 p-5 sm:p-6 sm:grid-cols-[minmax(180px,1fr)_minmax(280px,1.2fr)_auto] sm:items-center hover:bg-slate-50/50 dark:hover:bg-white/[.02] transition"
+                >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-[11px] bg-[#fbefdc] text-[#9b7133]"><ArrowDownRight className="h-4 w-4" /></span><span className="font-[var(--font-display)] text-[18px] font-semibold tracking-[-.4px] text-[#23483c]">{formatMoney(payment.amount)}</span></div>
-                    <p className="mt-2 font-mono text-[11px] text-[#5a766b]">UTR {payment.utr || '—'}</p>
-                    <p className="mt-1 text-[10px] text-[#8a9890]">Received {formatDate(payment.receivedAt, { time: true })}</p>
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <ArrowDownRight className="h-4 w-4" />
+                      </span>
+                      <span className="font-[var(--font-display)] text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+                        {formatMoney(payment.amount)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        UTR: {payment.utr || '—'}
+                      </span>
+                      {payment.utr && <CopyButton text={payment.utr} label="" />}
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                      Received {formatDate(payment.receivedAt, { time: true })}
+                    </p>
                   </div>
+
                   <div>
-                    <label htmlFor={`match-${payment.id}`} className="mb-1.5 block text-[10px] font-bold uppercase tracking-[.12em] text-[#74867b]">Choose matching order</label>
-                    <select id={`match-${payment.id}`} value={selected} onChange={(event) => setSelections((current) => ({ ...current, [payment.id]: event.target.value }))} className="h-11 w-full rounded-xl border border-[#dce5dc] bg-[#fffefa] px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10">
-                      <option value="">{candidates.length ? 'Select an order' : 'No amount and time match found'}</option>
-                      {candidates.map((order) => <option key={order.order_id} value={order.order_id}>{order.receipt || order.order_id} · {formatMoney(order.payableAmount)} · {order.order_id}</option>)}
+                    <label htmlFor={`match-${payment.id}`} className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Choose matching order
+                    </label>
+                    <select
+                      id={`match-${payment.id}`}
+                      value={selected}
+                      onChange={(event) => setSelections((current) => ({ ...current, [payment.id]: event.target.value }))}
+                      className="h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    >
+                      <option value="">{candidates.length ? 'Select an order to match' : 'No amount/time match found'}</option>
+                      {candidates.map((order) => (
+                        <option key={order.order_id} value={order.order_id}>
+                          {order.receipt || order.order_id} · {formatMoney(order.payableAmount)}
+                        </option>
+                      ))}
                     </select>
-                    {candidates.length === 0 && <p className="mt-1.5 text-[10px] leading-4 text-[#9a6b43]">Order amount and IST transaction time must match, including the 10-minute verification grace.</p>}
+                    {candidates.length === 0 && (
+                      <p className="mt-1.5 text-[11px] leading-4 text-amber-600 dark:text-amber-400">
+                        Order amount and IST transaction time must match within the 10-minute grace window.
+                      </p>
+                    )}
                   </div>
-                  <button type="button" disabled={!selected || claiming === payment.id} onClick={() => claim(payment)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#174e41] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-45">
-                    {claiming === payment.id ? <Spinner small /> : <Link2 className="h-4 w-4" />}Match payment
+
+                  <button
+                    type="button"
+                    disabled={!selected || claiming === payment.id}
+                    onClick={() => claim(payment)}
+                    className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 text-xs font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 shadow-2xs"
+                  >
+                    {claiming === payment.id ? <Spinner small /> : <Link2 className="h-4 w-4" />}
+                    <span>Match Payment</span>
                   </button>
                 </article>
               );
@@ -888,25 +1155,49 @@ export function UnmatchedPage() {
           </div>
         )}
       </Panel>
+
       {utrReports.length > 0 && (
-        <Panel className="mt-5 overflow-hidden">
-          <PanelTitle title="Customer UTR reports" detail={`${utrReports.length} reference${utrReports.length === 1 ? '' : 's'} awaiting bank verification or a FamApp alert`} />
-          <div className="divide-y divide-[#edf0eb]">
+        <Panel className="overflow-hidden">
+          <PanelTitle
+            title="Customer UTR reports"
+            detail={`${utrReports.length} reference${utrReports.length === 1 ? '' : 's'} awaiting bank verification or FamApp alert`}
+          />
+          <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
             {utrReports.map((order) => (
-              <article key={order.order_id} className="grid gap-4 px-5 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,1.1fr)] lg:items-center sm:px-6">
+              <article key={order.order_id} className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,1.2fr)] lg:items-center">
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#294b40]">{order.receipt || order.order_id} · {formatMoney(order.payableAmount)}</p>
-                  <p className="mt-1 break-all font-mono text-xs text-[#426b57]">UTR {order.reportedUtr}</p>
-                  <p className="mt-1 break-all font-mono text-[10px] text-[#8a9890]">{order.order_id}</p>
-                  <p className="mt-2 text-[10px] text-[#8a9890]">Submitted {order.reportedUtrAt ? formatDate(order.reportedUtrAt, { time: true }) : 'recently'} · Not yet verified</p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-[var(--font-display)] text-lg font-bold text-slate-900 dark:text-white">
+                      {formatMoney(order.payableAmount)}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      ({order.receipt || 'No receipt reference'})
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      Reported UTR: {order.reportedUtr}
+                    </span>
+                    <CopyButton text={order.reportedUtr} label="" />
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                      {order.order_id}
+                    </span>
+                    <CopyButton text={order.order_id} label="" />
+                  </div>
+                  <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                    Submitted {order.reportedUtrAt ? formatDate(order.reportedUtrAt, { time: true }) : 'recently'} · Pending verification
+                  </p>
                 </div>
+
                 <form
-                  className="space-y-3 rounded-xl border border-[#e2eae0] bg-[#fbfcf9] p-3.5"
+                  className="space-y-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[.02] p-4 sm:p-5"
                   onSubmit={(event) => { event.preventDefault(); confirmReportedPayment(order); }}
                 >
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block text-[10px] font-bold text-[#587266]">
-                      Amount shown in your account
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Amount shown in bank (₹)
                       <input
                         type="text"
                         inputMode="decimal"
@@ -916,57 +1207,64 @@ export function UnmatchedPage() {
                         value={bankConfirmations[order.order_id]?.amount || ''}
                         onChange={(event) => updateBankConfirmation(order.order_id, { amount: event.target.value })}
                         placeholder="0.00"
-                        className="mt-1.5 h-10 w-full rounded-lg border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                        className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                       />
                     </label>
-                    <label className="block text-[10px] font-bold text-[#587266]">
-                      Transfer date and time (IST)
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      Transfer time (IST)
                       <input
                         type="datetime-local"
                         step="60"
                         required
                         value={bankConfirmations[order.order_id]?.receivedAt || ''}
                         onChange={(event) => updateBankConfirmation(order.order_id, { receivedAt: event.target.value })}
-                        className="mt-1.5 h-10 w-full rounded-lg border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                        className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                       />
                     </label>
                   </div>
-                  <label className="flex cursor-pointer items-start gap-2 text-[10px] leading-4 text-[#587266]">
+                  <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
                     <input
                       type="checkbox"
                       required
                       checked={Boolean(bankConfirmations[order.order_id]?.verified)}
                       onChange={(event) => updateBankConfirmation(order.order_id, { verified: event.target.checked })}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#126b58]"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded accent-emerald-600"
                     />
-                    <span>I checked my bank or UPI account and verified this exact UTR and transfer.</span>
+                    <span>I personally verified this exact UTR and credited amount in my bank account.</span>
                   </label>
-                  <button
-                    type="submit"
-                    disabled={confirmingUtr === order.order_id}
-                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#174e41] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {confirmingUtr === order.order_id ? <Spinner small /> : <ShieldCheck className="h-4 w-4" />}
-                    Confirm bank-verified payment
-                  </button>
-                  <button
-                    type="button"
-                    disabled={clearingUtr === order.order_id}
-                    onClick={() => clearReportedPayment(order)}
-                    className="min-h-9 w-full rounded-lg border border-[#e4d6d1] px-3 text-[11px] font-bold text-[#985746] hover:bg-[#fff3ef] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {clearingUtr === order.order_id ? 'Clearing…' : 'Clear incorrect UTR'}
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={confirmingUtr === order.order_id}
+                      className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 shadow-2xs"
+                    >
+                      {confirmingUtr === order.order_id ? <Spinner small /> : <ShieldCheck className="h-4 w-4" />}
+                      <span>Confirm Bank Payment</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={clearingUtr === order.order_id}
+                      onClick={() => clearReportedPayment(order)}
+                      className="min-h-[42px] rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-transparent px-4 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {clearingUtr === order.order_id ? 'Clearing…' : 'Clear UTR'}
+                    </button>
+                  </div>
                 </form>
               </article>
             ))}
           </div>
-          <p className="border-t border-[#edf0eb] px-5 py-3 text-[10px] leading-5 text-[#89968e] sm:px-6">
-            Confirm only after checking the UTR, exact amount, and transfer time in your bank or UPI account. The IST transfer time must be between order creation and 10 minutes after expiry. PopPay records this as merchant-verified.
-          </p>
+          <div className="border-t border-slate-100 dark:border-white/10 px-5 sm:px-6 py-3.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Confirm only after checking the UTR, exact amount, and transfer time in your bank or UPI account. PopPay records this as merchant-verified.
+          </div>
         </Panel>
       )}
-      {data && data.payments?.length > 0 && <p className="mt-3 flex items-center gap-2 px-1 text-[10px] leading-5 text-[#89968e]"><Clock3 className="h-3.5 w-3.5 shrink-0" />A successful match confirms the order and can queue your configured webhook.</p>}
+      {data && data.payments?.length > 0 && (
+        <p className="flex items-center gap-2 px-1 text-xs text-slate-500 dark:text-slate-400">
+          <Clock3 className="h-3.5 w-3.5 shrink-0" />
+          <span>A successful match confirms the order and triggers your configured webhook.</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -974,9 +1272,14 @@ export function UnmatchedPage() {
 function SettingsCard({ title, detail, icon: Icon, children }) {
   return (
     <Panel className="overflow-hidden">
-      <div className="flex items-start gap-3 border-b border-[#edf0eb] px-5 py-4 sm:px-6">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#edf4eb] text-[#52796a]"><Icon className="h-4 w-4" /></span>
-        <div><h2 className="text-sm font-bold text-[#203d36]">{title}</h2><p className="mt-1 text-xs leading-5 text-[#84928a]">{detail}</p></div>
+      <div className="flex items-start gap-3 border-b border-slate-100 dark:border-white/10 px-5 sm:px-6 py-4">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">{title}</h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{detail}</p>
+        </div>
       </div>
       <div className="p-5 sm:p-6">{children}</div>
     </Panel>
@@ -984,9 +1287,21 @@ function SettingsCard({ title, detail, icon: Icon, children }) {
 }
 
 function WebhookLogList({ logs, loading, error, retryLog, retrying }) {
-  if (loading) return <div className="space-y-3">{[0, 1, 2].map((item) => <div key={item} className="skeleton h-20 rounded-xl" />)}</div>;
-  if (error) return <p className="text-xs text-[#9a503d]">{error}</p>;
-  if (!logs.length) return <div className="rounded-xl bg-[#f8faf6] px-4 py-5 text-center text-xs text-[#84928a]">No webhook deliveries have been recorded.</div>;
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[0, 1, 2].map((item) => <div key={item} className="skeleton h-16 rounded-xl" />)}
+      </div>
+    );
+  }
+  if (error) return <p className="text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>;
+  if (!logs.length) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-200 dark:border-white/10 p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+        No webhook deliveries have been recorded yet.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2.5">
@@ -994,26 +1309,52 @@ function WebhookLogList({ logs, loading, error, retryLog, retrying }) {
         const logId = log._id || log.id;
         const succeeded = Number(log.responseStatus) >= 200 && Number(log.responseStatus) < 300;
         return (
-          <details key={logId} className="group rounded-xl border border-[#e3eae2] bg-[#fbfcf9]">
-            <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 p-3.5">
-              <span className={`h-2 w-2 rounded-full ${succeeded ? 'bg-[#4c9b72]' : 'bg-[#d39a50]'}`} />
-              <span className="min-w-[120px] flex-1 font-mono text-[11px] font-semibold text-[#355a4d]">{log.orderId}</span>
-              <span className="text-[10px] text-[#839087]">{formatDate(log.updatedAt || log.createdAt, { time: true })}</span>
-              <span className={`rounded-full px-2 py-1 text-[9px] font-bold ${succeeded ? 'bg-[#e5f3e5] text-[#25644f]' : 'bg-[#fff1dc] text-[#966a2b]'}`}>{log.responseStatus || 'QUEUED'}</span>
-              <span className="text-[10px] text-[#71817b]">{log.attempts ?? 0} attempts</span>
-              <span className="text-[10px] text-[#819087] group-open:hidden">Details</span>
+          <details key={logId} className="group rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[.02] overflow-hidden">
+            <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 p-3.5 hover:bg-slate-100/60 dark:hover:bg-white/[.04] transition">
+              <span className={`h-2 w-2 rounded-full ${succeeded ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span className="min-w-[120px] flex-1 font-mono text-xs font-bold text-slate-900 dark:text-white">{log.orderId}</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">{formatDate(log.updatedAt || log.createdAt, { time: true })}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                succeeded
+                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+              }`}>
+                {log.responseStatus || 'QUEUED'}
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">{log.attempts ?? 0} attempts</span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold group-open:hidden">Details</span>
             </summary>
-            <div className="border-t border-[#e8eee7] px-3.5 py-3.5">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div><p className="text-[9px] font-bold uppercase tracking-[.12em] text-[#87968d]">Next retry</p><p className="mt-1 text-[11px] text-[#4d6d5e]">{formatDate(log.nextRetryAt, { time: true })}</p></div>
-                <div><p className="text-[9px] font-bold uppercase tracking-[.12em] text-[#87968d]">Attempts recorded</p><p className="mt-1 text-[11px] text-[#4d6d5e]">{log.attemptHistory?.length || 0}</p></div>
+            <div className="border-t border-slate-200/80 dark:border-white/10 p-4 space-y-3 bg-white dark:bg-[#12201b]/50">
+              <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Next retry</p>
+                  <p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{formatDate(log.nextRetryAt, { time: true })}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Attempts recorded</p>
+                  <p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{log.attemptHistory?.length || 0}</p>
+                </div>
               </div>
-              {log.attemptHistory?.length > 0 && <div className="mt-3 space-y-1.5">
-                {log.attemptHistory.map((attempt, index) => <p key={`${attempt.attemptedAt}-${index}`} className="text-[10px] text-[#7c8b82]">{formatDate(attempt.attemptedAt, { time: true })} · response {attempt.responseStatus || 'no response'}</p>)}
-              </div>}
-              <pre className="mt-3 max-h-44 overflow-auto rounded-lg bg-[#f0f4ee] p-3 font-mono text-[10px] leading-4 text-[#557265]">{JSON.stringify(log.payload, null, 2)}</pre>
-              <button type="button" disabled={retrying === logId} onClick={() => retryLog(logId)} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#dbe6da] bg-white px-3 text-[10px] font-bold text-[#39725a] hover:bg-[#f0f6ed] disabled:opacity-50">
-                {retrying === logId ? <Spinner small /> : <RefreshCw className="h-3.5 w-3.5" />}Retry delivery
+              {log.attemptHistory?.length > 0 && (
+                <div className="space-y-1 rounded-xl bg-slate-50 dark:bg-white/[.02] p-2.5 text-[11px]">
+                  {log.attemptHistory.map((attempt, index) => (
+                    <p key={`${attempt.attemptedAt}-${index}`} className="text-slate-600 dark:text-slate-300">
+                      {formatDate(attempt.attemptedAt, { time: true })} · Status {attempt.responseStatus || 'No response'}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <pre className="max-h-44 overflow-auto rounded-xl bg-slate-900 p-3 font-mono text-[11px] leading-relaxed text-emerald-300">
+                {JSON.stringify(log.payload, null, 2)}
+              </pre>
+              <button
+                type="button"
+                disabled={retrying === logId}
+                onClick={() => retryLog(logId)}
+                className="inline-flex min-h-[38px] items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 shadow-2xs"
+              >
+                {retrying === logId ? <Spinner small /> : <RefreshCw className="h-3.5 w-3.5" />}
+                <span>Retry Delivery</span>
               </button>
             </div>
           </details>
@@ -1225,51 +1566,57 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="page-enter">
-      <PageHeading eyebrow="Merchant controls" title="Settings" detail="Manage where payments land, how notifications are read, and how your system is notified." />
-      {message && <div className="mb-5"><Notice tone={message.tone} onClose={() => setMessage(null)}>{message.text}</Notice></div>}
-      <div className="grid gap-4 xl:grid-cols-2">
+    <div className="page-enter space-y-6">
+      <PageHeading
+        eyebrow="Merchant controls"
+        title="Settings"
+        detail="Manage settlement UPI handles, Gmail listener synchronization, webhooks, and cryptographic keys."
+      />
+      {message && <Notice tone={message.tone} onClose={() => setMessage(null)}>{message.text}</Notice>}
+
+      <div className="grid gap-5 xl:grid-cols-2">
         <SettingsCard title="Merchant Profile" detail="Update your merchant account display name and details." icon={Store}>
-          <form onSubmit={saveProfile} className="space-y-3">
+          <form onSubmit={saveProfile} className="space-y-4">
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-[#466358]">Full Name</span>
+              <span className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">Display Name</span>
               <input
                 required
                 value={profileName}
                 onChange={(event) => setProfileName(event.target.value)}
-                placeholder="Merchant Name"
-                className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 text-sm font-semibold text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                placeholder="Business or Store Name"
+                className="h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
             </label>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
               <div>
-                <p className="text-[11px] font-mono text-[#60796e]">{merchant.email}</p>
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400">{merchant.email}</p>
                 {merchant.role === 'admin' && (
-                  <span className="mt-0.5 inline-block rounded bg-[#dff3e9] px-2 py-0.5 text-[10px] font-bold text-[#126b58]">
+                  <span className="mt-1 inline-block rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                     SUPER ADMIN
                   </span>
                 )}
               </div>
               <button
                 disabled={busy === 'profile'}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50"
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 shadow-2xs"
               >
-                {busy === 'profile' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Save Name
+                {busy === 'profile' ? <Spinner small /> : <Check className="h-4 w-4" />}
+                <span>Save Profile</span>
               </button>
             </div>
           </form>
         </SettingsCard>
 
         <SettingsCard title="Security & Password" detail="Change your merchant account login password." icon={KeyRound}>
-          <form onSubmit={handlePasswordChange} className="space-y-3">
-            <div className="grid gap-2 sm:grid-cols-3">
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
               <input
                 type="password"
                 required
                 value={currPassword}
                 onChange={(e) => setCurrPassword(e.target.value)}
                 placeholder="Current Password"
-                className="h-10 rounded-xl border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b]"
+                className="h-11 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
               <input
                 type="password"
@@ -1277,8 +1624,8 @@ export function SettingsPage() {
                 minLength="8"
                 value={newPasswordVal}
                 onChange={(e) => setNewPasswordVal(e.target.value)}
-                placeholder="New Password (min 8)"
-                className="h-10 rounded-xl border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b]"
+                placeholder="New (min 8 chars)"
+                className="h-11 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
               <input
                 type="password"
@@ -1287,126 +1634,298 @@ export function SettingsPage() {
                 value={confirmPasswordVal}
                 onChange={(e) => setConfirmPasswordVal(e.target.value)}
                 placeholder="Confirm New"
-                className="h-10 rounded-xl border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b]"
+                className="h-11 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end pt-1">
               <button
                 disabled={busy === 'password'}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50"
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 shadow-2xs"
               >
-                {busy === 'password' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Change Password
+                {busy === 'password' ? <Spinner small /> : <Check className="h-4 w-4" />}
+                <span>Change Password</span>
               </button>
             </div>
           </form>
         </SettingsCard>
 
-        <SettingsCard title="Receiving account" detail="UPI transfers settle directly to this account." icon={Store}>
-          <form onSubmit={saveUpi} className="space-y-3">
-            <label className="block"><span className="mb-1.5 block text-xs font-semibold text-[#466358]">Merchant UPI ID</span><input required minLength="4" maxLength="320" value={upiId} onChange={(event) => setUpiId(event.target.value)} placeholder="business@bank" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 font-mono text-sm text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10" /></label>
-            <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[10px] leading-4 text-[#8a9890]">New checkouts will direct payment to this UPI address.</p><button disabled={busy === 'upi'} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50">{busy === 'upi' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Save UPI ID</button></div>
+        <SettingsCard title="Receiving account" detail="Direct bank settlements occur instantly to this UPI VPA." icon={Store}>
+          <form onSubmit={saveUpi} className="space-y-4">
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">Merchant UPI ID (VPA)</span>
+              <input
+                required
+                minLength="4"
+                maxLength="320"
+                value={upiId}
+                onChange={(event) => setUpiId(event.target.value)}
+                placeholder="business@fam / merchant@okhdfcbank"
+                className="h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 font-mono text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </label>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">All customer QR codes and payment intents route funds here.</p>
+              <button
+                disabled={busy === 'upi'}
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 shadow-2xs"
+              >
+                {busy === 'upi' ? <Spinner small /> : <Check className="h-4 w-4" />}
+                <span>Save UPI ID</span>
+              </button>
+            </div>
           </form>
         </SettingsCard>
 
         <SettingsCard title="Storefront branding" detail="Customize your shop name, logo, and checkout theme color." icon={Palette}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-[#294b40]">{merchant.branding?.displayName || merchant.name}</p>
-              <p className="mt-0.5 text-xs text-[#84928a]">{merchant.branding?.tagline || 'Direct UPI checkout active'}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: merchant.branding?.brandColor || '#126b58' }} />
-                <span className="font-mono text-[11px] text-[#557567]">{merchant.branding?.brandColor || '#126b58'}</span>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">{merchant.branding?.displayName || merchant.name}</p>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{merchant.branding?.tagline || 'Direct UPI checkout active'}</p>
+              <div className="mt-2.5 flex items-center gap-2">
+                <span className="h-4 w-4 rounded-full border border-black/10 shadow-xs" style={{ backgroundColor: merchant.branding?.brandColor || '#10b981' }} />
+                <span className="font-mono text-xs text-slate-700 dark:text-slate-300 font-semibold">{merchant.branding?.brandColor || '#10b981'}</span>
               </div>
             </div>
-            <Link to="/branding" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42]">
-              <Palette className="h-3.5 w-3.5" />
-              Customize Checkout
+            <Link
+              to="/branding"
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 shadow-2xs"
+            >
+              <Palette className="h-4 w-4" />
+              <span>Customize Checkout</span>
             </Link>
           </div>
         </SettingsCard>
 
-        <SettingsCard title="Gmail payment inbox" detail="Read eligible FamApp notifications to confirm incoming transfers." icon={Mail}>
+        <SettingsCard title="Gmail payment inbox" detail="Listen for verified FamApp bank notifications for instant order clearance." icon={Mail}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-[15px] ${merchant.gmail?.connected ? 'bg-[#e5f3e5] text-[#367556]' : 'bg-[#f1f3ee] text-[#829087]'}`}><Mail className="h-5 w-5" /></span>
-            <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#294b40]">{merchant.gmail?.connected ? 'Connected' : 'Not connected'}</p><p className="mt-1 break-all text-xs text-[#84928a]">{merchant.gmail?.email || 'Connect the inbox that receives FamApp transfer emails.'}</p></div>
-            {merchant.gmail?.connected ? <button type="button" disabled={busy === 'gmail'} onClick={disconnect} className="min-h-10 rounded-lg border border-[#e4d6d1] px-3.5 text-xs font-bold text-[#985746] hover:bg-[#fff3ef] disabled:opacity-50">{busy === 'gmail' ? 'Disconnecting…' : 'Disconnect'}</button> : <button type="button" disabled={busy === 'gmail'} onClick={connectGmail} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50">{busy === 'gmail' ? <Spinner small /> : <ExternalLink className="h-3.5 w-3.5" />}Connect Gmail</button>}
+            <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${
+              merchant.gmail?.connected
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                : 'bg-slate-100 dark:bg-white/[.04] text-slate-400'
+            }`}>
+              <Mail className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                  {merchant.gmail?.connected ? 'Inbox Connected' : 'Not Connected'}
+                </p>
+                {merchant.gmail?.connected && (
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+              </div>
+              <p className="mt-0.5 break-all text-xs text-slate-500 dark:text-slate-400">
+                {merchant.gmail?.email || 'Connect the Google inbox that receives FamApp credit alerts.'}
+              </p>
+            </div>
+            {merchant.gmail?.connected ? (
+              <button
+                type="button"
+                disabled={busy === 'gmail'}
+                onClick={disconnect}
+                className="min-h-[42px] rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-transparent px-4 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition active:scale-95 disabled:opacity-50"
+              >
+                {busy === 'gmail' ? 'Disconnecting…' : 'Disconnect'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={busy === 'gmail'}
+                onClick={connectGmail}
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 shadow-2xs disabled:opacity-50"
+              >
+                {busy === 'gmail' ? <Spinner small /> : <ExternalLink className="h-4 w-4" />}
+                <span>Connect Gmail</span>
+              </button>
+            )}
           </div>
-          <p className="mt-4 rounded-lg bg-[#f5f7f2] px-3 py-2.5 text-[10px] leading-4 text-[#829087]">PopPay checks sender and Authentication-Results first. Message bodies are retrieved only for allowed senders with FamApp DKIM pass.</p>
+          <div className="mt-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[.02] p-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+            PopPay inspects DKIM signatures cryptographically. Only bank transfer notifications from whitelisted senders are processed.
+          </div>
           {merchant.gmail?.connected && (
-            <div className="mt-4 rounded-xl border border-[#e2eae0] bg-[#fbfcf9] p-3.5">
+            <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="max-w-sm text-[10px] leading-4 text-[#829087]">
-                  Fetch and verify the two latest emails from your saved allowed senders.
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Fetch and test-verify the 2 latest credit alert emails right now.
                 </p>
                 <button
                   type="button"
                   onClick={fetchLatestEmails}
                   disabled={fetchingGmail || !merchant.allowedSenders?.length}
-                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 shadow-2xs"
                 >
-                  {fetchingGmail ? <Spinner small /> : <RefreshCw className="h-3.5 w-3.5" />}
-                  {fetchingGmail ? 'Fetching emails…' : 'Fetch latest 2 emails'}
+                  {fetchingGmail ? <Spinner small /> : <RefreshCw className={`h-3.5 w-3.5 ${fetchingGmail ? 'animate-spin' : ''}`} />}
+                  <span>{fetchingGmail ? 'Syncing…' : 'Sync Latest Emails'}</span>
                 </button>
               </div>
               {!merchant.allowedSenders?.length && (
-                <p className="mt-2 text-[10px] text-[#9a6b43]">Add and save an allowed FamApp sender below to enable fetching.</p>
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  Add and save an allowed FamApp sender below to enable synchronization.
+                </p>
               )}
               {gmailFetchResult?.unmatched > 0 && (
-                <Link to="/unmatched" className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-[#126b58] hover:underline">
-                  Review unmatched transfers <ArrowRight className="h-3 w-3" />
+                <Link to="/unmatched" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                  <span>Review unmatched transfers ({gmailFetchResult.unmatched})</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               )}
             </div>
           )}
         </SettingsCard>
 
-        <SettingsCard title="Allowed senders" detail="Only these sender addresses can be considered for payment matching. Up to 10." icon={ShieldCheck}>
+        <SettingsCard title="Allowed Senders" detail="Cryptographic whitelist: only notifications from these addresses trigger automated matching." icon={ShieldCheck}>
           <div className="mb-4 flex flex-wrap gap-2">
-            {senders.map((sender) => <span key={sender} className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#dce8dc] bg-[#f5f8f2] py-1 pl-3 pr-1.5 text-[11px] font-medium text-[#436557]"><span className="max-w-[220px] truncate">{sender}</span><button type="button" onClick={() => setSenders((current) => current.filter((value) => value !== sender))} aria-label={`Remove ${sender}`} className="grid h-6 w-6 place-items-center rounded-full text-[#789087] hover:bg-[#e7eee4] hover:text-[#984d3c]"><X className="h-3.5 w-3.5" /></button></span>)}
-            {!senders.length && <p className="text-xs text-[#9a6b43]">No senders are listed. Add at least one before saving.</p>}
+            {senders.map((sender) => (
+              <span key={sender} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[.04] py-1.5 pl-3 pr-2 text-xs font-medium text-slate-800 dark:text-slate-200">
+                <span className="truncate max-w-[220px]">{sender}</span>
+                <button
+                  type="button"
+                  onClick={() => setSenders((current) => current.filter((value) => value !== sender))}
+                  aria-label={`Remove ${sender}`}
+                  className="grid h-5 w-5 place-items-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-slate-200 dark:hover:bg-white/10"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            ))}
+            {!senders.length && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">No senders added yet. Add at least one before saving.</p>
+            )}
           </div>
-          <form onSubmit={addSender} className="flex flex-col gap-2 sm:flex-row">
-            <input type="email" value={senderInput} onChange={(event) => setSenderInput(event.target.value)} maxLength="254" placeholder="alerts@famapp.in" className="h-10 min-w-0 flex-1 rounded-lg border border-[#dce5dc] bg-white px-3 text-xs outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10" />
-            <button type="submit" disabled={!senderInput.trim() || senders.length >= 10} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-[#dce5dc] px-3.5 text-xs font-bold text-[#476b5b] hover:bg-[#f2f6ef] disabled:opacity-45"><Plus className="h-3.5 w-3.5" />Add sender</button>
+          <form onSubmit={addSender} className="flex flex-col gap-2.5 sm:flex-row">
+            <input
+              type="email"
+              value={senderInput}
+              onChange={(event) => setSenderInput(event.target.value)}
+              maxLength="254"
+              placeholder="alerts@famapp.in"
+              className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            />
+            <button
+              type="submit"
+              disabled={!senderInput.trim() || senders.length >= 10}
+              className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.04] px-4 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[.08] disabled:opacity-40"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Sender</span>
+            </button>
           </form>
-          <div className="mt-4 flex justify-end"><button type="button" onClick={saveSenders} disabled={busy === 'senders'} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50">{busy === 'senders' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Save senders</button></div>
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={saveSenders}
+              disabled={busy === 'senders'}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 shadow-2xs"
+            >
+              {busy === 'senders' ? <Spinner small /> : <Check className="h-4 w-4" />}
+              <span>Save Allowed Senders</span>
+            </button>
+          </div>
         </SettingsCard>
 
-        <SettingsCard title="Webhook destination" detail="Get a signed payment.success event after an order is confirmed." icon={Webhook}>
-          <form onSubmit={saveWebhook} className="space-y-3">
-            <label className="block"><span className="mb-1.5 block text-xs font-semibold text-[#466358]">HTTPS endpoint</span><input type="url" required pattern="https://.*" value={webhookUrl} onChange={(event) => setWebhookUrl(event.target.value)} placeholder="https://yourdomain.com/payments/poppay" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 text-sm text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10" /></label>
-            <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[10px] leading-4 text-[#8a9890]">Use HTTPS. Requests include a signature; never expose your webhook secret.</p><button disabled={busy === 'webhook'} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50">{busy === 'webhook' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Save URL</button></div>
+        <SettingsCard title="Webhook destination" detail="Receive signed payment.success HTTP POST notifications when an order is verified." icon={Webhook}>
+          <form onSubmit={saveWebhook} className="space-y-4">
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">HTTPS Webhook Endpoint</span>
+              <input
+                type="url"
+                required
+                pattern="https://.*"
+                value={webhookUrl}
+                onChange={(event) => setWebhookUrl(event.target.value)}
+                placeholder="https://yourdomain.com/api/poppay/webhook"
+                className="h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 font-mono text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </label>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Payloads are signed with HMAC-SHA256 in the x-poppay-signature header.</p>
+              <button
+                disabled={busy === 'webhook'}
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 shadow-2xs"
+              >
+                {busy === 'webhook' ? <Spinner small /> : <Check className="h-4 w-4" />}
+                <span>Save Webhook</span>
+              </button>
+            </div>
           </form>
         </SettingsCard>
 
-        <SettingsCard title="API credentials" detail="Your public key identifies the merchant. Secret values are never retrievable." icon={KeyRound}>
-          <div className="rounded-xl border border-[#e3eae2] bg-[#f7f9f5] p-3.5">
-            <p className="text-[9px] font-bold uppercase tracking-[.13em] text-[#87968d]">Public key</p>
-            <code className="mt-1.5 block break-all font-mono text-xs text-[#355a4d]">{merchant.publicKey || 'Not available'}</code>
+        <SettingsCard title="API credentials" detail="Your public key identifies your business. Secret values are never retrievable." icon={KeyRound}>
+          <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[.02] p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Public Key</p>
+              <CopyButton text={merchant.publicKey} label="Copy" />
+            </div>
+            <code className="mt-2 block break-all font-mono text-xs font-bold text-slate-900 dark:text-emerald-300">
+              {merchant.publicKey || 'Not available'}
+            </code>
           </div>
-          <div className="mt-3 flex flex-col gap-3 rounded-xl border border-[#f0dfb7] bg-[#fff8e8] p-3.5 sm:flex-row sm:items-center">
-            <div className="min-w-0 flex-1"><p className="text-xs font-bold text-[#775e32]">Rotate all credentials</p><p className="mt-1 text-[10px] leading-4 text-[#8d7549]">This immediately invalidates the previous API and signing keys.</p></div>
-            <button type="button" onClick={() => setRotateOpen(true)} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#e4d19d] bg-white/70 px-3 text-[10px] font-bold text-[#805e23] hover:bg-white"><RefreshCw className="h-3.5 w-3.5" />Rotate keys</button>
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Rotate all credentials</p>
+              <p className="mt-0.5 text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                Invalidates your current Secret Key, Webhook Secret, and Signing Secret immediately.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRotateOpen(true)}
+              className="inline-flex min-h-[38px] shrink-0 items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3.5 text-xs font-bold text-amber-800 dark:text-amber-300 transition active:scale-95"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Rotate Keys</span>
+            </button>
           </div>
         </SettingsCard>
 
-        <SettingsCard title="Webhook attempts" detail="Recent deliveries, responses, and scheduled retries." icon={Activity}>
+        <SettingsCard title="Webhook attempts" detail="Recent deliveries, response codes, and automatic exponential backoff retries." icon={Activity}>
           <WebhookLogList logs={logs} loading={logsLoading} error={logsError} retryLog={retryLog} retrying={retrying} />
-          {!logsLoading && !logsError && <button type="button" onClick={loadLogs} className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-bold text-[#47715e] hover:underline"><RefreshCw className="h-3 w-3" />Refresh attempts</button>}
+          {!logsLoading && !logsError && (
+            <button
+              type="button"
+              onClick={loadLogs}
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>Refresh attempts ledger</span>
+            </button>
+          )}
         </SettingsCard>
       </div>
 
-      {rotateOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[#102d27]/65 p-0 backdrop-blur-[3px] sm:items-center sm:p-5" role="presentation">
-        <section role="dialog" aria-modal="true" aria-labelledby="rotate-title" className="w-full max-w-[460px] rounded-t-[24px] bg-[#fffefa] p-5 sm:rounded-[24px] sm:p-6">
-          <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-[#fff2dd] text-[#9a712d]"><KeyRound className="h-5 w-5" /></div>
-          <h2 id="rotate-title" className="font-[var(--font-display)] text-xl font-semibold tracking-[-.7px] text-[#142e2b]">Replace all credentials?</h2>
-          <p className="mt-2 text-xs leading-5 text-[#71817b]">Your current secret key, signing secret, and webhook secret will stop working immediately. You’ll need to update your integration and save the replacement values shown once.</p>
-          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button type="button" onClick={() => setRotateOpen(false)} className="min-h-10 rounded-lg border border-[#dce5dc] px-4 text-xs font-bold text-[#557367]">Keep current keys</button>
-            <button type="button" disabled={busy === 'rotate'} onClick={rotateKeys} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#a35b43] px-4 text-xs font-bold text-white hover:bg-[#8e4d39] disabled:opacity-60">{busy === 'rotate' ? <Spinner small /> : <RefreshCw className="h-3.5 w-3.5" />}Replace credentials</button>
-          </div>
-        </section>
-      </div>}
+      {rotateOpen && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="presentation">
+          <section role="dialog" aria-modal="true" aria-labelledby="rotate-title" className="w-full max-w-[480px] rounded-t-[26px] bg-white dark:bg-[#0e1714] border border-slate-200 dark:border-white/10 p-6 shadow-2xl sm:rounded-[26px]">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <KeyRound className="h-6 w-6" />
+            </div>
+            <h2 id="rotate-title" className="font-[var(--font-display)] text-xl font-bold text-slate-900 dark:text-white">
+              Rotate All API Credentials?
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+              Your existing Secret Key, Webhook Secret, and Signing Secret will be permanently revoked. You will be given one-time access to copy the new set.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setRotateOpen(false)}
+                className="min-h-[42px] rounded-xl border border-slate-200 dark:border-white/10 px-4 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[.04]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={busy === 'rotate'}
+                onClick={rotateKeys}
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-5 text-xs font-bold text-white shadow-2xs transition active:scale-95 disabled:opacity-50"
+              >
+                {busy === 'rotate' ? <Spinner small /> : <RefreshCw className="h-4 w-4" />}
+                <span>Confirm & Revoke Old Keys</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
@@ -1504,24 +2023,24 @@ export function BrandingPage() {
         title="Checkout & Branding"
         detail="Personalize your storefront name, brand color, logo, and checkout look. Preview your changes in real-time exactly as customers will experience them."
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={resetDefaults}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[#dce5dc] bg-white px-3.5 text-xs font-semibold text-[#557367] shadow-xs transition hover:bg-[#f2f7f2]"
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.04] px-4 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-2xs transition hover:bg-slate-50 dark:hover:bg-white/[.08]"
             >
               <Undo2 className="h-3.5 w-3.5" />
-              Reset defaults
+              <span>Reset defaults</span>
             </button>
             <button
               type="button"
               disabled={busy}
               onClick={saveBranding}
               style={{ backgroundColor: brandColor }}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95 disabled:opacity-50"
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-xl px-5 text-xs font-bold text-white shadow-2xs transition hover:opacity-95 active:scale-95 disabled:opacity-50"
             >
               {busy ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}
-              {busy ? 'Saving…' : 'Save changes'}
+              <span>{busy ? 'Saving…' : 'Save changes'}</span>
             </button>
           </div>
         }
