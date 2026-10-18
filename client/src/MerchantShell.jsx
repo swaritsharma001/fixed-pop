@@ -249,7 +249,7 @@ export function PrivateArea() {
   }, []);
 
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('poppay_theme') || 'dark';
+    return localStorage.getItem('poppay_theme') || 'light';
   });
 
   const toggleTheme = () => {

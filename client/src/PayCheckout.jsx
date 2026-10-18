@@ -186,18 +186,17 @@ function PayCheckoutInner() {
   const [payment, setPayment] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [redirectIn, setRedirectIn] = useState(3);
-  const [checkoutDark, setCheckoutDark] = useState(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const [checkoutDark, setCheckoutDark] = useState(false);
 
   useEffect(() => {
     if (checkout?.branding?.checkoutTheme === 'dark') {
       setCheckoutDark(true);
     } else if (checkout?.branding?.checkoutTheme === 'light') {
       setCheckoutDark(false);
+    } else if (checkout?.branding?.checkoutTheme === 'auto') {
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        setCheckoutDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      }
     }
   }, [checkout?.branding?.checkoutTheme]);
 
