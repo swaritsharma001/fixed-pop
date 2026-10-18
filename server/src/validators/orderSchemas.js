@@ -30,6 +30,7 @@ const createOrderSchema = z
     amount: amountSchema,
     receipt: z.string().trim().min(1).max(120),
     redirectUrl: httpsUrlSchema.optional(),
+    expiresInMins: z.coerce.number().int().min(5).max(10080).optional(),
   })
   .strict();
 

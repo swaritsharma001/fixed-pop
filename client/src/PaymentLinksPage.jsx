@@ -36,6 +36,7 @@ export function PaymentLinksPage() {
   const [amount, setAmount] = useState('');
   const [receipt, setReceipt] = useState('');
   const [redirectUrl, setRedirectUrl] = useState('');
+  const [expiresInMins, setExpiresInMins] = useState(1440); // 24 hours default
   const [creating, setCreating] = useState(false);
 
   // Newly Created Link Modal
@@ -77,6 +78,7 @@ export function PaymentLinksPage() {
       const payload = {
         amount: String(amount).trim(),
         receipt: receipt.trim(),
+        expiresInMins: Number(expiresInMins) || 1440,
       };
       if (redirectUrl.trim()) {
         payload.redirectUrl = redirectUrl.trim();
@@ -195,6 +197,34 @@ export function PaymentLinksPage() {
                   className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 />
                 <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Shown to customer on checkout screen.</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Link Validity / Expiry Duration
+              </label>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { mins: 1440, label: '24 Hours', badge: 'Recommended', detail: 'Best for WhatsApp' },
+                  { mins: 4320, label: '3 Days', badge: null, detail: 'Longer invoice' },
+                  { mins: 60, label: '1 Hour', badge: null, detail: 'Short window' },
+                  { mins: 15, label: '15 Minutes', badge: null, detail: 'Flash sale' },
+                ].map((opt) => (
+                  <button
+                    key={opt.mins}
+                    type="button"
+                    onClick={() => setExpiresInMins(opt.mins)}
+                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition active:scale-95 ${
+                      expiresInMins === opt.mins
+                        ? 'border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold shadow-2xs'
+                        : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.02] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[.04]'
+                    }`}
+                  >
+                    <span className="text-xs">{opt.label}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{opt.badge || opt.detail}</span>
+                  </button>
+                ))}
               </div>
             </div>
 

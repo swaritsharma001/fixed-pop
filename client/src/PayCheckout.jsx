@@ -536,11 +536,28 @@ function PayCheckoutInner() {
 
   if (viewState === 'loading') return <PaymentLoader checkoutDark={checkoutDark} />;
 
-  const minutes = remainingMs === null ? null : Math.floor(remainingMs / 60000);
-  const seconds = remainingMs === null ? null : Math.floor((remainingMs % 60000) / 1000);
-  const formattedCountdown = minutes === null
-    ? '—'
-    : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const totalMinutes = remainingMs === null ? null : Math.floor(remainingMs / 60000);
+  const totalHours = totalMinutes === null ? null : Math.floor(totalMinutes / 60);
+  const totalDays = totalHours === null ? null : Math.floor(totalHours / 24);
+
+  let formattedExpiry = '—';
+  let isUrgent = false;
+
+  if (remainingMs !== null) {
+    if (totalDays > 0) {
+      formattedExpiry = `Valid for ${totalDays}d ${totalHours % 24}h`;
+    } else if (totalHours > 1) {
+      formattedExpiry = `Valid for ${totalHours} hours`;
+    } else if (totalMinutes > 0) {
+      const mins = totalMinutes;
+      const secs = Math.floor((remainingMs % 60000) / 1000);
+      formattedExpiry = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      if (mins <= 5) isUrgent = true;
+    } else {
+      formattedExpiry = 'Expiring soon';
+      isUrgent = true;
+    }
+  }
 
   const brandColor = checkout?.branding?.brandColor || '#126b58';
   const logoUrl = checkout?.branding?.logoUrl;
@@ -775,14 +792,12 @@ function PayCheckoutInner() {
                   <span className={`text-[11px] font-semibold uppercase tracking-wider ${checkoutDark ? 'text-[#8ba096]' : 'text-slate-600'}`}>Exact payable amount</span>
                   {remainingMs !== null && (
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-2xs transition-colors ${
-                      remainingMs < 60000 
+                      isUrgent
                         ? checkoutDark ? 'bg-[#3c1717] text-[#f87171] border border-[#5a2525] animate-pulse' : 'bg-red-50 text-red-600 border border-red-200 animate-pulse'
-                        : remainingMs < 180000
-                        ? checkoutDark ? 'bg-[#382a12] text-[#fbbf24] border border-[#573f18]' : 'bg-amber-50 text-amber-700 border border-amber-200'
                         : checkoutDark ? 'bg-[#152e25] text-[#34d399] border border-[#1d4336]' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     }`}>
                       <Icon name="clock" className="h-3 w-3" />
-                      {formattedCountdown}
+                      {formattedExpiry}
                     </span>
                   )}
                 </div>

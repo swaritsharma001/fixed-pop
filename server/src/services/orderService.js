@@ -11,13 +11,16 @@ function createOrderId() {
   return `order_${crypto.randomBytes(9).toString('base64url')}`;
 }
 
-async function createPendingOrder({ merchantId, amountPaise, receipt, redirectUrl }) {
+async function createPendingOrder({ merchantId, amountPaise, receipt, redirectUrl, expiresInMins }) {
   await Order.updateMany(
     { merchantId, status: 'PENDING', expiresAt: { $lte: new Date() } },
     { $set: { status: 'EXPIRED' } },
   );
   const baseAmount = paiseToRupees(amountPaise);
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const durationMs = Number.isInteger(expiresInMins) && expiresInMins > 0
+    ? expiresInMins * 60 * 1000
+    : 10 * 60 * 1000;
+  const expiresAt = new Date(Date.now() + durationMs);
 
   // 1. Prioritize exact amount so ₹5.00 stays exactly ₹5.00
   const exactOccupied = await Order.exists({
