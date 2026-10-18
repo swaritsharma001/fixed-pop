@@ -78,6 +78,8 @@ async function stats(req, res, next) {
     return res.json({
       todayCollection: paiseToRupees(totalPaise),
       todayPaymentCount: todayPayments.length,
+      todayOrderCount,
+      todayPaidOrderCount,
       successRate: todayOrderCount
         ? Math.round((todayPaidOrderCount / todayOrderCount) * 10000) / 100
         : 0,

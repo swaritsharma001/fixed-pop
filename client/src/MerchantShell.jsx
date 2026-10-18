@@ -264,7 +264,7 @@ export function PrivateArea() {
   }, []);
 
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('poppay_theme') || 'light';
+    return localStorage.getItem('poppay_theme') || 'dark';
   });
 
   const toggleTheme = () => {
@@ -459,13 +459,13 @@ export function PrivateArea() {
               </div>
             </div>
 
-            <div className="mx-auto w-full max-w-[1440px] px-4 pb-12 pt-6 sm:px-7 sm:pt-8 lg:px-9 lg:pt-8">
+            <div className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-6 sm:px-7 sm:pt-8 sm:pb-16 lg:px-9 lg:pt-8 lg:pb-12">
               <Outlet />
             </div>
           </main>
 
-          {/* Clean Mobile Bottom Navigation */}
-          <nav className="fixed inset-x-0 bottom-0 z-30 flex h-[64px] items-center justify-around border-t border-slate-200/90 dark:border-[#172b24] bg-white/95 dark:bg-[#091310]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Primary navigation">
+          {/* Clean Mobile Bottom Navigation with Clear Active Indicator */}
+          <nav className="fixed inset-x-0 bottom-0 z-30 flex h-[66px] items-center justify-around border-t border-slate-200/90 dark:border-[#172b24] bg-white/95 dark:bg-[#091310]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md shadow-lg lg:hidden" aria-label="Primary navigation">
             {[
               ['/dashboard', 'Home', Gauge],
               ['/payment-links', 'Links', Link2],
@@ -477,12 +477,21 @@ export function PrivateArea() {
                 key={to}
                 to={to}
                 end={to === '/dashboard'}
-                className={({ isActive }) => `flex shrink-0 min-w-[56px] flex-col items-center justify-center gap-1 px-2 py-1 text-[10px] font-bold transition-all ${
-                  isActive ? 'text-emerald-600 dark:text-emerald-400 font-extrabold' : 'text-slate-500 dark:text-[#82998e] hover:text-emerald-600'
+                className={({ isActive }) => `relative flex shrink-0 min-w-[62px] flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${
+                  isActive
+                    ? 'text-emerald-700 dark:text-emerald-400 font-extrabold bg-emerald-500/15 dark:bg-emerald-400/15 shadow-xs border border-emerald-500/20'
+                    : 'text-slate-600 dark:text-[#82998e] hover:text-emerald-600 dark:hover:text-emerald-400'
                 }`}
               >
-                <Icon className="h-[19px] w-[19px]" strokeWidth={2} />
-                <span className="whitespace-nowrap">{label}</span>
+                {({ isActive }) => (
+                  <>
+                    <Icon className="h-[20px] w-[20px]" strokeWidth={isActive ? 2.5 : 1.9} />
+                    <span className="whitespace-nowrap">{label}</span>
+                    {isActive && (
+                      <span className="absolute -bottom-1 h-1 w-5 rounded-full bg-emerald-600 dark:bg-emerald-400 shadow-xs" />
+                    )}
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -497,9 +506,9 @@ export function PageHeading({ eyebrow, title, detail, action }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        {eyebrow && <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[.16em] text-emerald-600 dark:text-emerald-400">{eyebrow}</p>}
+        {eyebrow && <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">{eyebrow}</p>}
         <h1 className="font-[var(--font-display)] text-[28px] sm:text-[34px] font-bold leading-tight tracking-[-1.3px] text-slate-900 dark:text-white">{title}</h1>
-        {detail && <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-[#9bb2a8]">{detail}</p>}
+        {detail && <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-[#a3b8af] font-medium">{detail}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
