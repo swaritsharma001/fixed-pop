@@ -444,13 +444,30 @@ export default function PayCheckout() {
   const supportEmail = checkout?.branding?.supportEmail;
   const merchantName = checkout?.merchantName || checkout?.branding?.displayName || 'Merchant';
 
+  const [checkoutDark, setCheckoutDark] = useState(() => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (checkout?.branding?.checkoutTheme === 'dark') {
+      setCheckoutDark(true);
+    } else if (checkout?.branding?.checkoutTheme === 'light') {
+      setCheckoutDark(false);
+    }
+  }, [checkout?.branding?.checkoutTheme]);
+
   return (
-    <main className="checkout-shell min-h-[100dvh] px-4 py-5 sm:px-6 sm:py-9">
+    <main
+      style={checkoutDark ? {
+        background: `radial-gradient(ellipse at 50% 0%, ${brandColor}22, transparent 65%), #080e0c`,
+      } : undefined}
+      className={`checkout-shell min-h-[100dvh] px-4 py-5 sm:px-6 sm:py-9 transition-colors ${checkoutDark ? 'bg-[#080e0c] text-[#eaf3ee]' : ''}`}
+    >
       <div className="mx-auto max-w-[920px]">
         <header className="entrance mb-5 flex items-center justify-between px-1 sm:mb-7">
           <div className="flex items-center gap-2.5">
             <span
-              style={{ backgroundColor: brandColor }}
+              style={{ backgroundColor: brandColor, boxShadow: `0 4px 14px ${brandColor}40` }}
               className="grid h-9 w-9 place-items-center rounded-[12px] text-[#eff9e8] shadow-xs"
             >
               <svg viewBox="0 0 24 24" className="h-[21px] w-[21px]" fill="none" aria-hidden="true">
@@ -458,26 +475,50 @@ export default function PayCheckout() {
                 <circle cx="18" cy="17" r="3" fill="#c7e8a8" />
               </svg>
             </span>
-            <span className="font-[var(--font-display)] text-[21px] font-bold tracking-[-1.2px] text-[#142e2b]">poppay</span>
+            <span className={`font-[var(--font-display)] text-[21px] font-bold tracking-[-1.2px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>poppay</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-[#dce7dd] bg-[#f9fbf6] px-3 py-1.5 text-[11px] font-semibold tracking-[.02em] text-[#527169]">
-            <Icon name="lock" className="h-[13px] w-[13px]" />
-            SECURE CHECKOUT
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCheckoutDark((d) => !d)}
+              title={checkoutDark ? 'Switch to Light checkout' : 'Switch to Dark checkout'}
+              className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                checkoutDark
+                  ? 'border-[#1f342d] bg-[#12221d] text-[#c7decb] hover:bg-[#182c26]'
+                  : 'border-[#dce7dd] bg-[#f9fbf6] text-[#527169] hover:bg-[#edf5ec]'
+              }`}
+            >
+              {checkoutDark ? (
+                <svg className="h-3.5 w-3.5 text-[#fbbf24]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              ) : (
+                <svg className="h-3.5 w-3.5 text-[#126b58]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              )}
+            </button>
+            <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold tracking-[.02em] ${
+              checkoutDark
+                ? 'border-[#1f342d] bg-[#12221d] text-[#8ca097]'
+                : 'border-[#dce7dd] bg-[#f9fbf6] text-[#527169]'
+            }`}>
+              <Icon name="lock" className="h-[13px] w-[13px]" />
+              SECURE CHECKOUT
+            </div>
           </div>
         </header>
 
         {viewState === 'error' ? (
-          <section className="entrance rounded-[28px] border border-[#e1e8e1] bg-[#fffefa] px-6 py-12 text-center shadow-[0_24px_70px_rgba(25,61,48,.08)] sm:px-12">
+          <section className={`entrance rounded-[28px] border px-6 py-12 text-center shadow-xl sm:px-12 ${
+            checkoutDark ? 'border-[#3f1f1a] bg-[#141b18] text-[#eaf3ee]' : 'border-[#e1e8e1] bg-[#fffefa]'
+          }`}>
             <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-[#faeee9] text-[#b64c3c]">
               <Icon name="alert" className="h-7 w-7" />
             </div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#a35a47]">Checkout unavailable</p>
-            <h1 className="font-[var(--font-display)] text-[28px] font-semibold tracking-[-1.2px] text-[#142e2b]">We couldn’t open this payment</h1>
+            <h1 className={`font-[var(--font-display)] text-[28px] font-semibold tracking-[-1.2px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>We couldn’t open this payment</h1>
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#71817b]">{loadError || 'Please try again in a moment.'}</p>
             <button
               type="button"
               onClick={() => setRetryCount((count) => count + 1)}
-              style={{ backgroundColor: brandColor }}
+              style={{ backgroundColor: brandColor, boxShadow: `0 4px 14px ${brandColor}40` }}
               className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white transition-opacity hover:opacity-90"
             >
               <Icon name="refresh" className="h-4 w-4" />
@@ -485,16 +526,18 @@ export default function PayCheckout() {
             </button>
           </section>
         ) : viewState === 'expired' ? (
-          <section className="entrance rounded-[28px] border border-[#e1e8e1] bg-[#fffefa] px-6 py-12 text-center shadow-[0_24px_70px_rgba(25,61,48,.08)] sm:px-12">
+          <section className={`entrance rounded-[28px] border px-6 py-12 text-center shadow-xl sm:px-12 ${
+            checkoutDark ? 'border-[#3f311a] bg-[#141b18] text-[#eaf3ee]' : 'border-[#e1e8e1] bg-[#fffefa]'
+          }`}>
             <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-[#f8f0df] text-[#9a712d]">
               <Icon name="clock" className="h-7 w-7" />
             </div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#9a712d]">Payment window closed</p>
-            <h1 className="font-[var(--font-display)] text-[28px] font-semibold tracking-[-1.2px] text-[#142e2b]">This request has expired</h1>
+            <h1 className={`font-[var(--font-display)] text-[28px] font-semibold tracking-[-1.2px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>This request has expired</h1>
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#71817b]">No payment was confirmed. Return to {merchantName} to request a fresh payment link.</p>
-            <div className="mx-auto mt-7 max-w-sm rounded-2xl bg-[#f6f8f2] px-5 py-4 text-left">
+            <div className={`mx-auto mt-7 max-w-sm rounded-2xl px-5 py-4 text-left ${checkoutDark ? 'bg-[#152420]' : 'bg-[#f6f8f2]'}`}>
               <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#84928a]">Order reference</p>
-              <p className="mt-1 break-all font-mono text-sm text-[#33554c]">{orderId}</p>
+              <p className={`mt-1 break-all font-mono text-sm ${checkoutDark ? 'text-[#34d399]' : 'text-[#33554c]'}`}>{orderId}</p>
             </div>
             <div className="mx-auto max-w-md">
               <UtrSubmission
@@ -505,33 +548,43 @@ export default function PayCheckout() {
             </div>
           </section>
         ) : viewState === 'success' ? (
-          <section className="entrance rounded-[28px] border border-[#dce9dd] bg-[#fffefa] px-6 py-12 text-center shadow-[0_24px_70px_rgba(25,61,48,.08)] sm:px-12">
-            <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-[22px] bg-[#dff3e9] text-[#126b58]">
+          <section className={`entrance rounded-[28px] border px-6 py-12 text-center shadow-xl sm:px-12 ${
+            checkoutDark ? 'border-[#1b3d30] bg-[#101b17] text-[#eaf3ee]' : 'border-[#dce9dd] bg-[#fffefa]'
+          }`}>
+            <div className={`mx-auto mb-5 grid h-16 w-16 place-items-center rounded-[22px] ${
+              checkoutDark ? 'bg-[#15342a] text-[#34d399]' : 'bg-[#dff3e9] text-[#126b58]'
+            }`}>
               <Icon name="check" className="h-8 w-8" />
             </div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#126b58]">Payment confirmed</p>
-            <h1 className="font-[var(--font-display)] text-[30px] font-semibold tracking-[-1.3px] text-[#142e2b]">You’re all set.</h1>
-            <p className="mt-2 text-sm text-[#71817b]">Your payment was sent directly to {merchantName}.</p>
-            <p className="mt-6 font-[var(--font-display)] text-[36px] font-bold tracking-[-1.8px] text-[#142e2b]">₹{formatAmount(checkout?.payableAmount)}</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#34d399]">Payment confirmed</p>
+            <h1 className={`font-[var(--font-display)] text-[30px] font-semibold tracking-[-1.3px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>You’re all set.</h1>
+            <p className="mt-2 text-sm text-[#84928a]">Your payment was sent directly to {merchantName}.</p>
+            <p className={`mt-6 font-[var(--font-display)] text-[36px] font-bold tracking-[-1.8px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>₹{formatAmount(checkout?.payableAmount)}</p>
             {payment?.utr && (
-              <div className="mx-auto mt-6 max-w-sm rounded-2xl bg-[#f6f8f2] px-5 py-4 text-left">
+              <div className={`mx-auto mt-6 max-w-sm rounded-2xl px-5 py-4 text-left ${checkoutDark ? 'bg-[#152420]' : 'bg-[#f6f8f2]'}`}>
                 <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#84928a]">UPI reference number</p>
-                <p className="mt-1 break-all font-mono text-sm text-[#33554c]">{payment.utr}</p>
+                <p className={`mt-1 break-all font-mono text-sm ${checkoutDark ? 'text-[#34d399]' : 'text-[#33554c]'}`}>{payment.utr}</p>
               </div>
             )}
             {payment?.redirectUrl && <p className="mt-6 text-xs text-[#71817b]">Taking you back in {redirectIn} seconds…</p>}
           </section>
         ) : (
-          <div className="entrance grid overflow-hidden rounded-[28px] border border-[#e1e8e1] bg-[#fffefa] shadow-[0_24px_70px_rgba(25,61,48,.08)] md:grid-cols-[1fr_360px]">
+          <div className={`entrance grid overflow-hidden rounded-[28px] border md:grid-cols-[1fr_360px] ${
+            checkoutDark
+              ? 'border-[#1d2f29] bg-[#111a18] shadow-[0_24px_70px_rgba(0,0,0,.6)] text-[#eaf3ee]'
+              : 'border-[#e1e8e1] bg-[#fffefa] shadow-[0_24px_70px_rgba(25,61,48,.08)]'
+          }`}>
             <section className="p-5 sm:p-9 md:p-10">
               <div className="mb-7 flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#87968d]">You’re paying</p>
-                  <h1 className="mt-1.5 max-w-[390px] break-words font-[var(--font-display)] text-[25px] font-semibold leading-tight tracking-[-1.1px] text-[#142e2b] sm:text-[30px]">
+                  <p className={`text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#7e948a]' : 'text-[#87968d]'}`}>You’re paying</p>
+                  <h1 className={`mt-1.5 max-w-[390px] break-words font-[var(--font-display)] text-[25px] font-semibold leading-tight tracking-[-1.1px] sm:text-[30px] ${
+                    checkoutDark ? 'text-white' : 'text-[#142e2b]'
+                  }`}>
                     {merchantName}
                   </h1>
                   {tagline && (
-                    <p className="mt-1 text-xs text-[#6e8278] truncate">{tagline}</p>
+                    <p className={`mt-1 text-xs truncate ${checkoutDark ? 'text-[#8ca097]' : 'text-[#6e8278]'}`}>{tagline}</p>
                   )}
                 </div>
                 {logoUrl ? (
@@ -539,28 +592,36 @@ export default function PayCheckout() {
                     src={logoUrl}
                     alt={merchantName}
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    className="mt-1 h-12 w-12 shrink-0 rounded-[16px] object-cover border border-[#e2ebe2] shadow-xs"
+                    className={`mt-1 h-12 w-12 shrink-0 rounded-[16px] object-cover border shadow-xs ${
+                      checkoutDark ? 'border-[#223932]' : 'border-[#e2ebe2]'
+                    }`}
                   />
                 ) : (
                   <div
-                    style={{ backgroundColor: `${brandColor}18`, color: brandColor }}
-                    className="mt-1 grid h-12 w-12 shrink-0 place-items-center rounded-[16px] font-[var(--font-display)] text-lg font-bold border border-black/5 shadow-xs"
+                    style={{ backgroundColor: `${brandColor}22`, color: brandColor }}
+                    className={`mt-1 grid h-12 w-12 shrink-0 place-items-center rounded-[16px] font-[var(--font-display)] text-lg font-bold border shadow-xs ${
+                      checkoutDark ? 'border-[#223932]' : 'border-black/5'
+                    }`}
                   >
                     {merchantName.trim().charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
 
-              <div className="rounded-[20px] border border-[#e6ebe3] bg-gradient-to-br from-[#f8faf5] to-[#f2f7ef] p-5 sm:p-6 shadow-sm">
+              <div className={`rounded-[20px] border p-5 sm:p-6 shadow-sm transition-colors ${
+                checkoutDark
+                  ? 'border-[#1e332c] bg-gradient-to-br from-[#14231f] to-[#0f1a17]'
+                  : 'border-[#e6ebe3] bg-gradient-to-br from-[#f8faf5] to-[#f2f7ef]'
+              }`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#71817b]">Exact payable amount</span>
+                  <span className={`text-xs font-semibold uppercase tracking-wider ${checkoutDark ? 'text-[#8ba096]' : 'text-[#71817b]'}`}>Exact payable amount</span>
                   {remainingMs !== null && (
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tabular-nums shadow-sm transition-colors ${
                       remainingMs < 60000 
-                        ? 'bg-[#fbdfdf] text-[#b64c3c] animate-pulse border border-[#f5b8b8]' 
+                        ? checkoutDark ? 'bg-[#3c1717] text-[#f87171] border border-[#5a2525] animate-pulse' : 'bg-[#fbdfdf] text-[#b64c3c] border border-[#f5b8b8] animate-pulse'
                         : remainingMs < 180000
-                        ? 'bg-[#fbefdc] text-[#8c672a] border border-[#ecd2a8]'
-                        : 'bg-[#edf3eb] text-[#3e6858] border border-[#d6e5d4]'
+                        ? checkoutDark ? 'bg-[#382a12] text-[#fbbf24] border border-[#573f18]' : 'bg-[#fbefdc] text-[#8c672a] border border-[#ecd2a8]'
+                        : checkoutDark ? 'bg-[#152e25] text-[#34d399] border border-[#1d4336]' : 'bg-[#edf3eb] text-[#3e6858] border border-[#d6e5d4]'
                     }`}>
                       <Icon name="clock" className="h-3.5 w-3.5" />
                       {formattedCountdown}
@@ -568,33 +629,46 @@ export default function PayCheckout() {
                   )}
                 </div>
                 <div className="mt-2 flex items-baseline justify-between gap-4">
-                  <p className="font-[var(--font-display)] text-[40px] font-bold leading-none tracking-[-2px] text-[#142e2b] sm:text-[46px]">
+                  <p className={`font-[var(--font-display)] text-[40px] font-bold leading-none tracking-[-2px] sm:text-[46px] ${
+                    checkoutDark ? 'text-white' : 'text-[#142e2b]'
+                  }`}>
                     <span className="mr-1 text-[28px] font-semibold" style={{ color: brandColor }}>₹</span>{formatAmount(checkout?.payableAmount)}
                   </p>
                   <button
                     type="button"
                     onClick={copyAmount}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#d9e4d8] bg-white px-3 py-1.5 text-xs font-bold text-[#126b58] shadow-sm transition hover:bg-[#edf5eb] active:scale-95"
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 ${
+                      checkoutDark
+                        ? 'border-[#223932] bg-[#172a24] text-[#34d399] hover:bg-[#1f372f]'
+                        : 'border-[#d9e4d8] bg-white text-[#126b58] hover:bg-[#edf5eb]'
+                    }`}
                     title="Copy exact amount"
                   >
                     <Icon name={amountCopied ? 'check' : 'copy'} className="h-3.5 w-3.5" />
                     {amountCopied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
-                <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-xs font-semibold text-[#126b58] border border-[#e1ece1]">
+                <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold border ${
+                  checkoutDark
+                    ? 'bg-[#152520] border-[#1f382f] text-[#34d399]'
+                    : 'bg-white/70 border-[#e1ece1] text-[#126b58]'
+                }`}>
                   <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
                   <span>Important: Pay exactly ₹{formatAmount(checkout?.payableAmount)} (including paise) for instant verification.</span>
                 </div>
               </div>
 
               <div className="mt-6">
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-[.14em] text-[#87968d]">One-click mobile UPI</p>
+                <p className={`mb-3 text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#7e948a]' : 'text-[#87968d]'}`}>One-click mobile UPI</p>
                 <a
                   href={checkout?.upiLink || undefined}
                   onClick={(event) => {
                     if (!checkout?.upiLink) event.preventDefault();
                   }}
-                  style={checkout?.upiLink ? { backgroundColor: brandColor } : undefined}
+                  style={checkout?.upiLink ? { 
+                    backgroundColor: brandColor,
+                    boxShadow: `0 8px 24px ${brandColor}40`
+                  } : undefined}
                   className={`group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-2xl px-5 text-sm font-bold shadow-md transition-all ${
                     checkout?.upiLink
                       ? 'text-white hover:brightness-105 hover:shadow-lg active:scale-[0.99]'
@@ -618,21 +692,29 @@ export default function PayCheckout() {
               </div>
 
               <div className="my-5 flex items-center gap-3">
-                <span className="h-px flex-1 bg-[#e7ece5]" />
-                <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#9ba69f]">or manual transfer via UPI ID</span>
-                <span className="h-px flex-1 bg-[#e7ece5]" />
+                <span className={`h-px flex-1 ${checkoutDark ? 'bg-[#1d2f29]' : 'bg-[#e7ece5]'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#71857b]' : 'text-[#9ba69f]'}`}>or manual transfer via UPI ID</span>
+                <span className={`h-px flex-1 ${checkoutDark ? 'bg-[#1d2f29]' : 'bg-[#e7ece5]'}`} />
               </div>
 
-              <div className="flex min-h-[60px] items-center gap-3 rounded-2xl border border-[#e4eae2] bg-white p-3 shadow-sm hover:border-[#ccd9cb] transition-colors">
+              <div className={`flex min-h-[60px] items-center gap-3 rounded-2xl border p-3 shadow-sm transition-colors ${
+                checkoutDark
+                  ? 'border-[#1e332c] bg-[#14221f] hover:border-[#2a473e]'
+                  : 'border-[#e4eae2] bg-white hover:border-[#ccd9cb]'
+              }`}>
                 <div className="min-w-0 flex-1 pl-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#93a097]">Merchant Verified UPI ID</p>
-                  <p className="mt-0.5 truncate font-mono text-[14px] font-semibold text-[#1e443a] select-all">{upiId || 'UPI ID unavailable'}</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-[.12em] ${checkoutDark ? 'text-[#7e948a]' : 'text-[#93a097]'}`}>Merchant Verified UPI ID</p>
+                  <p className={`mt-0.5 truncate font-mono text-[14px] font-semibold select-all ${checkoutDark ? 'text-[#34d399]' : 'text-[#1e443a]'}`}>{upiId || 'UPI ID unavailable'}</p>
                 </div>
                 <button
                   type="button"
                   onClick={copyUpiId}
                   disabled={!upiId}
-                  className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-[#d3e2d3] bg-[#f7faf5] px-3.5 text-xs font-bold text-[#126b58] shadow-sm transition hover:bg-[#edf5eb] active:scale-95 disabled:cursor-not-allowed disabled:text-[#a7b1aa]"
+                  className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-bold shadow-sm transition active:scale-95 disabled:cursor-not-allowed ${
+                    checkoutDark
+                      ? 'border-[#223932] bg-[#182b25] text-[#34d399] hover:bg-[#203a31] disabled:text-[#52635b]'
+                      : 'border-[#d3e2d3] bg-[#f7faf5] text-[#126b58] hover:bg-[#edf5eb] disabled:text-[#a7b1aa]'
+                  }`}
                   aria-label={copied ? 'UPI ID copied' : 'Copy UPI ID'}
                 >
                   <Icon name={copied ? 'check' : 'copy'} className="h-4 w-4" />
@@ -640,12 +722,12 @@ export default function PayCheckout() {
                 </button>
               </div>
 
-              <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#f4f7f1] px-4 py-3.5">
-                <div className="mt-0.5 text-[#678477]">
+              <div className={`mt-6 flex items-start gap-3 rounded-xl px-4 py-3.5 ${checkoutDark ? 'bg-[#14221f] text-[#8aa095]' : 'bg-[#f4f7f1] text-[#73857b]'}`}>
+                <div className={`mt-0.5 ${checkoutDark ? 'text-[#34d399]' : 'text-[#678477]'}`}>
                   <Icon name="lock" className="h-4 w-4" />
                 </div>
-                <p className="text-[11px] leading-[1.55] text-[#73857b]">
-                  Your money goes directly to <span className="font-semibold text-[#426457]">{checkout?.merchantName || 'the merchant'}</span>. PopPay never holds your funds.
+                <p className="text-[11px] leading-[1.55]">
+                  Your money goes directly to <span className={`font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-[#426457]'}`}>{checkout?.merchantName || 'the merchant'}</span>. PopPay never holds your funds.
                 </p>
               </div>
               <UtrSubmission
@@ -655,40 +737,48 @@ export default function PayCheckout() {
               />
             </section>
 
-            <aside className="entrance-delay flex flex-col items-center bg-[#f5f8f1] px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-7">
+            <aside className={`entrance-delay flex flex-col items-center px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-7 ${
+              checkoutDark ? 'bg-[#0d1614] border-t md:border-t-0 md:border-l border-[#1a2d27]' : 'bg-[#f5f8f1]'
+            }`}>
               <div className="mb-4 flex w-full items-center justify-between">
-                <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#6d8478]">Scan to pay</p>
-                <span className="rounded-full border border-[#dfe9dd] bg-[#fbfcf8] px-2.5 py-1 text-[10px] font-bold text-[#678477]">UPI</span>
+                <p className={`text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#8ca097]' : 'text-[#6d8478]'}`}>Scan to pay</p>
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                  checkoutDark ? 'border-[#1f362e] bg-[#13221d] text-[#8ca097]' : 'border-[#dfe9dd] bg-[#fbfcf8] text-[#678477]'
+                }`}>UPI</span>
               </div>
-              <div className="qr-frame grid aspect-square w-full max-w-[272px] place-items-center rounded-[22px] border border-[#e9eee7] bg-[#fffefa] p-3.5">
+              <div className={`qr-frame grid aspect-square w-full max-w-[272px] place-items-center rounded-[22px] border p-3.5 ${
+                checkoutDark ? 'border-[#1f362e] bg-white' : 'border-[#e9eee7] bg-[#fffefa]'
+              }`}>
                 {qrImage ? (
                   <img src={qrImage} alt="UPI payment QR code" className="h-full w-full object-contain select-none" />
                 ) : (
                   <div className="flex flex-col items-center px-5 text-center">
                     <div className="mb-3 h-8 w-8 rounded-lg border-2 border-[#c5d7c7] border-t-[#126b58] animate-spin" />
-                    <p className="text-xs font-medium text-[#72857a]">Preparing secure QR code…</p>
+                    <p className={`text-xs font-medium ${checkoutDark ? 'text-[#72857a]' : 'text-[#72857a]'}`}>Preparing secure QR code…</p>
                   </div>
                 )}
               </div>
               <div className="mt-5 flex flex-col items-center gap-1.5 text-center">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d6e5d5] bg-white px-3 py-1 shadow-xs">
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 shadow-xs ${
+                  checkoutDark ? 'border-[#1e3a30] bg-[#132620] text-[#34d399]' : 'border-[#d6e5d5] bg-white text-[#1a5b4c]'
+                }`}>
                   <span className="radar-sweep h-2 w-2 rounded-full bg-[#22c55e]" />
-                  <span className="text-[11px] font-bold text-[#1a5b4c]">Live Bank Alert Listener Active</span>
+                  <span className="text-[11px] font-bold">Live Bank Alert Listener Active</span>
                 </span>
-                <span className="text-[11px] font-medium text-[#678073]">Scan via PhonePe, GPay, Paytm or BHIM</span>
+                <span className={`text-[11px] font-medium ${checkoutDark ? 'text-[#7e9288]' : 'text-[#678073]'}`}>Scan via PhonePe, GPay, Paytm or BHIM</span>
               </div>
-              <div className="mt-auto w-full border-t border-[#e2eade] pt-4">
+              <div className={`mt-auto w-full border-t pt-4 ${checkoutDark ? 'border-[#1a2e28]' : 'border-[#e2eade]'}`}>
                 {viewState === 'waiting' ? (
                   <div className="flex items-center justify-center gap-2.5 text-center">
                     <span className="flex items-center gap-1.5">
-                      <i className="waiting-dot h-2 w-2 rounded-full bg-[#126b58]" />
-                      <i className="waiting-dot h-2 w-2 rounded-full bg-[#126b58]" />
-                      <i className="waiting-dot h-2 w-2 rounded-full bg-[#126b58]" />
+                      <i className="waiting-dot h-2 w-2 rounded-full" style={{ backgroundColor: brandColor }} />
+                      <i className="waiting-dot h-2 w-2 rounded-full" style={{ backgroundColor: brandColor }} />
+                      <i className="waiting-dot h-2 w-2 rounded-full" style={{ backgroundColor: brandColor }} />
                     </span>
-                    <span className="text-xs font-bold text-[#23584a]">Waiting for bank confirmation…</span>
+                    <span className={`text-xs font-bold ${checkoutDark ? 'text-[#34d399]' : 'text-[#23584a]'}`}>Waiting for bank confirmation…</span>
                   </div>
                 ) : null}
-                <p className="mt-1.5 text-center text-[10px] leading-4 text-[#8a9990]">
+                <p className={`mt-1.5 text-center text-[10px] leading-4 ${checkoutDark ? 'text-[#6e8278]' : 'text-[#8a9990]'}`}>
                   Funds transfer instantly to the merchant. Do not refresh.
                 </p>
               </div>
@@ -696,14 +786,16 @@ export default function PayCheckout() {
           </div>
         )}
 
-        <footer className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 text-center text-[10px] font-medium text-[#8b9990]">
+        <footer className={`mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 text-center text-[10px] font-medium ${
+          checkoutDark ? 'text-[#6e8278]' : 'text-[#8b9990]'
+        }`}>
           <span>Powered by PopPay</span>
           <span aria-hidden="true">·</span>
           <span>Direct UPI to {merchantName}</span>
           {supportEmail && (
             <>
               <span aria-hidden="true">·</span>
-              <a href={`mailto:${supportEmail}`} className="underline hover:text-[#142e2b]">Support: {supportEmail}</a>
+              <a href={`mailto:${supportEmail}`} className={`underline ${checkoutDark ? 'hover:text-white' : 'hover:text-[#142e2b]'}`}>Support: {supportEmail}</a>
             </>
           )}
           <span aria-hidden="true">·</span>

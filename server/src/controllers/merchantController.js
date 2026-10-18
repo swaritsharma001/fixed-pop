@@ -86,6 +86,7 @@ async function updateBranding(req, res, next) {
     merchant.branding = {
       displayName: parsed.data.displayName || nameToSet,
       brandColor: parsed.data.brandColor || merchant.branding?.brandColor || '#126b58',
+      checkoutTheme: parsed.data.checkoutTheme || merchant.branding?.checkoutTheme || 'light',
       logoUrl: parsed.data.logoUrl || null,
       tagline: parsed.data.tagline || null,
       supportEmail: parsed.data.supportEmail || null,

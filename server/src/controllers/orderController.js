@@ -130,6 +130,7 @@ async function publicCheckout(req, res, next) {
       branding: {
         displayName: shopName,
         brandColor: merchant.branding?.brandColor || '#126b58',
+        checkoutTheme: merchant.branding?.checkoutTheme || 'light',
         logoUrl: merchant.branding?.logoUrl || null,
         tagline: merchant.branding?.tagline || null,
         supportEmail: merchant.branding?.supportEmail || null,

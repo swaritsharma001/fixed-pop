@@ -36,6 +36,7 @@ const brandingBodySchema = z
       .trim()
       .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Must be a valid hex color code like #126b58')
       .optional(),
+    checkoutTheme: z.enum(['light', 'dark', 'auto']).optional(),
     logoUrl: z
       .string()
       .trim()

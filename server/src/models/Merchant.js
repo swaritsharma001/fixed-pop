@@ -22,6 +22,7 @@ const brandingSchema = new mongoose.Schema(
   {
     displayName: { type: String, default: null, trim: true, maxlength: 120 },
     brandColor: { type: String, default: '#126b58', trim: true, maxlength: 20 },
+    checkoutTheme: { type: String, enum: ['light', 'dark', 'auto'], default: 'light' },
     logoUrl: { type: String, default: null, trim: true, maxlength: 2048 },
     tagline: { type: String, default: null, trim: true, maxlength: 200 },
     supportEmail: { type: String, default: null, trim: true, maxlength: 254 },

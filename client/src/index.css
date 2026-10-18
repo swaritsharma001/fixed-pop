@@ -23,6 +23,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html.dark {
+  color-scheme: dark;
+  --canvas: #090f0e;
+  --paper: #111a18;
+  --ink: #eaf3ee;
+  --muted: #8ca097;
+  --line: #1d2e29;
+  --forest: #1ea88a;
+  --forest-dark: #126b58;
+  --mint: #15332b;
+  --lime: #34d399;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -39,28 +52,60 @@ body {
   min-height: 100dvh;
   background: var(--canvas);
   color: var(--ink);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
+html.dark body {
+  background: #090f0e;
+  color: #eaf3ee;
 }
 
-button,
-a {
-  font: inherit;
+html.dark .merchant-shell {
+  background: radial-gradient(ellipse at 92% 0%, rgba(30, 168, 138, .07), transparent 34rem), #090f0e !important;
 }
 
-button:focus-visible,
-a:focus-visible {
-  outline: 3px solid #d29d43;
-  outline-offset: 3px;
+html.dark .checkout-shell {
+  background: radial-gradient(ellipse at 8% 4%, rgba(30, 168, 138, .12), transparent 29rem), #080e0c !important;
 }
 
-.checkout-shell {
-  background:
-    radial-gradient(ellipse at 8% 4%, rgba(199, 232, 168, .2), transparent 29rem),
-    var(--canvas);
+html.dark .panel-shadow {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .25);
+}
+
+/* Dark mode panel background & borders */
+html.dark section.rounded-\[20px\],
+html.dark div.rounded-\[20px\],
+html.dark .panel-dark {
+  background-color: #111a18;
+  border-color: #1c2e29;
+}
+
+html.dark input:not([type="color"]):not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select {
+  background-color: #15221f;
+  border-color: #233731;
+  color: #eaf3ee;
+}
+
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: #1ea88a;
+}
+
+html.dark table thead th {
+  background-color: #0d1514;
+  border-color: #1c2e29;
+  color: #8ca097;
+}
+
+html.dark table tbody tr {
+  border-color: #182824;
+}
+
+html.dark table tbody tr:hover {
+  background-color: #14221f;
 }
 
 .entrance {

@@ -16,6 +16,7 @@ import {
   Link2,
   Mail,
   Monitor,
+  Moon,
   Palette,
   Plus,
   RefreshCw,
@@ -23,6 +24,7 @@ import {
   Smartphone,
   Sparkles,
   Store,
+  Sun,
   Undo2,
   Webhook,
   WalletCards,
@@ -1030,16 +1032,26 @@ const BRAND_PALETTES = [
   { label: 'Tangerine Sun', hex: '#ea580c' },
   { label: 'Vibrant Crimson', hex: '#e11d48' },
   { label: 'Midnight Slate', hex: '#1e293b' },
+  { label: 'Cyber Pink', hex: '#db2777' },
+  { label: 'Neon Teal', hex: '#0d9488' },
+  { label: 'Sunset Gold', hex: '#d97706' },
+  { label: 'Indigo Glow', hex: '#4f46e5' },
+  { label: 'Obsidian Dark', hex: '#18181b' },
+  { label: 'Coral Rose', hex: '#f43f5e' },
+  { label: 'Deep Cyan', hex: '#0891b2' },
+  { label: 'Violet Night', hex: '#6d28d9' },
 ];
 
 export function BrandingPage() {
   const { merchant, refreshMerchant, setMerchant } = useMerchant();
   const [displayName, setDisplayName] = useState(merchant?.branding?.displayName || merchant?.name || '');
   const [brandColor, setBrandColor] = useState(merchant?.branding?.brandColor || '#126b58');
+  const [checkoutTheme, setCheckoutTheme] = useState(merchant?.branding?.checkoutTheme || 'light');
   const [logoUrl, setLogoUrl] = useState(merchant?.branding?.logoUrl || '');
   const [tagline, setTagline] = useState(merchant?.branding?.tagline || '');
   const [supportEmail, setSupportEmail] = useState(merchant?.branding?.supportEmail || '');
   const [previewDevice, setPreviewDevice] = useState('mobile');
+  const [previewTheme, setPreviewTheme] = useState(merchant?.branding?.checkoutTheme === 'dark' ? 'dark' : 'light');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -1047,11 +1059,18 @@ export function BrandingPage() {
     if (merchant) {
       setDisplayName(merchant.branding?.displayName || merchant.name || '');
       setBrandColor(merchant.branding?.brandColor || '#126b58');
+      setCheckoutTheme(merchant.branding?.checkoutTheme || 'light');
+      setPreviewTheme(merchant.branding?.checkoutTheme === 'dark' ? 'dark' : 'light');
       setLogoUrl(merchant.branding?.logoUrl || '');
       setTagline(merchant.branding?.tagline || '');
       setSupportEmail(merchant.branding?.supportEmail || '');
     }
   }, [merchant]);
+
+  function randomizeColor() {
+    const randomHex = BRAND_PALETTES[Math.floor(Math.random() * BRAND_PALETTES.length)].hex;
+    setBrandColor(randomHex);
+  }
 
   async function saveBranding(e) {
     e?.preventDefault();
@@ -1062,6 +1081,7 @@ export function BrandingPage() {
         name: displayName.trim() || merchant.name,
         displayName: displayName.trim() || merchant.name,
         brandColor,
+        checkoutTheme,
         logoUrl: logoUrl.trim() || null,
         tagline: tagline.trim() || null,
         supportEmail: supportEmail.trim() || null,
@@ -1069,7 +1089,7 @@ export function BrandingPage() {
       const res = await updateBranding(payload);
       if (refreshMerchant) await refreshMerchant();
       else if (setMerchant) setMerchant((curr) => ({ ...curr, ...res }));
-      setMessage({ tone: 'success', text: 'Checkout look and branding successfully saved!' });
+      setMessage({ tone: 'success', text: 'Checkout look, theme mode and branding successfully saved!' });
     } catch (err) {
       setMessage({ tone: 'error', text: err.message || 'Could not save branding settings.' });
     } finally {
@@ -1228,12 +1248,63 @@ export function BrandingPage() {
 
           <Panel>
             <PanelTitle
-              title="Brand theme color"
-              detail="Select a signature color for checkout buttons, highlights, and status accents."
+              title="Brand theme color & appearance"
+              detail="Select a signature color for buttons, highlights, and configure your checkout theme appearance."
             />
-            <div className="space-y-5 p-5 sm:p-6">
+            <div className="space-y-6 p-5 sm:p-6">
+              {/* Checkout Theme Appearance Selector */}
               <div>
-                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#436458]">Preset Palettes</p>
+                <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                  Checkout Theme Appearance
+                </p>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { id: 'light', label: 'Light Theme', icon: Sun, detail: 'Clean ivory & white' },
+                    { id: 'dark', label: 'Dark Theme', icon: Moon, detail: 'OLED obsidian & neon' },
+                    { id: 'auto', label: 'Auto (System)', icon: Sparkles, detail: 'Matches device' },
+                  ].map((mode) => {
+                    const active = checkoutTheme === mode.id;
+                    const ModeIcon = mode.icon;
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => {
+                          setCheckoutTheme(mode.id);
+                          if (mode.id !== 'auto') setPreviewTheme(mode.id);
+                        }}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-center transition ${
+                          active
+                            ? 'border-[#126b58] bg-[#f0f6f2] dark:bg-[#152e25] dark:border-[#34d399] shadow-sm ring-2 ring-[#126b58]/20'
+                            : 'border-[#e2e8e0] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] text-[#697f74] hover:border-[#ccd7cb]'
+                        }`}
+                      >
+                        <ModeIcon className={`h-4 w-4 ${active ? 'text-[#126b58] dark:text-[#34d399]' : 'text-[#82968c]'}`} />
+                        <span className={`text-xs font-bold ${active ? 'text-[#142e2b] dark:text-[#eaf3ee]' : 'text-[#697f74] dark:text-[#8ea299]'}`}>
+                          {mode.label}
+                        </span>
+                        <span className="text-[10px] text-[#84968c] dark:text-[#71857c] hidden sm:inline">{mode.detail}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Preset Palettes */}
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                    Preset Palettes
+                  </p>
+                  <button
+                    type="button"
+                    onClick={randomizeColor}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-2.5 py-1 text-[11px] font-bold text-[#126b58] dark:text-[#34d399] hover:bg-[#edf4ec] transition shadow-2xs"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Shuffle Color
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                   {BRAND_PALETTES.map((palette) => {
                     const active = brandColor.toLowerCase() === palette.hex.toLowerCase();
@@ -1244,27 +1315,28 @@ export function BrandingPage() {
                         onClick={() => setBrandColor(palette.hex)}
                         className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
                           active
-                            ? 'border-[#126b58] bg-[#f0f6f2] shadow-sm ring-2 ring-[#126b58]/20'
-                            : 'border-[#e2e8e0] bg-white hover:border-[#ccd7cb]'
+                            ? 'border-[#126b58] bg-[#f0f6f2] dark:bg-[#152e25] dark:border-[#34d399] shadow-sm ring-2 ring-[#126b58]/20'
+                            : 'border-[#e2e8e0] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] hover:border-[#ccd7cb]'
                         }`}
                       >
                         <span
                           className="h-5 w-5 shrink-0 rounded-full border border-black/15 shadow-xs"
                           style={{ backgroundColor: palette.hex }}
                         />
-                        <span className="truncate text-xs font-semibold text-[#1e3b33]">{palette.label}</span>
+                        <span className="truncate text-xs font-semibold text-[#1e3b33] dark:text-[#dce7e1]">{palette.label}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="pt-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#436458]">
-                  Custom Hex Code
+              {/* Custom Color Freedom */}
+              <div className="pt-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                  Any Custom Brand Color (Hex / Color Picker)
                 </label>
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="relative flex h-11 items-center gap-2 rounded-xl border border-[#dce5dc] bg-white px-3 shadow-xs">
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <div className="relative flex h-11 items-center gap-2.5 rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3 shadow-xs">
                     <input
                       type="color"
                       value={brandColor.startsWith('#') && brandColor.length === 7 ? brandColor : '#126b58'}
@@ -1276,11 +1348,11 @@ export function BrandingPage() {
                       maxLength="7"
                       value={brandColor}
                       onChange={(e) => setBrandColor(e.target.value)}
-                      className="w-24 font-mono text-sm font-bold uppercase text-[#1c3831] outline-none"
+                      className="w-24 font-mono text-sm font-bold uppercase text-[#1c3831] dark:text-[#eaf3ee] outline-none bg-transparent"
                     />
                   </div>
-                  <div className="flex-1 rounded-xl bg-[#f7f9f5] px-3.5 py-2.5 text-[11px] text-[#697f74] border border-[#e5ebe2]">
-                    High contrast colors provide the highest conversion rate on UPI apps.
+                  <div className="flex-1 min-w-[200px] rounded-xl bg-[#f7f9f5] dark:bg-[#13201d] px-3.5 py-2.5 text-[11px] text-[#697f74] dark:text-[#8ea299] border border-[#e5ebe2] dark:border-[#1c2e29]">
+                    Choose ANY custom color hex code. Your checkout buttons, highlights and QR glows will dynamically adopt this color.
                   </div>
                 </div>
               </div>
@@ -1301,46 +1373,81 @@ export function BrandingPage() {
           </Panel>
         </div>
 
-        {/* Right Column: Razorpay-Style Live Device Mockup */}
+        {/* Right Column: Razorpay-Style Live Device Mockup with Light/Dark Theme Switcher */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#527466]">
-              <Eye className="h-4 w-4 text-[#126b58]" />
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+            <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#527466] dark:text-[#4ade80]">
+              <Eye className="h-4 w-4 text-[#126b58] dark:text-[#34d399]" />
               Live Checkout Preview
             </span>
-            <div className="flex items-center rounded-lg border border-[#dce5dc] bg-white p-0.5 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setPreviewDevice('mobile')}
-                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition ${
-                  previewDevice === 'mobile'
-                    ? 'bg-[#126b58] text-white shadow-xs'
-                    : 'text-[#647c71] hover:text-[#126b58]'
-                }`}
-              >
-                <Smartphone className="h-3.5 w-3.5" />
-                Mobile
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewDevice('desktop')}
-                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition ${
-                  previewDevice === 'desktop'
-                    ? 'bg-[#126b58] text-white shadow-xs'
-                    : 'text-[#647c71] hover:text-[#126b58]'
-                }`}
-              >
-                <Monitor className="h-3.5 w-3.5" />
-                Desktop
-              </button>
+            <div className="flex items-center gap-2">
+              {/* Preview Theme Switcher (Light / Dark) */}
+              <div className="flex items-center rounded-lg border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] p-0.5 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setPreviewTheme('light')}
+                  title="Preview in Light theme"
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
+                    previewTheme === 'light'
+                      ? 'bg-[#126b58] text-white shadow-xs'
+                      : 'text-[#647c71] hover:text-[#126b58]'
+                  }`}
+                >
+                  <Sun className="h-3 w-3" />
+                  Light
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTheme('dark')}
+                  title="Preview in Dark theme"
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
+                    previewTheme === 'dark'
+                      ? 'bg-[#126b58] text-white shadow-xs'
+                      : 'text-[#647c71] hover:text-[#126b58]'
+                  }`}
+                >
+                  <Moon className="h-3 w-3" />
+                  Dark
+                </button>
+              </div>
+
+              {/* Device Switcher (Mobile / Desktop) */}
+              <div className="flex items-center rounded-lg border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] p-0.5 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setPreviewDevice('mobile')}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                    previewDevice === 'mobile'
+                      ? 'bg-[#126b58] text-white shadow-xs'
+                      : 'text-[#647c71] hover:text-[#126b58]'
+                  }`}
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  Mobile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewDevice('desktop')}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                    previewDevice === 'desktop'
+                      ? 'bg-[#126b58] text-white shadow-xs'
+                      : 'text-[#647c71] hover:text-[#126b58]'
+                  }`}
+                >
+                  <Monitor className="h-3.5 w-3.5" />
+                  Desktop
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Interactive Mockup Container */}
-          <div className="relative rounded-[28px] border border-[#dce6dc] bg-[#eef3eb] p-4 shadow-xl sm:p-6 flex flex-col items-center">
+          <div className="relative rounded-[28px] border border-[#dce6dc] dark:border-[#1d2f2a] bg-[#eef3eb] dark:bg-[#0c1613] p-4 shadow-xl sm:p-6 flex flex-col items-center">
             {previewDevice === 'mobile' ? (
               /* Mobile Phone Bezel Mockup */
-              <div className="w-full max-w-[340px] rounded-[38px] border-[7px] border-[#1e2a27] bg-[#f3f5ef] p-3 shadow-2xl overflow-hidden">
+              <div className={`w-full max-w-[340px] rounded-[38px] border-[7px] border-[#1e2a27] p-3 shadow-2xl overflow-hidden transition-colors ${
+                previewTheme === 'dark' ? 'bg-[#080e0c]' : 'bg-[#f3f5ef]'
+              }`}>
                 {/* Phone Speaker Notch */}
                 <div className="mx-auto mb-3 flex h-4 w-28 items-center justify-center rounded-full bg-[#1e2a27]">
                   <div className="h-2 w-2 rounded-full bg-[#121c1a]" />
@@ -1348,16 +1455,28 @@ export function BrandingPage() {
                 </div>
 
                 {/* Mobile Screen Content */}
-                <div className="rounded-[24px] bg-[#fffefa] p-4 shadow-sm border border-[#e4ece2]">
+                <div className={`rounded-[24px] p-4 shadow-sm border transition-colors ${
+                  previewTheme === 'dark'
+                    ? 'bg-[#111a18] border-[#1d2f29] text-[#eaf3ee]'
+                    : 'bg-[#fffefa] border-[#e4ece2] text-[#142e2b]'
+                }`}>
                   {/* Shop Header */}
-                  <div className="mb-4 flex items-start justify-between gap-2.5 border-b border-[#edf2ea] pb-3">
+                  <div className={`mb-4 flex items-start justify-between gap-2.5 border-b pb-3 ${
+                    previewTheme === 'dark' ? 'border-[#1b2b26]' : 'border-[#edf2ea]'
+                  }`}>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-[#829289]">Paying to</p>
-                      <h4 className="truncate font-[var(--font-display)] text-[16px] font-bold text-[#142e2b]">
+                      <p className={`text-[9px] font-bold uppercase tracking-wider ${
+                        previewTheme === 'dark' ? 'text-[#8ca097]' : 'text-[#829289]'
+                      }`}>Paying to</p>
+                      <h4 className={`truncate font-[var(--font-display)] text-[16px] font-bold ${
+                        previewTheme === 'dark' ? 'text-[#f0f7f3]' : 'text-[#142e2b]'
+                      }`}>
                         {effectiveShopName}
                       </h4>
                       {tagline && (
-                        <p className="truncate text-[10px] text-[#6d7f76]">{tagline}</p>
+                        <p className={`truncate text-[10px] ${
+                          previewTheme === 'dark' ? 'text-[#85978f]' : 'text-[#6d7f76]'
+                        }`}>{tagline}</p>
                       )}
                     </div>
                     {logoUrl ? (
@@ -1378,17 +1497,25 @@ export function BrandingPage() {
                   </div>
 
                   {/* Amount Card */}
-                  <div className="rounded-xl border border-[#e5ebe2] bg-[#f8faf6] p-3">
+                  <div className={`rounded-xl border p-3 ${
+                    previewTheme === 'dark'
+                      ? 'border-[#1f332c] bg-[#14221f]'
+                      : 'border-[#e5ebe2] bg-[#f8faf6]'
+                  }`}>
                     <div className="flex items-center justify-between text-[10px] font-bold text-[#71857c]">
                       <span>EXACT AMOUNT</span>
-                      <span className="rounded-full bg-[#edf3eb] px-2 py-0.5 text-[9px] text-[#3e6858]">
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] ${
+                        previewTheme === 'dark' ? 'bg-[#1b352c] text-[#4ade80]' : 'bg-[#edf3eb] text-[#3e6858]'
+                      }`}>
                         ⏱ 09:48
                       </span>
                     </div>
-                    <p className="mt-1 font-[var(--font-display)] text-[26px] font-bold text-[#142e2b]">
+                    <p className={`mt-1 font-[var(--font-display)] text-[26px] font-bold ${
+                      previewTheme === 'dark' ? 'text-[#ffffff]' : 'text-[#142e2b]'
+                    }`}>
                       <span style={{ color: brandColor }} className="mr-0.5 text-[18px]">₹</span>499.24
                     </p>
-                    <p className="mt-1 text-[9px] font-semibold text-[#126b58]">
+                    <p className="mt-1 text-[9px] font-semibold" style={{ color: brandColor }}>
                       Includes 24p unique verification suffix
                     </p>
                   </div>
@@ -1397,7 +1524,10 @@ export function BrandingPage() {
                   <div className="mt-3.5">
                     <button
                       type="button"
-                      style={{ backgroundColor: brandColor }}
+                      style={{
+                        backgroundColor: brandColor,
+                        boxShadow: `0 4px 14px ${brandColor}40`,
+                      }}
                       className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
                     >
                       <span>Pay via UPI App</span>
@@ -1409,26 +1539,40 @@ export function BrandingPage() {
                   </div>
 
                   {/* Merchant UPI ID display */}
-                  <div className="mt-3 rounded-lg border border-[#e4ebe2] bg-white p-2 text-left">
+                  <div className={`mt-3 rounded-lg border p-2 text-left ${
+                    previewTheme === 'dark'
+                      ? 'border-[#1f332c] bg-[#14221f]'
+                      : 'border-[#e4ebe2] bg-white'
+                  }`}>
                     <p className="text-[8px] font-bold uppercase tracking-wider text-[#8b9c92]">Verified UPI ID</p>
-                    <p className="font-mono text-[11px] font-semibold text-[#234b3f] truncate">
+                    <p className={`font-mono text-[11px] font-semibold truncate ${
+                      previewTheme === 'dark' ? 'text-[#4ade80]' : 'text-[#234b3f]'
+                    }`}>
                       {merchant?.upiId || 'merchant@bank'}
                     </p>
                   </div>
 
                   {/* Micro QR Mockup */}
-                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-[#e8eee6] bg-[#f7faf5] p-2">
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white border border-[#dbe4d9] font-mono text-[8px] font-bold text-[#426457]">
+                  <div className={`mt-3 flex items-center gap-3 rounded-xl border p-2 ${
+                    previewTheme === 'dark'
+                      ? 'border-[#1f332c] bg-[#14221f]'
+                      : 'border-[#e8eee6] bg-[#f7faf5]'
+                  }`}>
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white border border-[#dbe4d9] font-mono text-[8px] font-bold text-[#142e2b]">
                       [ QR ]
                     </div>
                     <div className="min-w-0 text-left">
-                      <p className="text-[10px] font-bold text-[#234b3f]">Instant Bank Sync</p>
+                      <p className={`text-[10px] font-bold ${previewTheme === 'dark' ? 'text-[#eaf3ee]' : 'text-[#234b3f]'}`}>
+                        Instant Bank Sync
+                      </p>
                       <p className="text-[9px] text-[#788a81]">Auto-detected within 3 seconds</p>
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="mt-3 border-t border-[#edf2ea] pt-2 text-center text-[8px] text-[#8b9c92]">
+                  <div className={`mt-3 border-t pt-2 text-center text-[8px] ${
+                    previewTheme === 'dark' ? 'border-[#1b2b26] text-[#70847b]' : 'border-[#edf2ea] text-[#8b9c92]'
+                  }`}>
                     Direct UPI to {effectiveShopName}
                     {supportEmail && ` · ${supportEmail}`}
                   </div>
@@ -1436,13 +1580,21 @@ export function BrandingPage() {
               </div>
             ) : (
               /* Desktop Card Mockup */
-              <div className="w-full max-w-[430px] rounded-2xl border border-[#d6e0d4] bg-white shadow-xl overflow-hidden">
+              <div className={`w-full max-w-[430px] rounded-2xl border shadow-xl overflow-hidden transition-colors ${
+                previewTheme === 'dark'
+                  ? 'bg-[#111a18] border-[#1d2f29]'
+                  : 'bg-white border-[#d6e0d4]'
+              }`}>
                 {/* Browser Tab Bar */}
-                <div className="flex items-center gap-1.5 border-b border-[#e5ebe3] bg-[#f4f7f2] px-3 py-2">
+                <div className={`flex items-center gap-1.5 border-b px-3 py-2 ${
+                  previewTheme === 'dark' ? 'border-[#1c2e29] bg-[#0c1514]' : 'border-[#e5ebe3] bg-[#f4f7f2]'
+                }`}>
                   <span className="h-2 w-2 rounded-full bg-[#ff5f56]" />
                   <span className="h-2 w-2 rounded-full bg-[#ffbd2e]" />
                   <span className="h-2 w-2 rounded-full bg-[#27c93f]" />
-                  <span className="ml-2 flex-1 rounded bg-white px-2 py-0.5 font-mono text-[9px] text-[#70847b] truncate">
+                  <span className={`ml-2 flex-1 rounded px-2 py-0.5 font-mono text-[9px] truncate ${
+                    previewTheme === 'dark' ? 'bg-[#15221f] text-[#8ea299]' : 'bg-white text-[#70847b]'
+                  }`}>
                     https://checkout.poppay.in/pay/order_demo
                   </span>
                 </div>
@@ -1450,11 +1602,17 @@ export function BrandingPage() {
                 <div className="p-4 sm:p-5">
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-[#829289]">Paying to</p>
-                      <h4 className="font-[var(--font-display)] text-[18px] font-bold text-[#142e2b]">
+                      <p className={`text-[9px] font-bold uppercase tracking-wider ${
+                        previewTheme === 'dark' ? 'text-[#8ca097]' : 'text-[#829289]'
+                      }`}>Paying to</p>
+                      <h4 className={`font-[var(--font-display)] text-[18px] font-bold ${
+                        previewTheme === 'dark' ? 'text-[#f0f7f3]' : 'text-[#142e2b]'
+                      }`}>
                         {effectiveShopName}
                       </h4>
-                      {tagline && <p className="text-[10px] text-[#6d7f76]">{tagline}</p>}
+                      {tagline && <p className={`text-[10px] ${
+                        previewTheme === 'dark' ? 'text-[#85978f]' : 'text-[#6d7f76]'
+                      }`}>{tagline}</p>}
                     </div>
                     {logoUrl ? (
                       <img
@@ -1466,16 +1624,20 @@ export function BrandingPage() {
                     ) : (
                       <div
                         style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-base font-bold border border-black/5"
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
                       >
                         {initialLetter}
                       </div>
                     )}
                   </div>
 
-                  <div className="rounded-xl border border-[#e5ebe2] bg-[#f8faf6] p-3">
-                    <span className="text-[10px] font-bold text-[#71857c]">EXACT AMOUNT</span>
-                    <p className="mt-1 font-[var(--font-display)] text-[28px] font-bold text-[#142e2b]">
+                  <div className={`rounded-xl border p-3 ${
+                    previewTheme === 'dark' ? 'border-[#1f332c] bg-[#14221f]' : 'border-[#e5ebe2] bg-[#f8faf6]'
+                  }`}>
+                    <p className="text-[10px] font-bold text-[#71857c]">EXACT PAYABLE AMOUNT</p>
+                    <p className={`mt-1 font-[var(--font-display)] text-[28px] font-bold ${
+                      previewTheme === 'dark' ? 'text-white' : 'text-[#142e2b]'
+                    }`}>
                       <span style={{ color: brandColor }} className="mr-0.5 text-[20px]">₹</span>499.24
                     </p>
                   </div>
@@ -1483,7 +1645,10 @@ export function BrandingPage() {
                   <div className="mt-3.5">
                     <button
                       type="button"
-                      style={{ backgroundColor: brandColor }}
+                      style={{
+                        backgroundColor: brandColor,
+                        boxShadow: `0 4px 14px ${brandColor}40`,
+                      }}
                       className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
                     >
                       <span>Pay with UPI App</span>
@@ -1491,16 +1656,18 @@ export function BrandingPage() {
                     </button>
                   </div>
 
-                  <div className="mt-3 text-center text-[9px] text-[#86998f]">
+                  <div className={`mt-3 text-center text-[9px] ${
+                    previewTheme === 'dark' ? 'text-[#70847b]' : 'text-[#86998f]'
+                  }`}>
                     Powered by PopPay · Direct UPI to {effectiveShopName}
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="mt-4 flex items-center gap-2 text-center text-xs text-[#527466]">
-              <Sparkles className="h-3.5 w-3.5 text-[#126b58]" />
-              <span>Real-time instant rendering preview</span>
+            <div className="mt-4 flex items-center gap-2 text-center text-xs text-[#527466] dark:text-[#34d399]">
+              <Sparkles className="h-3.5 w-3.5 text-[#126b58] dark:text-[#34d399]" />
+              <span>Real-time instant rendering preview ({previewTheme.toUpperCase()} MODE)</span>
             </div>
           </div>
         </div>
