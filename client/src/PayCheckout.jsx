@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
+  buildApiUrl,
   getCheckoutStatus,
   getPublicCheckout,
   submitCheckoutUtr,
@@ -341,7 +342,7 @@ export default function PayCheckout() {
     // ── Primary: Server-Sent Events (server pushes; no repeated requests) ────
     let es = null;
     try {
-      es = new EventSource(`/api/v1/checkout/${encodeURIComponent(orderId)}/events`);
+      es = new EventSource(buildApiUrl(`/api/v1/checkout/${encodeURIComponent(orderId)}/events`));
 
       es.addEventListener('status', (event) => {
         if (!active) return;

@@ -17,29 +17,91 @@ const authLimiter = rateLimit({
 });
 
 app.disable('x-powered-by');
-app.use(helmet());
-app.use((req, res, next) => {
-  const origin = req.get('origin');
-  if (!origin) return next();
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
+
+function isAllowedOrigin(origin, req) {
+  if (!origin) return true;
   let parsedOrigin;
   try {
     parsedOrigin = new URL(origin);
   } catch {
-    return res.status(403).json({ error: 'Origin not allowed' });
+    return false;
   }
+  if (!['http:', 'https:'].includes(parsedOrigin.protocol)) return false;
+  if (parsedOrigin.username || parsedOrigin.password) return false;
+
+  const originHost = parsedOrigin.host.toLowerCase();
+  const reqHost = (req.get('host') || '').toLowerCase();
+
+  // Same host as API
+  if (originHost === reqHost) return true;
+
+  // PopPay domains
   if (
-    !['http:', 'https:'].includes(parsedOrigin.protocol) ||
-    parsedOrigin.origin !== origin ||
-    parsedOrigin.username ||
-    parsedOrigin.password ||
-    parsedOrigin.host !== req.get('host')
+    originHost === 'poppay.tech' ||
+    originHost === 'www.poppay.tech' ||
+    originHost === 'api.poppay.tech' ||
+    originHost.endsWith('.poppay.tech')
   ) {
+    return true;
+  }
+
+  // Vercel preview and production deployments
+  if (originHost.endsWith('.vercel.app')) {
+    return true;
+  }
+
+  // Local development
+  if (
+    originHost === 'localhost' ||
+    originHost.startsWith('localhost:') ||
+    originHost === '127.0.0.1' ||
+    originHost.startsWith('127.0.0.1:')
+  ) {
+    return true;
+  }
+
+  // Configured custom origins from env
+  const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((o) => o.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (envOrigins.includes(origin.toLowerCase()) || envOrigins.includes(originHost)) {
+    return true;
+  }
+
+  // Public checkout and payment routes allow any web origin so merchants can embed checkout or integrate from their sites
+  const reqPath = req.path || '';
+  if (
+    reqPath.startsWith('/api/v1/checkout') ||
+    reqPath.startsWith('/checkout') ||
+    reqPath.startsWith('/pay')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  if (!origin) return next();
+
+  if (!isAllowedOrigin(origin, req)) {
     return res.status(403).json({ error: 'Origin not allowed' });
   }
+
   res.vary('Origin');
   res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,X-Requested-With,Accept,Origin');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   return next();
 });

@@ -1,15 +1,57 @@
+export function getApiBaseUrl() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string') {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (
+      hostname === 'poppay.tech' ||
+      hostname === 'www.poppay.tech' ||
+      hostname.endsWith('.vercel.app')
+    ) {
+      return 'https://api.poppay.tech';
+    }
+  }
+  return '';
+}
+
+export const API_BASE_URL = getApiBaseUrl();
+
+export function buildApiUrl(path) {
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const base = getApiBaseUrl();
+  if (!base) return path;
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
+export function getToken() {
+  try {
+    return (
+      sessionStorage.getItem('poppay:token') ||
+      localStorage.getItem('poppay:token') ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
 async function request(path, options = {}) {
   const { auth = true, ...fetchOptions } = options;
   const headers = {
     ...(fetchOptions.body ? { 'Content-Type': 'application/json' } : {}),
     ...fetchOptions.headers,
   };
-  const token = auth ? sessionStorage.getItem('poppay:token') : null;
+  const token = auth ? getToken() : null;
   if (token) headers.Authorization = `Bearer ${token}`;
-  const response = await fetch(path, {
+  const response = await fetch(buildApiUrl(path), {
     ...fetchOptions,
     headers,
   });
+  if (response.status === 401 && auth) {
+    clearSession();
+  }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(payload.error || `Request failed (${response.status})`);
@@ -184,15 +226,21 @@ function toQuery(params) {
 }
 
 export function saveSession(token) {
-  sessionStorage.setItem('poppay:token', token);
+  try {
+    sessionStorage.setItem('poppay:token', token);
+    localStorage.setItem('poppay:token', token);
+  } catch {}
 }
 
 export function clearSession() {
-  sessionStorage.removeItem('poppay:token');
+  try {
+    sessionStorage.removeItem('poppay:token');
+    localStorage.removeItem('poppay:token');
+  } catch {}
 }
 
 export function hasSession() {
-  return Boolean(sessionStorage.getItem('poppay:token'));
+  return Boolean(getToken());
 }
 
 export { request };

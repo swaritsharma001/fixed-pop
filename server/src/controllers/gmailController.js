@@ -28,7 +28,11 @@ async function callback(req, res) {
 
   try {
     await completeOAuth(parsed.data.code, parsed.data.state);
-    return res.redirect(303, '/dashboard?gmail=connected');
+    const frontendBase = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://poppay.tech' : '');
+    const redirectUrl = frontendBase
+      ? `${frontendBase.replace(/\/+$/, '')}/dashboard?gmail=connected`
+      : '/dashboard?gmail=connected';
+    return res.redirect(303, redirectUrl);
   } catch (error) {
     const providerError = error?.response?.data?.error;
     console.error('Gmail OAuth callback failed', {

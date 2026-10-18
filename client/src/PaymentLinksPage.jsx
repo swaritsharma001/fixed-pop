@@ -81,7 +81,9 @@ export function PaymentLinksPage() {
       }
 
       const created = await createPaymentLink(payload);
-      const fullUrl = `${window.location.origin}${created.checkoutUrl}`;
+      const fullUrl = created.checkoutUrl?.startsWith('http')
+        ? created.checkoutUrl
+        : `${window.location.origin}${created.checkoutUrl?.startsWith('/') ? '' : '/'}${created.checkoutUrl}`;
 
       // Generate QR Code for sharing
       try {
@@ -355,7 +357,9 @@ export function PaymentLinksPage() {
               </thead>
               <tbody className="divide-y divide-[#edf3eb]">
                 {links.map((item) => {
-                  const fullUrl = `${window.location.origin}${item.checkoutUrl}`;
+                  const fullUrl = item.checkoutUrl?.startsWith('http')
+                    ? item.checkoutUrl
+                    : `${window.location.origin}${item.checkoutUrl?.startsWith('/') ? '' : '/'}${item.checkoutUrl}`;
                   return (
                     <tr key={item.orderId} className="hover:bg-[#f9fbf8]">
                       <td className="py-3.5 pl-1 pr-3 font-semibold text-[#183930]">

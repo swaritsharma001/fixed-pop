@@ -12,6 +12,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/pay/:orderId" element={<PayCheckout />} />
+      <Route path="/checkout/:orderId" element={<PayCheckout />} />
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/privacy" element={<PrivacyPage />} />
