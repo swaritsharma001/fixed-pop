@@ -3,7 +3,7 @@
 
   var script = document.currentScript;
   var sdkUrl = script && script.src ? script.src : new URL('/checkout.js', location.href).href;
-  var checkoutOrigin = "https://8e940b42-8477-4eb4-be4d-bdcf0ab42dba-00-31uq9ahd8svan.pike.replit.dev"
+  var checkoutOrigin = "https://fixed-pop--techysharma001.replit.app"
   var styleId = 'poppay-checkout-sdk-styles';
 
   function injectStyles() {
