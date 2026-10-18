@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthPage } from './AuthPages.jsx';
-import { DashboardPage, IntegrationPage, OrdersPage, PaymentsPage, SettingsPage, UnmatchedPage } from './MerchantPages.jsx';
+import { BrandingPage, DashboardPage, IntegrationPage, OrdersPage, PaymentsPage, SettingsPage, UnmatchedPage } from './MerchantPages.jsx';
+import { PaymentLinksPage } from './PaymentLinksPage.jsx';
+import { AdminPage } from './AdminPage.jsx';
 import { PrivateArea } from './MerchantShell.jsx';
 import PayCheckout from './PayCheckout.jsx';
 import PrivacyPage from './PrivacyPage.jsx';
@@ -15,11 +17,14 @@ export default function App() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route element={<PrivateArea />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/payment-links" element={<PaymentLinksPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/unmatched" element={<UnmatchedPage />} />
+        <Route path="/branding" element={<BrandingPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/integration" element={<IntegrationPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route path="/" element={<Navigate to={hasSession() ? '/dashboard' : '/login'} replace />} />
       <Route path="*" element={<Navigate to={hasSession() ? '/dashboard' : '/login'} replace />} />

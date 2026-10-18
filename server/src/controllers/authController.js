@@ -25,6 +25,15 @@ function publicMerchant(merchant) {
     allowedSenders: merchant.allowedSenders || [],
     publicKey: merchant.keys?.publicKey || null,
     webhookUrl: merchant.webhookUrl || null,
+    branding: {
+      displayName: merchant.branding?.displayName || merchant.name,
+      brandColor: merchant.branding?.brandColor || '#126b58',
+      logoUrl: merchant.branding?.logoUrl || null,
+      tagline: merchant.branding?.tagline || null,
+      supportEmail: merchant.branding?.supportEmail || null,
+    },
+    role: merchant.role || 'merchant',
+    isBanned: Boolean(merchant.isBanned),
     createdAt: merchant.createdAt,
   };
 }
@@ -77,6 +86,9 @@ async function login(req, res, next) {
     );
     if (!merchant || !(await bcrypt.compare(parsed.data.password, merchant.passwordHash))) {
       return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    if (merchant.isBanned) {
+      return res.status(403).json({ error: 'Your account has been suspended by the administrator.' });
     }
 
     return res.json({

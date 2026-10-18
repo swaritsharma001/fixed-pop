@@ -17,6 +17,37 @@ async function createPendingOrder({ merchantId, amountPaise, receipt, redirectUr
     { $set: { status: 'EXPIRED' } },
   );
   const baseAmount = paiseToRupees(amountPaise);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  // 1. Prioritize exact amount so ₹5.00 stays exactly ₹5.00
+  const exactOccupied = await Order.exists({
+    merchantId,
+    status: 'PENDING',
+    payableAmount: mongoose.Types.Decimal128.fromString(baseAmount),
+  });
+
+  if (!exactOccupied) {
+    const order = new Order({
+      merchantId,
+      orderId: createOrderId(),
+      receipt,
+      baseAmount,
+      payableAmount: baseAmount,
+      status: 'PENDING',
+      redirectUrl: redirectUrl || null,
+      expiresAt,
+    });
+
+    try {
+      await order.save();
+      return order;
+    } catch (error) {
+      if (error.code !== 11000) throw error;
+      // Concurrent race occupied exact amount; fallback to offset below
+    }
+  }
+
+  // 2. Only if exact amount is already occupied by a simultaneous active order, use unique paise suffix
   const minPayable = mongoose.Types.Decimal128.fromString(
     paiseToRupees(amountPaise + 1),
   );
@@ -31,7 +62,6 @@ async function createPendingOrder({ merchantId, amountPaise, receipt, redirectUr
   const usedPaise = new Set(occupied.map((order) => decimalToPaise(order.payableAmount)));
   const startingOffset = crypto.randomInt(0, 99);
   const attemptedPaise = new Set();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   for (let attempt = 0; attempt < 99; attempt += 1) {
     const payablePaise = pickUniquePayablePaise(

@@ -27,9 +27,48 @@ const webhookUrlSchema = z
 const upiBodySchema = z.object({ upiId: upiIdSchema }).strict();
 const webhookBodySchema = z.object({ webhookUrl: webhookUrlSchema }).strict();
 
+const brandingBodySchema = z
+  .object({
+    name: z.string().trim().min(2).max(120).optional(),
+    displayName: z.string().trim().min(2).max(120).optional(),
+    brandColor: z
+      .string()
+      .trim()
+      .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Must be a valid hex color code like #126b58')
+      .optional(),
+    logoUrl: z
+      .string()
+      .trim()
+      .url('Must be a valid URL starting with http:// or https://')
+      .max(2048)
+      .nullable()
+      .optional()
+      .or(z.literal('')),
+    tagline: z.string().trim().max(200).nullable().optional().or(z.literal('')),
+    supportEmail: z.string().trim().email('Invalid support email address').nullable().optional().or(z.literal('')),
+  })
+  .strict();
+
+const profileBodySchema = z
+  .object({
+    name: z.string().trim().min(2).max(120).optional(),
+    upiId: upiIdSchema.optional(),
+  })
+  .strict();
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(8).max(128),
+    newPassword: z.string().min(8).max(128),
+  })
+  .strict();
+
 module.exports = {
   upiIdSchema,
   webhookUrlSchema,
   upiBodySchema,
   webhookBodySchema,
+  brandingBodySchema,
+  profileBodySchema,
+  changePasswordSchema,
 };

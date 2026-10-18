@@ -6,7 +6,7 @@ const TOKEN_LIFETIME = '7d';
 
 function createAccessToken(merchant) {
   return jwt.sign(
-    { email: merchant.email, type: 'merchant' },
+    { email: merchant.email, type: 'merchant', role: merchant.role || 'merchant' },
     getRequiredEnv('JWT_SECRET'),
     {
       algorithm: 'HS256',

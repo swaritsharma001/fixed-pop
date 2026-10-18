@@ -2,6 +2,7 @@ const Merchant = require('../models/Merchant');
 const Payment = require('../models/Payment');
 const WebhookLog = require('../models/WebhookLog');
 const { decimalToPaise, paiseToRupees } = require('../utils/money');
+const { notifyOrderUpdate } = require('./sseService');
 
 async function settleOrderFromVerifiedAlert({
   session,
@@ -71,4 +72,4 @@ async function settleOrderFromVerifiedAlert({
   return payment;
 }
 
-module.exports = { settleOrderFromVerifiedAlert };
+module.exports = { settleOrderFromVerifiedAlert, notifyOrderUpdate };

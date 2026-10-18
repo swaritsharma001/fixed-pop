@@ -3,7 +3,13 @@
 
   var script = document.currentScript;
   var sdkUrl = script && script.src ? script.src : new URL('/checkout.js', location.href).href;
-  var checkoutOrigin = "https://fixed-pop--techysharma001.replit.app"
+  var defaultOrigin = (function () {
+    try {
+      return new URL(sdkUrl).origin;
+    } catch {
+      return location.origin;
+    }
+  })();
   var styleId = 'poppay-checkout-sdk-styles';
 
   function injectStyles() {
@@ -42,6 +48,9 @@
     this.key = options.key;
     this.orderId = options.order_id;
     this.name = options.name || '';
+    this.checkoutOrigin = options.baseUrl
+      ? String(options.baseUrl).replace(/\/$/, '')
+      : (global.POPPAY_BASE_URL ? String(global.POPPAY_BASE_URL).replace(/\/$/, '') : defaultOrigin);
     this.handler = typeof options.handler === 'function' ? options.handler : function () {};
     this.onDismiss = typeof options.onDismiss === 'function' ? options.onDismiss : function () {};
     this.overlay = null;
@@ -77,7 +86,7 @@
     iframe.title = this.name ? 'Checkout for ' + this.name : 'PopPay checkout';
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
     iframe.allow = 'clipboard-write';
-    iframe.src = new URL('/pay/' + encodeURIComponent(this.orderId), checkoutOrigin).href;
+    iframe.src = new URL('/pay/' + encodeURIComponent(this.orderId), this.checkoutOrigin).href;
 
     modal.appendChild(closeButton);
     modal.appendChild(iframe);
@@ -88,7 +97,7 @@
 
     var self = this;
     this.boundMessage = function (event) {
-      if (!self.iframe || event.origin !== checkoutOrigin || event.source !== self.iframe.contentWindow) {
+      if (!self.iframe || event.origin !== self.checkoutOrigin || event.source !== self.iframe.contentWindow) {
         return;
       }
       var data = event.data;

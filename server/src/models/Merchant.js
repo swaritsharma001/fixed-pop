@@ -18,6 +18,17 @@ const keysSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const brandingSchema = new mongoose.Schema(
+  {
+    displayName: { type: String, default: null, trim: true, maxlength: 120 },
+    brandColor: { type: String, default: '#126b58', trim: true, maxlength: 20 },
+    logoUrl: { type: String, default: null, trim: true, maxlength: 2048 },
+    tagline: { type: String, default: null, trim: true, maxlength: 200 },
+    supportEmail: { type: String, default: null, trim: true, maxlength: 254 },
+  },
+  { _id: false },
+);
+
 const merchantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 120 },
@@ -39,6 +50,10 @@ const merchantSchema = new mongoose.Schema(
     keys: { type: keysSchema, default: () => ({}) },
     webhookUrl: { type: String, default: null, trim: true, maxlength: 2048 },
     webhookSecret: { type: String, default: null, select: false },
+    branding: { type: brandingSchema, default: () => ({}) },
+    role: { type: String, enum: ['merchant', 'admin'], default: 'merchant' },
+    isBanned: { type: Boolean, default: false },
+    bannedReason: { type: String, default: null, trim: true, maxlength: 500 },
   },
   { timestamps: true },
 );

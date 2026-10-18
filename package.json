@@ -10,6 +10,7 @@
     "dev:server": "node --watch server/src/index.js",
     "dev:client": "vite --config client/vite.config.mjs",
     "dev:poppay": "concurrently -k -n API,WEB \"npm:dev:server\" \"npm:dev:client\"",
+    "build": "vite build --config client/vite.config.mjs",
     "build:client": "vite build --config client/vite.config.mjs"
   },
   "dependencies": {

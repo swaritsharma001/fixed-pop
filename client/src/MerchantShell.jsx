@@ -8,9 +8,12 @@ import {
   Code2,
   Gauge,
   KeyRound,
+  Link2,
   LogOut,
   Menu,
+  Palette,
   Settings2,
+  Shield,
   ShieldCheck,
   Store,
   WalletCards,
@@ -52,6 +55,7 @@ const navGroups = [
     label: 'Workspace',
     links: [
       { to: '/dashboard', label: 'Overview', icon: Gauge, end: true },
+      { to: '/payment-links', label: 'Payment Links', icon: Link2 },
       { to: '/orders', label: 'Orders', icon: Clipboard },
       { to: '/payments', label: 'Payments', icon: WalletCards },
       { to: '/unmatched', label: 'Needs matching', icon: Activity },
@@ -60,6 +64,7 @@ const navGroups = [
   {
     label: 'Manage',
     links: [
+      { to: '/branding', label: 'Checkout & Branding', icon: Palette },
       { to: '/settings', label: 'Settings', icon: Settings2 },
       { to: '/integration', label: 'Developer guide', icon: Code2 },
     ],
@@ -81,9 +86,23 @@ function BrandMark({ light = false }) {
 }
 
 function NavItems({ onNavigate }) {
+  const { merchant } = useMerchant();
+
+  const groups = merchant?.role === 'admin'
+    ? [
+        ...navGroups,
+        {
+          label: 'Administration',
+          links: [
+            { to: '/admin', label: 'Universal Admin', icon: ShieldCheck },
+          ],
+        },
+      ]
+    : navGroups;
+
   return (
     <div className="space-y-7">
-      {navGroups.map((group) => (
+      {groups.map((group) => (
         <div key={group.label}>
           <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[.17em] text-[#82978e]">{group.label}</p>
           <nav className="space-y-1" aria-label={group.label}>
@@ -100,6 +119,11 @@ function NavItems({ onNavigate }) {
                 <Icon className="h-[17px] w-[17px]" strokeWidth={1.8} />
                 {label}
                 {label === 'Needs matching' && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#c7e8a8]" />}
+                {label === 'Universal Admin' && (
+                  <span className="ml-auto rounded-md bg-[#c7e8a8] px-1.5 py-0.5 text-[9px] font-bold text-[#123b32]">
+                    ADMIN
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -249,19 +273,23 @@ export function PrivateArea() {
   return (
     <MerchantContext.Provider value={contextValue}>
       <div className="merchant-shell min-h-[100dvh]">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[246px] flex-col bg-[#123b32] px-4 pb-5 pt-6 lg:flex">
-          <div className="px-2"><BrandMark light /></div>
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[.055] px-3.5 py-3">
-            <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#9bb7a9]">Merchant space</p>
-            <p className="mt-1 truncate text-sm font-semibold text-white">{merchant.name}</p>
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[246px] flex-col justify-between overflow-y-auto bg-[#123b32] px-4 pb-6 pt-6 custom-scrollbar overscroll-contain lg:flex">
+          <div className="flex flex-col">
+            <div className="px-2"><BrandMark light /></div>
+            <div className="mt-7 rounded-2xl border border-white/10 bg-white/[.055] px-3.5 py-3">
+              <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#9bb7a9]">Merchant space</p>
+              <p className="mt-1 truncate text-sm font-semibold text-white">{merchant.name}</p>
+            </div>
+            <div className="mt-7"><NavItems /></div>
           </div>
-          <div className="mt-8 flex-1"><NavItems /></div>
-          <Link to="/privacy" className="sidebar-link mb-3 flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white">
-            <ShieldCheck className="h-4 w-4" />Privacy & data
-          </Link>
-          <button type="button" onClick={signOut} className="flex min-h-11 items-center gap-3 rounded-xl border-t border-white/10 px-3 pt-3 text-xs font-semibold text-[#bfd0c8] transition-colors hover:text-white">
-            <LogOut className="h-4 w-4" />Sign out
-          </button>
+          <div className="mt-8 shrink-0 border-t border-white/10 pt-4">
+            <Link to="/privacy" className="sidebar-link mb-2 flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white">
+              <ShieldCheck className="h-4 w-4" />Privacy & data
+            </Link>
+            <button type="button" onClick={signOut} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] transition-colors hover:bg-[#1b493e] hover:text-white">
+              <LogOut className="h-4 w-4" />Sign out
+            </button>
+          </div>
         </aside>
 
         <header className="sticky top-0 z-30 flex h-[62px] items-center justify-between border-b border-[#e1e8e1] bg-[#f7f8f3]/95 px-4 backdrop-blur lg:hidden">
@@ -272,13 +300,29 @@ export function PrivateArea() {
         </header>
 
         {mobileOpen && (
-          <div className="fixed inset-0 z-50 bg-[#102d27]/50 lg:hidden" onClick={() => setMobileOpen(false)}>
-            <div className="h-full w-[min(320px,86vw)] bg-[#123b32] px-4 pb-5 pt-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-              <div className="mb-7 flex items-center justify-between px-2"><BrandMark light /><button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="grid h-9 w-9 place-items-center rounded-lg text-white"><X className="h-5 w-5" /></button></div>
-              <div className="mb-6 rounded-2xl border border-white/10 bg-white/[.055] px-3.5 py-3"><p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#9bb7a9]">Merchant space</p><p className="mt-1 truncate text-sm font-semibold text-white">{merchant.name}</p></div>
-              <NavItems onNavigate={() => setMobileOpen(false)} />
-              <Link to="/privacy" onClick={() => setMobileOpen(false)} className="mt-6 flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8]"><ShieldCheck className="h-4 w-4" />Privacy & data</Link>
-              <button type="button" onClick={signOut} className="mt-4 flex min-h-11 w-full items-center gap-3 border-t border-white/10 px-3 pt-3 text-xs font-semibold text-[#bfd0c8]"><LogOut className="h-4 w-4" />Sign out</button>
+          <div className="fixed inset-0 z-50 bg-[#102d27]/60 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
+            <div className="h-full w-[min(320px,86vw)] flex flex-col justify-between overflow-y-auto bg-[#123b32] px-4 pb-8 pt-6 shadow-2xl custom-scrollbar overscroll-contain" onClick={(event) => event.stopPropagation()}>
+              <div>
+                <div className="mb-7 flex items-center justify-between px-2">
+                  <BrandMark light />
+                  <button type="button" onClick={() => setMobileOpen(false)} aria-label="Close navigation" className="grid h-9 w-9 place-items-center rounded-lg text-white hover:bg-white/10">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="mb-6 rounded-2xl border border-white/10 bg-white/[.055] px-3.5 py-3">
+                  <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#9bb7a9]">Merchant space</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-white">{merchant.name}</p>
+                </div>
+                <NavItems onNavigate={() => setMobileOpen(false)} />
+              </div>
+              <div className="mt-8 shrink-0 border-t border-white/10 pt-4">
+                <Link to="/privacy" onClick={() => setMobileOpen(false)} className="mb-2 flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] hover:bg-[#1b493e] hover:text-white">
+                  <ShieldCheck className="h-4 w-4" />Privacy & data
+                </Link>
+                <button type="button" onClick={signOut} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-xs font-semibold text-[#bfd0c8] transition-colors hover:bg-[#1b493e] hover:text-white">
+                  <LogOut className="h-4 w-4" />Sign out
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -288,16 +332,26 @@ export function PrivateArea() {
             <Outlet />
           </div>
         </main>
-        <nav className="fixed inset-x-0 bottom-0 z-30 grid h-[66px] grid-cols-5 border-t border-[#dfe7de] bg-[#fffefa]/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Primary navigation">
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex h-[66px] items-center justify-start gap-1 overflow-x-auto border-t border-[#dfe7de] bg-[#fffefa]/95 px-3 pb-[env(safe-area-inset-bottom)] backdrop-blur no-scrollbar sm:justify-around lg:hidden" aria-label="Primary navigation">
           {[
             ['/dashboard', 'Home', Gauge],
             ['/orders', 'Orders', Clipboard],
             ['/payments', 'Paid', WalletCards],
             ['/unmatched', 'Match', Activity],
+            ['/branding', 'Look', Palette],
             ['/settings', 'Settings', Settings2],
+            ['/integration', 'Guide', Code2],
           ].map(([to, label, Icon]) => (
-            <NavLink key={to} to={to} end={to === '/dashboard'} className={({ isActive }) => `flex flex-col items-center justify-center gap-1 text-[9px] font-bold ${isActive ? 'text-[#126b58]' : 'text-[#87968d]'}`}>
-              <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} /><span>{label}</span>
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/dashboard'}
+              className={({ isActive }) => `flex shrink-0 min-w-[56px] flex-col items-center justify-center gap-1 px-2 py-1 text-[9px] font-bold transition-colors ${
+                isActive ? 'text-[#126b58]' : 'text-[#87968d] hover:text-[#126b58]'
+              }`}
+            >
+              <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
+              <span className="whitespace-nowrap">{label}</span>
             </NavLink>
           ))}
         </nav>

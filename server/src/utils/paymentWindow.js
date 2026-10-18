@@ -12,7 +12,14 @@ function isWithinPaymentWindow({ createdAt, expiresAt, receivedAt }) {
     return false;
   }
 
-  return receivedAt >= createdAt
+  // Banking alerts often have minute-level resolution (00 seconds, 000 ms).
+  // In that case, the payment occurred at some point during [receivedAt, receivedAt + 59999ms].
+  const minuteResolution = receivedAt.getSeconds() === 0 && receivedAt.getMilliseconds() === 0;
+  const effectiveReceivedAt = minuteResolution
+    ? new Date(receivedAt.getTime() + 59999)
+    : receivedAt;
+
+  return effectiveReceivedAt >= createdAt
     && receivedAt.getTime() <= expiresAt.getTime() + PAYMENT_VERIFICATION_GRACE_MS;
 }
 

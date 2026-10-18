@@ -10,14 +10,20 @@ import {
   Clock3,
   Copy,
   ExternalLink,
+  Eye,
   FileCode2,
   KeyRound,
   Link2,
   Mail,
+  Monitor,
+  Palette,
   Plus,
   RefreshCw,
   ShieldCheck,
+  Smartphone,
+  Sparkles,
   Store,
+  Undo2,
   Webhook,
   WalletCards,
   X,
@@ -37,8 +43,11 @@ import {
   regenerateKeys,
   retryWebhook,
   updateAllowedSenders,
+  updateBranding,
   updateUpi,
   updateWebhook,
+  updateProfile,
+  changePassword,
 } from './api.js';
 import {
   EmptyState,
@@ -640,11 +649,55 @@ export function SettingsPage() {
   const [retrying, setRetrying] = useState('');
   const [rotateOpen, setRotateOpen] = useState(false);
 
+  const [profileName, setProfileName] = useState(merchant.name || '');
+  const [currPassword, setCurrPassword] = useState('');
+  const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [confirmPasswordVal, setConfirmPasswordVal] = useState('');
+
   useEffect(() => {
+    setProfileName(merchant.name || '');
     setUpiId(merchant.upiId || '');
     setSenders(merchant.allowedSenders || []);
     setWebhookUrl(merchant.webhookUrl || '');
   }, [merchant]);
+
+  async function saveProfile(event) {
+    event.preventDefault();
+    setBusy('profile'); setMessage(null);
+    try {
+      const result = await updateProfile({ name: profileName.trim() });
+      setMerchant((current) => ({ ...current, name: result.name }));
+      setMessage({ tone: 'success', text: 'Merchant profile name updated.' });
+    } catch (error) {
+      setMessage({ tone: 'error', text: error.message || 'Could not update profile.' });
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function handlePasswordChange(event) {
+    event.preventDefault();
+    if (newPasswordVal.length < 8) {
+      setMessage({ tone: 'error', text: 'New password must be at least 8 characters long.' });
+      return;
+    }
+    if (newPasswordVal !== confirmPasswordVal) {
+      setMessage({ tone: 'error', text: 'New password and confirmation do not match.' });
+      return;
+    }
+    setBusy('password'); setMessage(null);
+    try {
+      await changePassword({ currentPassword: currPassword, newPassword: newPasswordVal });
+      setMessage({ tone: 'success', text: 'Password changed successfully.' });
+      setCurrPassword('');
+      setNewPasswordVal('');
+      setConfirmPasswordVal('');
+    } catch (error) {
+      setMessage({ tone: 'error', text: error.message || 'Could not change password.' });
+    } finally {
+      setBusy('');
+    }
+  }
 
   async function loadLogs() {
     setLogsLoading(true);
@@ -786,11 +839,100 @@ export function SettingsPage() {
       <PageHeading eyebrow="Merchant controls" title="Settings" detail="Manage where payments land, how notifications are read, and how your system is notified." />
       {message && <div className="mb-5"><Notice tone={message.tone} onClose={() => setMessage(null)}>{message.text}</Notice></div>}
       <div className="grid gap-4 xl:grid-cols-2">
+        <SettingsCard title="Merchant Profile" detail="Update your merchant account display name and details." icon={Store}>
+          <form onSubmit={saveProfile} className="space-y-3">
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold text-[#466358]">Full Name</span>
+              <input
+                required
+                value={profileName}
+                onChange={(event) => setProfileName(event.target.value)}
+                placeholder="Merchant Name"
+                className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 text-sm font-semibold text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+              />
+            </label>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-mono text-[#60796e]">{merchant.email}</p>
+                {merchant.role === 'admin' && (
+                  <span className="mt-0.5 inline-block rounded bg-[#dff3e9] px-2 py-0.5 text-[10px] font-bold text-[#126b58]">
+                    SUPER ADMIN
+                  </span>
+                )}
+              </div>
+              <button
+                disabled={busy === 'profile'}
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50"
+              >
+                {busy === 'profile' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Save Name
+              </button>
+            </div>
+          </form>
+        </SettingsCard>
+
+        <SettingsCard title="Security & Password" detail="Change your merchant account login password." icon={KeyRound}>
+          <form onSubmit={handlePasswordChange} className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-3">
+              <input
+                type="password"
+                required
+                value={currPassword}
+                onChange={(e) => setCurrPassword(e.target.value)}
+                placeholder="Current Password"
+                className="h-10 rounded-xl border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b]"
+              />
+              <input
+                type="password"
+                required
+                minLength="8"
+                value={newPasswordVal}
+                onChange={(e) => setNewPasswordVal(e.target.value)}
+                placeholder="New Password (min 8)"
+                className="h-10 rounded-xl border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b]"
+              />
+              <input
+                type="password"
+                required
+                minLength="8"
+                value={confirmPasswordVal}
+                onChange={(e) => setConfirmPasswordVal(e.target.value)}
+                placeholder="Confirm New"
+                className="h-10 rounded-xl border border-[#dce5dc] bg-white px-3 text-xs text-[#294b40] outline-none focus:border-[#5b9b7b]"
+              />
+            </div>
+            <div className="flex items-center justify-end">
+              <button
+                disabled={busy === 'password'}
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50"
+              >
+                {busy === 'password' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Change Password
+              </button>
+            </div>
+          </form>
+        </SettingsCard>
+
         <SettingsCard title="Receiving account" detail="UPI transfers settle directly to this account." icon={Store}>
           <form onSubmit={saveUpi} className="space-y-3">
             <label className="block"><span className="mb-1.5 block text-xs font-semibold text-[#466358]">Merchant UPI ID</span><input required minLength="4" maxLength="320" value={upiId} onChange={(event) => setUpiId(event.target.value)} placeholder="business@bank" className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 font-mono text-sm text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10" /></label>
             <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-[10px] leading-4 text-[#8a9890]">New checkouts will direct payment to this UPI address.</p><button disabled={busy === 'upi'} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:opacity-50">{busy === 'upi' ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}Save UPI ID</button></div>
           </form>
+        </SettingsCard>
+
+        <SettingsCard title="Storefront branding" detail="Customize your shop name, logo, and checkout theme color." icon={Palette}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[#294b40]">{merchant.branding?.displayName || merchant.name}</p>
+              <p className="mt-0.5 text-xs text-[#84928a]">{merchant.branding?.tagline || 'Direct UPI checkout active'}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: merchant.branding?.brandColor || '#126b58' }} />
+                <span className="font-mono text-[11px] text-[#557567]">{merchant.branding?.brandColor || '#126b58'}</span>
+              </div>
+            </div>
+            <Link to="/branding" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#174e41] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42]">
+              <Palette className="h-3.5 w-3.5" />
+              Customize Checkout
+            </Link>
+          </div>
         </SettingsCard>
 
         <SettingsCard title="Gmail payment inbox" detail="Read eligible FamApp notifications to confirm incoming transfers." icon={Mail}>
@@ -879,6 +1021,494 @@ export function SettingsPage() {
   );
 }
 
+const BRAND_PALETTES = [
+  { label: 'Forest Emerald', hex: '#126b58' },
+  { label: 'Razorpay Navy', hex: '#0c2340' },
+  { label: 'Electric Blue', hex: '#2563eb' },
+  { label: 'Royal Purple', hex: '#7c3aed' },
+  { label: 'Mint Green', hex: '#059669' },
+  { label: 'Tangerine Sun', hex: '#ea580c' },
+  { label: 'Vibrant Crimson', hex: '#e11d48' },
+  { label: 'Midnight Slate', hex: '#1e293b' },
+];
+
+export function BrandingPage() {
+  const { merchant, refreshMerchant, setMerchant } = useMerchant();
+  const [displayName, setDisplayName] = useState(merchant?.branding?.displayName || merchant?.name || '');
+  const [brandColor, setBrandColor] = useState(merchant?.branding?.brandColor || '#126b58');
+  const [logoUrl, setLogoUrl] = useState(merchant?.branding?.logoUrl || '');
+  const [tagline, setTagline] = useState(merchant?.branding?.tagline || '');
+  const [supportEmail, setSupportEmail] = useState(merchant?.branding?.supportEmail || '');
+  const [previewDevice, setPreviewDevice] = useState('mobile');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    if (merchant) {
+      setDisplayName(merchant.branding?.displayName || merchant.name || '');
+      setBrandColor(merchant.branding?.brandColor || '#126b58');
+      setLogoUrl(merchant.branding?.logoUrl || '');
+      setTagline(merchant.branding?.tagline || '');
+      setSupportEmail(merchant.branding?.supportEmail || '');
+    }
+  }, [merchant]);
+
+  async function saveBranding(e) {
+    e?.preventDefault();
+    setBusy(true);
+    setMessage(null);
+    try {
+      const payload = {
+        name: displayName.trim() || merchant.name,
+        displayName: displayName.trim() || merchant.name,
+        brandColor,
+        logoUrl: logoUrl.trim() || null,
+        tagline: tagline.trim() || null,
+        supportEmail: supportEmail.trim() || null,
+      };
+      const res = await updateBranding(payload);
+      if (refreshMerchant) await refreshMerchant();
+      else if (setMerchant) setMerchant((curr) => ({ ...curr, ...res }));
+      setMessage({ tone: 'success', text: 'Checkout look and branding successfully saved!' });
+    } catch (err) {
+      setMessage({ tone: 'error', text: err.message || 'Could not save branding settings.' });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function resetDefaults() {
+    setDisplayName(merchant?.name || 'My Store');
+    setBrandColor('#126b58');
+    setLogoUrl('');
+    setTagline('Direct & Secure UPI Transfer');
+    setSupportEmail('');
+    setMessage({ tone: 'info', text: 'Reset to standard defaults. Click Save changes to apply.' });
+  }
+
+  const effectiveShopName = displayName.trim() || merchant?.name || 'Your Brand';
+  const initialLetter = effectiveShopName.trim().charAt(0).toUpperCase() || 'M';
+
+  return (
+    <div className="page-enter">
+      <PageHeading
+        eyebrow="Customization · Razorpay Style"
+        title="Checkout & Branding"
+        detail="Personalize your storefront name, brand color, logo, and checkout look. Preview your changes in real-time exactly as customers will experience them."
+        action={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={resetDefaults}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[#dce5dc] bg-white px-3.5 text-xs font-semibold text-[#557367] shadow-xs transition hover:bg-[#f2f7f2]"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+              Reset defaults
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={saveBranding}
+              style={{ backgroundColor: brandColor }}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl px-5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95 disabled:opacity-50"
+            >
+              {busy ? <Spinner small /> : <Check className="h-3.5 w-3.5" />}
+              {busy ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        }
+      />
+
+      {message && (
+        <div className="mb-6">
+          <Notice tone={message.tone} onClose={() => setMessage(null)}>
+            {message.text}
+          </Notice>
+        </div>
+      )}
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_480px]">
+        {/* Left Column: Customizer Form */}
+        <div className="space-y-6">
+          <Panel>
+            <PanelTitle
+              title="Storefront identity"
+              detail="This name and logo appear at the top of your checkout and UPI payment prompts."
+            />
+            <div className="space-y-5 p-5 sm:p-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#436458]">
+                  Shop / Business Name
+                </label>
+                <div className="relative mt-2">
+                  <input
+                    type="text"
+                    required
+                    maxLength="120"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="e.g. Acme Studio, Sharma Collections"
+                    className="h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 text-sm font-semibold text-[#142e2b] outline-none transition focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                  />
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#7d8e85]">
+                  Shown on customer order receipts, pay page, and UPI payee title.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#436458]">
+                  Tagline / Subtitle
+                </label>
+                <input
+                  type="text"
+                  maxLength="200"
+                  value={tagline}
+                  onChange={(e) => setTagline(e.target.value)}
+                  placeholder="e.g. Instant & Secure UPI Payment, Official Store"
+                  className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 text-sm text-[#142e2b] outline-none transition focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                />
+                <p className="mt-1.5 text-[11px] text-[#7d8e85]">
+                  A short reassurance badge displayed directly beneath your store name.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#436458]">
+                  Store Logo URL
+                </label>
+                <div className="mt-2 flex gap-3">
+                  <input
+                    type="url"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    placeholder="https://yourdomain.com/logo.png"
+                    className="h-11 flex-1 rounded-xl border border-[#dce5dc] bg-white px-3.5 font-mono text-xs text-[#294b40] outline-none transition focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                  />
+                  {logoUrl ? (
+                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-[#dce5dc] bg-white p-1">
+                      <img
+                        src={logoUrl}
+                        alt="Logo preview"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
+                    >
+                      {initialLetter}
+                    </div>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#7d8e85]">
+                  Leave empty to automatically display a stylish monogram avatar using your shop initials.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#436458]">
+                  Customer Support Email
+                </label>
+                <input
+                  type="email"
+                  value={supportEmail}
+                  onChange={(e) => setSupportEmail(e.target.value)}
+                  placeholder="e.g. support@mystore.com"
+                  className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] bg-white px-3.5 text-sm text-[#142e2b] outline-none transition focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                />
+                <p className="mt-1.5 text-[11px] text-[#7d8e85]">
+                  Optional email link displayed in the checkout footer for customer inquiries.
+                </p>
+              </div>
+            </div>
+          </Panel>
+
+          <Panel>
+            <PanelTitle
+              title="Brand theme color"
+              detail="Select a signature color for checkout buttons, highlights, and status accents."
+            />
+            <div className="space-y-5 p-5 sm:p-6">
+              <div>
+                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#436458]">Preset Palettes</p>
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  {BRAND_PALETTES.map((palette) => {
+                    const active = brandColor.toLowerCase() === palette.hex.toLowerCase();
+                    return (
+                      <button
+                        key={palette.hex}
+                        type="button"
+                        onClick={() => setBrandColor(palette.hex)}
+                        className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition ${
+                          active
+                            ? 'border-[#126b58] bg-[#f0f6f2] shadow-sm ring-2 ring-[#126b58]/20'
+                            : 'border-[#e2e8e0] bg-white hover:border-[#ccd7cb]'
+                        }`}
+                      >
+                        <span
+                          className="h-5 w-5 shrink-0 rounded-full border border-black/15 shadow-xs"
+                          style={{ backgroundColor: palette.hex }}
+                        />
+                        <span className="truncate text-xs font-semibold text-[#1e3b33]">{palette.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#436458]">
+                  Custom Hex Code
+                </label>
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="relative flex h-11 items-center gap-2 rounded-xl border border-[#dce5dc] bg-white px-3 shadow-xs">
+                    <input
+                      type="color"
+                      value={brandColor.startsWith('#') && brandColor.length === 7 ? brandColor : '#126b58'}
+                      onChange={(e) => setBrandColor(e.target.value)}
+                      className="h-7 w-7 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                    />
+                    <input
+                      type="text"
+                      maxLength="7"
+                      value={brandColor}
+                      onChange={(e) => setBrandColor(e.target.value)}
+                      className="w-24 font-mono text-sm font-bold uppercase text-[#1c3831] outline-none"
+                    />
+                  </div>
+                  <div className="flex-1 rounded-xl bg-[#f7f9f5] px-3.5 py-2.5 text-[11px] text-[#697f74] border border-[#e5ebe2]">
+                    High contrast colors provide the highest conversion rate on UPI apps.
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={saveBranding}
+                  style={{ backgroundColor: brandColor }}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-md transition hover:opacity-95 active:scale-95 disabled:opacity-50"
+                >
+                  {busy ? <Spinner small /> : <Check className="h-4 w-4" />}
+                  {busy ? 'Saving changes…' : 'Save branding'}
+                </button>
+              </div>
+            </div>
+          </Panel>
+        </div>
+
+        {/* Right Column: Razorpay-Style Live Device Mockup */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#527466]">
+              <Eye className="h-4 w-4 text-[#126b58]" />
+              Live Checkout Preview
+            </span>
+            <div className="flex items-center rounded-lg border border-[#dce5dc] bg-white p-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setPreviewDevice('mobile')}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                  previewDevice === 'mobile'
+                    ? 'bg-[#126b58] text-white shadow-xs'
+                    : 'text-[#647c71] hover:text-[#126b58]'
+                }`}
+              >
+                <Smartphone className="h-3.5 w-3.5" />
+                Mobile
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewDevice('desktop')}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                  previewDevice === 'desktop'
+                    ? 'bg-[#126b58] text-white shadow-xs'
+                    : 'text-[#647c71] hover:text-[#126b58]'
+                }`}
+              >
+                <Monitor className="h-3.5 w-3.5" />
+                Desktop
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Mockup Container */}
+          <div className="relative rounded-[28px] border border-[#dce6dc] bg-[#eef3eb] p-4 shadow-xl sm:p-6 flex flex-col items-center">
+            {previewDevice === 'mobile' ? (
+              /* Mobile Phone Bezel Mockup */
+              <div className="w-full max-w-[340px] rounded-[38px] border-[7px] border-[#1e2a27] bg-[#f3f5ef] p-3 shadow-2xl overflow-hidden">
+                {/* Phone Speaker Notch */}
+                <div className="mx-auto mb-3 flex h-4 w-28 items-center justify-center rounded-full bg-[#1e2a27]">
+                  <div className="h-2 w-2 rounded-full bg-[#121c1a]" />
+                  <div className="ml-2 h-1.5 w-8 rounded-full bg-[#273834]" />
+                </div>
+
+                {/* Mobile Screen Content */}
+                <div className="rounded-[24px] bg-[#fffefa] p-4 shadow-sm border border-[#e4ece2]">
+                  {/* Shop Header */}
+                  <div className="mb-4 flex items-start justify-between gap-2.5 border-b border-[#edf2ea] pb-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-[#829289]">Paying to</p>
+                      <h4 className="truncate font-[var(--font-display)] text-[16px] font-bold text-[#142e2b]">
+                        {effectiveShopName}
+                      </h4>
+                      {tagline && (
+                        <p className="truncate text-[10px] text-[#6d7f76]">{tagline}</p>
+                      )}
+                    </div>
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt="Shop logo"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        className="h-9 w-9 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
+                      />
+                    ) : (
+                      <div
+                        style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
+                      >
+                        {initialLetter}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Amount Card */}
+                  <div className="rounded-xl border border-[#e5ebe2] bg-[#f8faf6] p-3">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-[#71857c]">
+                      <span>EXACT AMOUNT</span>
+                      <span className="rounded-full bg-[#edf3eb] px-2 py-0.5 text-[9px] text-[#3e6858]">
+                        ⏱ 09:48
+                      </span>
+                    </div>
+                    <p className="mt-1 font-[var(--font-display)] text-[26px] font-bold text-[#142e2b]">
+                      <span style={{ color: brandColor }} className="mr-0.5 text-[18px]">₹</span>499.24
+                    </p>
+                    <p className="mt-1 text-[9px] font-semibold text-[#126b58]">
+                      Includes 24p unique verification suffix
+                    </p>
+                  </div>
+
+                  {/* Primary CTA Button */}
+                  <div className="mt-3.5">
+                    <button
+                      type="button"
+                      style={{ backgroundColor: brandColor }}
+                      className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      <span>Pay via UPI App</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                    <p className="mt-1 text-center text-[8px] text-[#829288]">
+                      GPay · PhonePe · Paytm · BHIM · Cred
+                    </p>
+                  </div>
+
+                  {/* Merchant UPI ID display */}
+                  <div className="mt-3 rounded-lg border border-[#e4ebe2] bg-white p-2 text-left">
+                    <p className="text-[8px] font-bold uppercase tracking-wider text-[#8b9c92]">Verified UPI ID</p>
+                    <p className="font-mono text-[11px] font-semibold text-[#234b3f] truncate">
+                      {merchant?.upiId || 'merchant@bank'}
+                    </p>
+                  </div>
+
+                  {/* Micro QR Mockup */}
+                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-[#e8eee6] bg-[#f7faf5] p-2">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white border border-[#dbe4d9] font-mono text-[8px] font-bold text-[#426457]">
+                      [ QR ]
+                    </div>
+                    <div className="min-w-0 text-left">
+                      <p className="text-[10px] font-bold text-[#234b3f]">Instant Bank Sync</p>
+                      <p className="text-[9px] text-[#788a81]">Auto-detected within 3 seconds</p>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-3 border-t border-[#edf2ea] pt-2 text-center text-[8px] text-[#8b9c92]">
+                    Direct UPI to {effectiveShopName}
+                    {supportEmail && ` · ${supportEmail}`}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Desktop Card Mockup */
+              <div className="w-full max-w-[430px] rounded-2xl border border-[#d6e0d4] bg-white shadow-xl overflow-hidden">
+                {/* Browser Tab Bar */}
+                <div className="flex items-center gap-1.5 border-b border-[#e5ebe3] bg-[#f4f7f2] px-3 py-2">
+                  <span className="h-2 w-2 rounded-full bg-[#ff5f56]" />
+                  <span className="h-2 w-2 rounded-full bg-[#ffbd2e]" />
+                  <span className="h-2 w-2 rounded-full bg-[#27c93f]" />
+                  <span className="ml-2 flex-1 rounded bg-white px-2 py-0.5 font-mono text-[9px] text-[#70847b] truncate">
+                    https://checkout.poppay.in/pay/order_demo
+                  </span>
+                </div>
+
+                <div className="p-4 sm:p-5">
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-[#829289]">Paying to</p>
+                      <h4 className="font-[var(--font-display)] text-[18px] font-bold text-[#142e2b]">
+                        {effectiveShopName}
+                      </h4>
+                      {tagline && <p className="text-[10px] text-[#6d7f76]">{tagline}</p>}
+                    </div>
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt="Shop logo"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        className="h-10 w-10 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
+                      />
+                    ) : (
+                      <div
+                        style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-base font-bold border border-black/5"
+                      >
+                        {initialLetter}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-[#e5ebe2] bg-[#f8faf6] p-3">
+                    <span className="text-[10px] font-bold text-[#71857c]">EXACT AMOUNT</span>
+                    <p className="mt-1 font-[var(--font-display)] text-[28px] font-bold text-[#142e2b]">
+                      <span style={{ color: brandColor }} className="mr-0.5 text-[20px]">₹</span>499.24
+                    </p>
+                  </div>
+
+                  <div className="mt-3.5">
+                    <button
+                      type="button"
+                      style={{ backgroundColor: brandColor }}
+                      className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      <span>Pay with UPI App</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 text-center text-[9px] text-[#86998f]">
+                    Powered by PopPay · Direct UPI to {effectiveShopName}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center gap-2 text-center text-xs text-[#527466]">
+              <Sparkles className="h-3.5 w-3.5 text-[#126b58]" />
+              <span>Real-time instant rendering preview</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const NODE_SNIPPET = `const response = await fetch(
   \`\${process.env.POPPAY_API_BASE_URL}/api/v1/orders\`,
   {
@@ -912,6 +1542,44 @@ const CURL_SNIPPET = `curl -X POST "$POPPAY_API_BASE_URL/api/v1/orders" \\
     "receipt": "counter-order-1042",
     "redirectUrl": "https://shop.example/thanks"
   }'`;
+
+const PYTHON_SNIPPET = `import os
+import requests
+
+response = requests.post(
+    f"{os.environ['POPPAY_API_BASE_URL']}/api/v1/orders",
+    headers={
+        "Authorization": f"Bearer {os.environ['POPPAY_SECRET_KEY']}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "amount": "248.00",
+        "receipt": "counter-order-1042",
+        "redirectUrl": "https://shop.example/thanks"
+    }
+)
+response.raise_for_status()
+order = response.json()
+print("Checkout URL:", order["checkoutUrl"])`;
+
+const PHP_SNIPPET = `<?php
+$ch = curl_init(getenv('POPPAY_API_BASE_URL') . '/api/v1/orders');
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer ' . getenv('POPPAY_SECRET_KEY'),
+        'Content-Type: application/json'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'amount' => '248.00',
+        'receipt' => 'counter-order-1042',
+        'redirectUrl' => 'https://shop.example/thanks'
+    ])
+]);
+$order = json_decode(curl_exec($ch), true);
+curl_close($ch);
+echo "Checkout URL: " . $order['checkoutUrl'];`;
 
 const POLL_SNIPPET = `const response = await fetch(
   \`\${process.env.POPPAY_API_BASE_URL}/api/v1/checkout/\${orderId}/status\`
@@ -1017,7 +1685,7 @@ export function IntegrationPage() {
   const { merchant } = useMerchant();
   const [language, setLanguage] = useState('node');
   const [copied, setCopied] = useState('');
-  const code = language === 'node' ? NODE_SNIPPET : CURL_SNIPPET;
+  const code = language === 'node' ? NODE_SNIPPET : language === 'python' ? PYTHON_SNIPPET : language === 'php' ? PHP_SNIPPET : CURL_SNIPPET;
   const publicKeySnippet = `const POPPAY_PUBLIC_KEY = ${JSON.stringify(merchant.publicKey || '')};`;
 
   async function copy(text, label) {
@@ -1077,7 +1745,7 @@ export function IntegrationPage() {
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)]">
-        <aside className="sticky top-[78px] hidden rounded-[18px] border border-[#e1e8e1] bg-[#fffefa] p-3 panel-shadow lg:block">
+        <aside className="sticky top-[78px] hidden max-h-[calc(100vh-100px)] overflow-y-auto rounded-[18px] border border-[#e1e8e1] bg-[#fffefa] p-3 panel-shadow custom-scrollbar-light lg:block">
           <p className="px-2 pb-2 pt-1 text-[9px] font-bold uppercase tracking-[.15em] text-[#87968d]">On this page</p>
           <nav className="space-y-1" aria-label="Developer guide sections">
             {GUIDE_NAV.map(([id, label], index) => <a key={id} href={`#${id}`} className="flex min-h-9 items-center gap-2.5 rounded-lg px-2 text-[10px] font-semibold text-[#62786d] transition-colors hover:bg-[#f0f5ee] hover:text-[#126b58]"><span className="font-mono text-[9px] text-[#9aaa9f]">{String(index + 1).padStart(2, '0')}</span>{label}</a>)}
@@ -1135,13 +1803,15 @@ export function IntegrationPage() {
             <Panel className="overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0eb] px-5 py-4 sm:px-6">
                 <div><h3 className="text-sm font-bold text-[#203d36]">POST /api/v1/orders</h3><p className="mt-1 text-xs text-[#84928a]">Accepts JSON; amount is INR with up to two decimal places.</p></div>
-                <div className="flex rounded-lg bg-[#f0f3ed] p-1" role="tablist" aria-label="Request example language">
-                  <button type="button" role="tab" aria-selected={language === 'node'} onClick={() => setLanguage('node')} className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${language === 'node' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a]'}`}>Node.js</button>
-                  <button type="button" role="tab" aria-selected={language === 'curl'} onClick={() => setLanguage('curl')} className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${language === 'curl' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a]'}`}>cURL</button>
+                <div className="flex rounded-lg bg-[#f0f3ed] p-1 gap-1" role="tablist" aria-label="Request example language">
+                  <button type="button" role="tab" aria-selected={language === 'node'} onClick={() => setLanguage('node')} className={`rounded-md px-2.5 py-1.5 text-[10px] font-bold ${language === 'node' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a] hover:text-[#275a46]'}`}>Node.js</button>
+                  <button type="button" role="tab" aria-selected={language === 'python'} onClick={() => setLanguage('python')} className={`rounded-md px-2.5 py-1.5 text-[10px] font-bold ${language === 'python' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a] hover:text-[#275a46]'}`}>Python</button>
+                  <button type="button" role="tab" aria-selected={language === 'php'} onClick={() => setLanguage('php')} className={`rounded-md px-2.5 py-1.5 text-[10px] font-bold ${language === 'php' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a] hover:text-[#275a46]'}`}>PHP</button>
+                  <button type="button" role="tab" aria-selected={language === 'curl'} onClick={() => setLanguage('curl')} className={`rounded-md px-2.5 py-1.5 text-[10px] font-bold ${language === 'curl' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a] hover:text-[#275a46]'}`}>cURL</button>
                 </div>
               </div>
               <div className="p-4 sm:p-5">
-                <GuideCode label={`${language === 'node' ? 'Node.js' : 'cURL'} · create an order`} code={code} copied={copied === 'create-order'} onCopy={() => copy(code, 'create-order')} compact />
+                <GuideCode label={`${language.toUpperCase()} · create an order`} code={code} copied={copied === 'create-order'} onCopy={() => copy(code, 'create-order')} compact />
               </div>
               <div className="grid gap-0 border-t border-[#edf0eb] sm:grid-cols-3 sm:divide-x sm:divide-[#edf0eb]">
                 <div className="p-4 sm:px-5"><p className="font-mono text-[9px] font-bold text-[#739483]">REQUEST</p><p className="mt-1 text-[10px] leading-4 text-[#718279]"><code>amount</code> is required (minimum ₹1.00); <code>receipt</code> is required (up to 120 characters); optional <code>redirectUrl</code> must be HTTPS.</p></div>

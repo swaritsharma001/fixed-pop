@@ -4,9 +4,11 @@ const mongoose = require('mongoose');
 const app = require('./app');
 const { getRequiredEnv } = require('./config');
 const { startWorkerLoop, stopWorkerLoop } = require('./workers/workerLoop');
+const { ensureAdminAccount } = require('./services/adminSeedService');
 
 async function start() {
   await mongoose.connect(getRequiredEnv('MONGO_URI'));
+  await ensureAdminAccount();
   startWorkerLoop();
   const port = Number(process.env.PORT) || 3001;
   const server = app.listen(port, '0.0.0.0', () => {

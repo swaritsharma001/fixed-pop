@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 const {
   publicCheckout,
   checkoutStatus,
+  checkoutEvents,
   submitCheckoutUtr,
 } = require('../controllers/orderController');
 
@@ -17,6 +18,8 @@ const utrReportLimiter = rateLimit({
 
 router.get('/:orderId', publicCheckout);
 router.get('/:orderId/status', checkoutStatus);
+// SSE endpoint – browser subscribes once, server pushes payment.success event
+router.get('/:orderId/events', checkoutEvents);
 router.post('/:orderId/utr', utrReportLimiter, submitCheckoutUtr);
 
 module.exports = router;

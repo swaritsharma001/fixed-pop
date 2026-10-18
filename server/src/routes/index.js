@@ -11,6 +11,7 @@ router.use('/orders', require('./orderRoutes'));
 router.use('/checkout', require('./checkoutRoutes'));
 router.use('/webhooks', require('./webhookRoutes'));
 router.use('/dashboard', require('./dashboardRoutes'));
+router.use('/admin', require('./adminRoutes'));
 router.use('/', require('./paymentRoutes'));
 router.use('/dev', require('./devRoutes'));
 

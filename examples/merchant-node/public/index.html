@@ -3,62 +3,398 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Example Shop · PopPay</title>
+    <title>Acme Studio · PopPay Storefront Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <style>
-      * { box-sizing: border-box; }
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f3f5ef; color: #142e2b; font-family: system-ui, sans-serif; }
-      main { width: min(100%, 420px); padding: 32px; border: 1px solid #e1e8e1; border-radius: 24px; background: #fffefa; box-shadow: 0 24px 70px rgba(25,61,48,.08); }
-      .mark { color: #126b58; font-weight: 800; letter-spacing: -.06em; }
-      p { color: #71817b; line-height: 1.6; }
-      button { width: 100%; min-height: 52px; border: 0; border-radius: 12px; background: #126b58; color: white; font: inherit; font-weight: 700; cursor: pointer; }
-      button:disabled { opacity: .6; cursor: wait; }
-      #message { min-height: 24px; margin-top: 14px; font-size: 13px; }
+      :root {
+        --canvas: #f6f8f5;
+        --card-bg: #ffffff;
+        --brand: #105c4b;
+        --brand-hover: #0c473a;
+        --brand-light: #e6f4ef;
+        --accent: #22c55e;
+        --text-primary: #12211d;
+        --text-secondary: #637770;
+        --border: #e2ebe4;
+        --radius: 24px;
+        --font-body: 'DM Sans', sans-serif;
+        --font-title: 'Space Grotesk', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        min-height: 100vh;
+        background: radial-gradient(circle at 10% 20%, rgba(16, 92, 75, 0.05) 0%, transparent 40%),
+                    radial-gradient(circle at 90% 80%, rgba(34, 197, 94, 0.05) 0%, transparent 40%),
+                    var(--canvas);
+        color: var(--text-primary);
+        font-family: var(--font-body);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 16px;
+      }
+      .container {
+        width: 100%;
+        max-width: 460px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 20px 60px rgba(16, 92, 75, 0.08), 0 4px 16px rgba(0,0,0,0.02);
+        overflow: hidden;
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .product-visual {
+        background: linear-gradient(135deg, #e8f3ee 0%, #d8ece2 100%);
+        padding: 36px 24px;
+        text-align: center;
+        position: relative;
+        border-bottom: 1px solid var(--border);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--brand);
+        border: 1px solid rgba(16, 92, 75, 0.12);
+        margin-bottom: 16px;
+      }
+      .badge-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--accent);
+      }
+      .product-icon {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 12px;
+        display: grid;
+        place-items: center;
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 12px 28px rgba(16, 92, 75, 0.12);
+        color: var(--brand);
+      }
+      .product-title {
+        font-family: var(--font-title);
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--text-primary);
+      }
+      .product-tagline {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+      }
+      .content {
+        padding: 28px;
+      }
+      .features-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+      .feature-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--brand-light);
+        color: var(--brand);
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+      .pricing-box {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 20px;
+      }
+      .price-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+      }
+      .price-value {
+        font-family: var(--font-title);
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.04em;
+      }
+      .price-value small {
+        font-size: 16px;
+        color: var(--brand);
+        font-weight: 600;
+        margin-right: 2px;
+      }
+      .btn-pay {
+        width: 100%;
+        min-height: 54px;
+        border: none;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #126b58 0%, #0d5244 100%);
+        color: white;
+        font-family: var(--font-body);
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 8px 24px rgba(18, 107, 88, 0.28);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-pay:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(18, 107, 88, 0.36);
+        background: linear-gradient(135deg, #157964 0%, #0f5c4c 100%);
+      }
+      .btn-pay:active:not(:disabled) {
+        transform: translateY(0);
+      }
+      .btn-pay:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+      .status-card {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        font-size: 12px;
+        line-height: 1.5;
+        display: none;
+        animation: fadeIn 0.3s ease;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .status-card.info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #eef6f3;
+        border: 1px solid #c7e3d8;
+        color: #125546;
+      }
+      .status-card.success {
+        display: block;
+        background: #edfaee;
+        border: 1px solid #bceac0;
+        color: #1a6327;
+      }
+      .status-card.error {
+        display: block;
+        background: #fdf2f2;
+        border: 1px solid #f9c9c9;
+        color: #9b2828;
+      }
+      .footer-note {
+        margin-top: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+      .footer-note svg {
+        width: 14px;
+        height: 14px;
+        color: var(--brand);
+      }
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .receipt-box {
+        margin-top: 12px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px dashed #9fd2a4;
+        border-radius: 10px;
+        padding: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #1b4928;
+        word-break: break-all;
+      }
     </style>
   </head>
   <body>
-    <main>
-      <p class="mark">PopPay · Example Shop</p>
-      <h1>Everyday cotton tote</h1>
-      <p>₹499.00 · Disjsjrect UPI payment</p>
-      <button id="buy" type="button" disabled>Pay ₹499.00</button>
-      <p id="message" role="status" aria-live="polite"></p>
-    </main>
+    <div class="container">
+      <div class="product-visual">
+        <span class="badge">
+          <span class="badge-dot"></span>
+          PopPay Verified Merchant
+        </span>
+        <div class="product-icon">
+          <svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+            <path d="M3 6h18"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+        </div>
+        <h1 class="product-title">Everyday Cotton Tote</h1>
+        <p class="product-tagline">100% Organic Canvas · Natural Dye · Limited Edition</p>
+      </div>
+
+      <div class="content">
+        <div class="features-list">
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <span>Zero intermediary platform fees · Direct to Merchant UPI</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <span>Real-time payment matching via verified bank credit alert</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">✓</span>
+            <span>Secured with cryptographic HMAC-SHA256 signature verification</span>
+          </div>
+        </div>
+
+        <div class="pricing-box">
+          <span class="price-label">Payable Amount</span>
+          <span class="price-value"><small>₹</small>5.00</span>
+        </div>
+
+        <button id="buy" class="btn-pay" type="button" disabled>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="2"/>
+            <line x1="2" x2="22" y1="10" y2="10"/>
+          </svg>
+          <span id="btn-text">Pay ₹5.00 via UPI</span>
+        </button>
+
+        <div id="status" class="status-card" role="status"></div>
+
+        <div class="footer-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>End-to-End Encrypted UPI Checkout by <strong>PopPay</strong></span>
+        </div>
+      </div>
+    </div>
+
     <script src="/config.js"></script>
     <script>
       const button = document.getElementById('buy');
-      const message = document.getElementById('message');
+      const btnText = document.getElementById('btn-text');
+      const statusBox = document.getElementById('status');
+
+      function setStatus(type, message, receiptDetails = null) {
+        statusBox.className = 'status-card ' + type;
+        if (receiptDetails) {
+          statusBox.innerHTML = `<strong>${message}</strong><div class="receipt-box">${receiptDetails}</div>`;
+        } else {
+          statusBox.textContent = message;
+        }
+      }
+
       const sdk = document.createElement('script');
-      sdk.src = "https://files.catbox.moe/gz9hsn.js";
-      sdk.onload = () => { button.disabled = false; };
-      sdk.onerror = () => { message.textContent = 'PopPay checkout crtould not be loaded.'; };
+      sdk.src = (window.POPPAY_BASE_URL ? window.POPPAY_BASE_URL.replace(/\/$/, '') : '') + '/checkout.js';
+      sdk.onload = () => {
+        button.disabled = false;
+      };
+      sdk.onerror = () => {
+        setStatus('error', 'Unable to load PopPay checkout SDK from ' + (window.POPPAY_BASE_URL || ''));
+      };
       document.head.appendChild(sdk);
+
       button.addEventListener('click', async () => {
         button.disabled = true;
-        message.textContent = 'Creating a secure payment request…';
+        btnText.innerHTML = '<span class="spinner"></span> Creating payment request…';
+        setStatus('info', 'Contacting PopPay to create a secure 10-minute order…');
+
         try {
           const response = await fetch('/create-order', { method: 'POST' });
           const order = await response.json();
           if (!response.ok) throw new Error(order.error || 'Could not create order.');
-          message.textContent = '';
+
+          setStatus('info', 'Order created (' + order.order_id + '). Opening secure checkout…');
+
           const checkout = new PopPay({
-            key: "pp_live_14b2324b9be017aeadc154d426387b9719ba",
+            key: window.POPPAY_PUBLIC_KEY,
             order_id: order.order_id,
-            name: 'Example Shop',
+            name: 'Acme Studio Demo',
+            baseUrl: window.POPPAY_BASE_URL,
             handler: async (payment) => {
-              const verified = await fetch('/verify-payment', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(payment),
-              }).then((result) => result.json());
-              message.textContent = verified.verified ? 'Payment verified by the merchant server.' : 'Payment verification failed.';
+              setStatus('info', 'Verifying cryptographic signature on merchant backend…');
+              try {
+                const verifyRes = await fetch('/verify-payment', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify(payment),
+                });
+                const verified = await verifyRes.json();
+                if (verified.verified) {
+                  setStatus('success', '🎉 Payment Verified Successfully!',
+                    `Order: ${payment.order_id}<br/>Payment ID: ${payment.payment_id}<br/>UTR: ${payment.utr}<br/>Signature Verified: Valid HMAC-SHA256`
+                  );
+                } else {
+                  setStatus('error', '⚠️ Payment verification signature mismatch.');
+                }
+              } catch (verifyErr) {
+                setStatus('error', 'Error reaching merchant verification endpoint.');
+              }
             },
-            onDismiss: () => { message.textContent = 'Checkout closed.'; },
+            onDismiss: () => {
+              setStatus('info', 'Checkout was closed.');
+            },
           });
           checkout.open();
         } catch (error) {
-          message.textContent = error.message;
+          setStatus('error', error.message || 'Error creating payment.');
         } finally {
           button.disabled = false;
+          btnText.textContent = 'Pay ₹5.00 via UPI';
         }
       });
     </script>

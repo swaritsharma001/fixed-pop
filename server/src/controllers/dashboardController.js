@@ -210,12 +210,13 @@ async function claimUnmatched(req, res, next) {
         throw error;
       }
 
+      const minuteTolerance = (unmatched.receivedAt.getSeconds() === 0 && unmatched.receivedAt.getMilliseconds() === 0) ? 59999 : 0;
       const order = await Order.findOne({
         merchantId: req.merchantId,
         orderId: parsed.data.order_id,
         status: { $in: ['PENDING', 'EXPIRED'] },
         payableAmount: unmatched.amount,
-        createdAt: { $lte: unmatched.receivedAt },
+        createdAt: { $lte: new Date(unmatched.receivedAt.getTime() + minuteTolerance) },
         expiresAt: { $gte: paymentExpirySearchLowerBound(unmatched.receivedAt) },
       }).session(session);
       if (!order) {

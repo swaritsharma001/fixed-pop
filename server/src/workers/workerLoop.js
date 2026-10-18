@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const { pollPendingMerchants } = require('../services/gmailWorkerService');
 const { deliverDueWebhooks } = require('../services/webhookService');
+const { reconcileUnmatchedPayments } = require('../services/paymentMatchingService');
 
 let timer = null;
 let running = false;
@@ -15,6 +16,7 @@ async function runWorkerCycle() {
       { $set: { status: 'EXPIRED' } },
     );
     await pollPendingMerchants();
+    await reconcileUnmatchedPayments();
     await deliverDueWebhooks();
   } catch (error) {
     console.error('PopPay worker cycle failed:', error.name || 'Error');
@@ -28,7 +30,7 @@ function startWorkerLoop() {
   const configured = Number.parseInt(process.env.GMAIL_POLL_INTERVAL_MS, 10);
   const intervalMs = Number.isSafeInteger(configured) && configured >= 1000
     ? configured
-    : 10000;
+    : 5000;
   void runWorkerCycle();
   timer = setInterval(() => void runWorkerCycle(), intervalMs);
   timer.unref?.();

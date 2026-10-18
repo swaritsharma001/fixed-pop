@@ -126,7 +126,36 @@ a:focus-visible {
 }
 
 .panel-shadow {
-  box-shadow: 0 14px 36px rgba(20, 46, 43, .045);
+  box-shadow: 0 16px 40px rgba(20, 46, 43, .05), 0 2px 6px rgba(20, 46, 43, .02);
+}
+
+.radar-sweep {
+  position: relative;
+}
+
+.radar-sweep::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #22c55e;
+  animation: radar-pulse 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  opacity: 0;
+}
+
+@keyframes radar-pulse {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.qr-frame {
+  box-shadow: 0 20px 48px rgba(18, 107, 88, 0.08), 0 4px 12px rgba(18, 107, 88, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qr-frame:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 56px rgba(18, 107, 88, 0.12), 0 6px 16px rgba(18, 107, 88, 0.06);
 }
 
 .skeleton {
@@ -138,8 +167,59 @@ a:focus-visible {
   50% { opacity: .58; }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @media (max-width: 1023px) {
   body {
     padding-bottom: calc(66px + env(safe-area-inset-bottom));
   }
+}
+
+/* Custom Sleek Scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.custom-scrollbar-light::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar-light::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar-light::-webkit-scrollbar-thumb {
+  background: rgba(18, 107, 88, 0.2);
+  border-radius: 9999px;
+}
+.custom-scrollbar-light::-webkit-scrollbar-thumb:hover {
+  background: rgba(18, 107, 88, 0.35);
+}
+.custom-scrollbar-light {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(18, 107, 88, 0.25) transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

@@ -15,16 +15,14 @@ function chooseMatchingOrder(candidates, utr) {
 }
 
 async function isDuplicateMessageOrUtr(gmailMessageId, utr) {
+  // Only consider exact gmailMessageId as hard duplicate – prevents double-processing the
+  // same raw email object even if the worker loop re-queues it.
+  // UTR conflicts are checked inside the transaction to allow the same UTR to appear in a
+  // legitimately re-sent payment notification email with a different gmailMessageId.
   const [processed, payment, unmatched] = await Promise.all([
-    ProcessedEmail.exists({
-      $or: [{ gmailMessageId }, { utr }],
-    }),
-    Payment.exists({
-      $or: [{ gmailMessageId }, { utr }],
-    }),
-    UnmatchedPayment.exists({
-      $or: [{ gmailMessageId }, { utr }],
-    }),
+    ProcessedEmail.exists({ gmailMessageId }),
+    Payment.exists({ gmailMessageId }),
+    UnmatchedPayment.exists({ gmailMessageId }),
   ]);
   return Boolean(processed || payment || unmatched);
 }
@@ -55,15 +53,9 @@ async function matchIncomingPayment({
 
   try {
     await session.withTransaction(async () => {
-      const alreadyProcessed = await ProcessedEmail.findOne({
-        $or: [{ gmailMessageId }, { utr }],
-      }).session(session);
-      const alreadyPaid = await Payment.findOne({
-        $or: [{ gmailMessageId }, { utr }],
-      }).session(session);
-      const alreadyUnmatched = await UnmatchedPayment.findOne({
-        $or: [{ gmailMessageId }, { utr }],
-      }).session(session);
+      const alreadyProcessed = await ProcessedEmail.findOne({ gmailMessageId }).session(session);
+      const alreadyPaid = await Payment.findOne({ gmailMessageId }).session(session);
+      const alreadyUnmatched = await UnmatchedPayment.findOne({ gmailMessageId }).session(session);
       if (alreadyProcessed || alreadyPaid || alreadyUnmatched) {
         matchResult = { matched: false, duplicate: true };
         return;
@@ -73,13 +65,25 @@ async function matchIncomingPayment({
         { session },
       );
 
-      const candidates = await Order.find({
+      const minuteTolerance = (receivedAt.getSeconds() === 0 && receivedAt.getMilliseconds() === 0) ? 59999 : 0;
+      let candidates = await Order.find({
         merchantId,
         status: { $in: ['PENDING', 'EXPIRED'] },
         payableAmount: amountDecimal,
-        createdAt: { $lte: receivedAt },
+        createdAt: { $lte: new Date(receivedAt.getTime() + minuteTolerance) },
         expiresAt: { $gte: paymentExpirySearchLowerBound(receivedAt) },
       }).session(session);
+
+      if (!candidates.length) {
+        // Fallback: match order active when alert was received by system
+        candidates = await Order.find({
+          merchantId,
+          status: { $in: ['PENDING', 'EXPIRED'] },
+          payableAmount: amountDecimal,
+          createdAt: { $lte: new Date(Date.now() + 59999) },
+          expiresAt: { $gte: paymentExpirySearchLowerBound(new Date()) },
+        }).session(session);
+      }
       const order = chooseMatchingOrder(candidates, utr);
 
       if (!order) {
@@ -119,11 +123,82 @@ async function matchIncomingPayment({
     await session.endSession();
   }
 
+  // After the DB transaction commits, push instant SSE update to any connected checkout browser.
+  if (matchResult?.matched) {
+    try {
+      const { notifyOrderUpdate } = require('./sseService');
+      notifyOrderUpdate(matchResult.orderId, { status: 'PAID', payment_id: matchResult.paymentId });
+    } catch {
+      // Best-effort; browser falls back to polling on next interval.
+    }
+  }
+
   return matchResult || { matched: false, duplicate: true };
+}
+
+async function reconcileUnmatchedPayments() {
+  const unmatchedList = await UnmatchedPayment.find({ status: 'UNMATCHED' });
+  if (!unmatchedList.length) return;
+
+  for (const unmatched of unmatchedList) {
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const current = await UnmatchedPayment.findOne({
+          _id: unmatched._id,
+          status: 'UNMATCHED',
+        }).session(session);
+        if (!current) return;
+
+        const minuteTolerance =
+          unmatched.receivedAt.getSeconds() === 0 &&
+          unmatched.receivedAt.getMilliseconds() === 0
+            ? 59999
+            : 0;
+
+        let candidates = await Order.find({
+          merchantId: unmatched.merchantId,
+          status: { $in: ['PENDING', 'EXPIRED'] },
+          payableAmount: unmatched.amount,
+          createdAt: { $lte: new Date(unmatched.receivedAt.getTime() + minuteTolerance) },
+          expiresAt: { $gte: paymentExpirySearchLowerBound(unmatched.receivedAt) },
+        }).session(session);
+
+        if (!candidates.length && unmatched.createdAt) {
+          candidates = await Order.find({
+            merchantId: unmatched.merchantId,
+            status: { $in: ['PENDING', 'EXPIRED'] },
+            payableAmount: unmatched.amount,
+            createdAt: { $lte: new Date(unmatched.createdAt.getTime() + 59999) },
+            expiresAt: { $gte: paymentExpirySearchLowerBound(unmatched.createdAt) },
+          }).session(session);
+        }
+
+        const order = chooseMatchingOrder(candidates, unmatched.utr);
+        if (!order) return;
+
+        await settleOrderFromVerifiedAlert({
+          session,
+          merchantId: order.merchantId,
+          order,
+          utr: unmatched.utr,
+          amount: unmatched.amount,
+          gmailMessageId: unmatched.gmailMessageId,
+          receivedAt: unmatched.receivedAt,
+          unmatchedPayment: current,
+        });
+      });
+    } catch {
+      // Ignore concurrent lock conflicts; will retry next cycle
+    } finally {
+      await session.endSession();
+    }
+  }
 }
 
 module.exports = {
   matchIncomingPayment,
   isDuplicateMessageOrUtr,
   chooseMatchingOrder,
+  reconcileUnmatchedPayments,
 };

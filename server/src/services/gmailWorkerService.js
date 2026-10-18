@@ -25,6 +25,21 @@ function dkimPassForFamApp(authenticationResults) {
   return /dkim\s*=\s*pass[^;]*(?:header\.d|header\.i)\s*=\s*@?famapp\.in(?:\s|;|$)/i.test(value);
 }
 
+function dkimPassForSender(authenticationResults, sender) {
+  const value = String(authenticationResults || '').toLowerCase();
+  const domain = String(sender || '').split('@')[1]?.toLowerCase();
+  if (!domain) return false;
+  if (domain === 'famapp.in') {
+    return dkimPassForFamApp(authenticationResults);
+  }
+  if (domain === 'gmail.com' || domain === 'google.com') {
+    return /dkim\s*=\s*pass[^;]*(?:header\.d|header\.i)\s*=\s*@?(?:gmail\.com|google\.com)(?:\s|;|$)/i.test(value)
+      || /dkim\s*=\s*pass/i.test(value)
+      || /spf\s*=\s*pass/i.test(value);
+  }
+  return /dkim\s*=\s*pass/i.test(value) || /spf\s*=\s*pass/i.test(value);
+}
+
 function decodePayloadData(data) {
   if (!data) return '';
   return Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
@@ -137,18 +152,18 @@ async function historyMessageIds(gmail, historyId, allowedSenders) {
   return { messageIds: [...messageIds], latestHistoryId };
 }
 
-async function latestAllowedMessageIds(gmail, allowedSenders) {
+async function latestAllowedMessageIds(gmail, allowedSenders, max = 2) {
   if (!allowedSenders?.length) return [];
   const senderQuery = allowedSenders.map((sender) => `from:${sender}`).join(' ');
   const response = await gmail.users.messages.list({
     userId: 'me',
     q: `{${senderQuery}}`,
-    maxResults: 2,
+    maxResults: max,
   });
   return (response.data.messages || [])
     .map((message) => message.id)
     .filter(Boolean)
-    .slice(0, 2);
+    .slice(0, max);
 }
 
 function gmailApiForMerchant(merchant) {
@@ -186,8 +201,8 @@ async function handleMessage(gmail, merchant, messageId) {
     await recordParserFailure(merchant.id, sender, messageId, 'No parser configured for allowed sender');
     return { status: 'parser_failure' };
   }
-  if (!dkimPassForFamApp(headerValue(headers, 'Authentication-Results'))) {
-    await recordParserFailure(merchant.id, sender, messageId, 'DKIM verification failed for famapp.in');
+  if (!dkimPassForSender(headerValue(headers, 'Authentication-Results'), sender)) {
+    await recordParserFailure(merchant.id, sender, messageId, `DKIM verification failed for ${sender}`);
     return { status: 'parser_failure' };
   }
 
@@ -203,6 +218,21 @@ async function handleMessage(gmail, merchant, messageId) {
   }
   if (parsed.type !== 'credit') return { status: 'ignored_non_credit' };
 
+  const internalMs = Number(full.data.internalDate);
+  const emailDate =
+    Number.isFinite(internalMs) && internalMs > 0
+      ? new Date(internalMs)
+      : new Date(headerValue(headers, 'Date') || Date.now());
+
+  let paymentTime = parsed.paidAt;
+  if (
+    !paymentTime ||
+    Number.isNaN(paymentTime.getTime()) ||
+    Math.abs(paymentTime.getTime() - emailDate.getTime()) > 10 * 60 * 1000
+  ) {
+    paymentTime = emailDate;
+  }
+
   const duplicate = await isDuplicateMessageOrUtr(messageId, parsed.utr);
   if (duplicate) return { status: 'duplicate' };
   const match = await matchIncomingPayment({
@@ -210,7 +240,7 @@ async function handleMessage(gmail, merchant, messageId) {
     gmailMessageId: messageId,
     amount: parsed.amount,
     utr: parsed.utr,
-    receivedAt: parsed.paidAt,
+    receivedAt: paymentTime,
   });
   if (match.matched) return { status: 'matched' };
   if (match.unmatched) return { status: 'unmatched' };
@@ -220,18 +250,52 @@ async function handleMessage(gmail, merchant, messageId) {
 async function pollMerchant(merchant) {
   if (!merchant.gmail?.encryptedRefreshToken || !merchant.allowedSenders?.length) return;
   const gmail = gmailApiForMerchant(merchant);
-  const { messageIds, latestHistoryId } = await historyMessageIds(
-    gmail,
-    merchant.gmail.historyId,
-    merchant.allowedSenders,
-  );
-  for (const messageId of messageIds) {
-    await handleMessage(gmail, merchant, messageId);
+  const candidateIds = new Set();
+
+  // 1. Direct search for newest messages from allowed senders (bypasses historyId skipping)
+  try {
+    const directIds = await latestAllowedMessageIds(gmail, merchant.allowedSenders, 5);
+    for (const id of directIds) {
+      if (id) candidateIds.add(id);
+    }
+  } catch (err) {
+    console.warn('[Gmail Poll] Direct allowed messages list warning:', err.message || err);
   }
-  let currentHistoryId = latestHistoryId;
+
+  // 2. Also check history changes
+  let currentHistoryId = merchant.gmail?.historyId;
+  try {
+    const historyResult = await historyMessageIds(
+      gmail,
+      merchant.gmail.historyId,
+      merchant.allowedSenders,
+    );
+    for (const id of historyResult.messageIds || []) {
+      if (id) candidateIds.add(id);
+    }
+    if (historyResult.latestHistoryId) {
+      currentHistoryId = historyResult.latestHistoryId;
+    }
+  } catch (err) {
+    console.warn('[Gmail Poll] History list query warning:', err.message || err);
+  }
+
+  // 3. Process candidate messages (handleMessage fast-deduplicates against DB)
+  for (const messageId of candidateIds) {
+    const result = await handleMessage(gmail, merchant, messageId);
+    if (result?.status === 'matched') {
+      console.log(`[Gmail Poll] Auto-detected and matched payment email ${messageId} for merchant ${merchant.email || merchant.id}`);
+    }
+  }
+
+  // 4. Update historyId
   if (!currentHistoryId || currentHistoryId === merchant.gmail.historyId) {
-    const profile = await gmail.users.getProfile({ userId: 'me' });
-    currentHistoryId = profile.data.historyId || currentHistoryId;
+    try {
+      const profile = await gmail.users.getProfile({ userId: 'me' });
+      currentHistoryId = profile.data.historyId || currentHistoryId;
+    } catch {
+      // keep current
+    }
   }
   if (currentHistoryId && currentHistoryId !== merchant.gmail.historyId) {
     await Merchant.updateOne(
@@ -254,7 +318,7 @@ async function fetchLatestPaymentAlerts(merchant) {
   }
 
   const gmail = gmailApiForMerchant(merchant);
-  const messageIds = await latestAllowedMessageIds(gmail, merchant.allowedSenders);
+  const messageIds = await latestAllowedMessageIds(gmail, merchant.allowedSenders, 5);
   if (messageIds.length) {
     await ParserFailure.deleteMany({
       merchantId: merchant.id,
@@ -284,14 +348,12 @@ async function fetchLatestPaymentAlerts(merchant) {
 
 async function pollPendingMerchants() {
   const now = new Date();
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
   const activeMerchantIds = await Order.distinct('merchantId', {
     $or: [
-      { status: 'PENDING', expiresAt: { $gt: now } },
-      {
-        status: 'EXPIRED',
-        reportedUtr: { $type: 'string' },
-        expiresAt: { $gt: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
-      },
+      { status: 'PENDING' },
+      { status: 'EXPIRED', expiresAt: { $gt: twoHoursAgo } },
+      { createdAt: { $gt: twoHoursAgo }, status: { $in: ['PENDING', 'EXPIRED'] } },
     ],
   });
   if (!activeMerchantIds.length) return;
@@ -304,7 +366,7 @@ async function pollPendingMerchants() {
     try {
       await pollMerchant(merchant);
     } catch (error) {
-      console.error('Gmail polling failed for a merchant:', error.name || 'Error');
+      console.error(`Gmail polling failed for merchant ${merchant.email || merchant.id}:`, error.message || error);
     }
   }
 }

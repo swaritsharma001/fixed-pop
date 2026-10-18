@@ -75,6 +75,10 @@ export function updateWebhook(webhookUrl) {
   return request('/api/v1/merchant/webhook', jsonPost({ webhookUrl }, 'PUT'));
 }
 
+export function updateBranding(data) {
+  return request('/api/v1/merchant/branding', jsonPost(data, 'PUT'));
+}
+
 export function regenerateKeys() {
   return request('/api/v1/merchant/keys/regenerate', jsonPost({}));
 }
@@ -121,6 +125,51 @@ export function getWebhookLogs() {
 
 export function retryWebhook(id) {
   return request(`/api/v1/webhooks/${encodeURIComponent(id)}/retry`, jsonPost({}));
+}
+
+export function updateProfile(data) {
+  return request('/api/v1/merchant/profile', jsonPost(data, 'PUT'));
+}
+
+export function changePassword(data) {
+  return request('/api/v1/merchant/change-password', jsonPost(data, 'PUT'));
+}
+
+export function createPaymentLink(data) {
+  return request('/api/v1/merchant/payment-links', jsonPost(data));
+}
+
+export function getPaymentLinks() {
+  return request('/api/v1/merchant/payment-links');
+}
+
+// Universal Admin API calls
+export function getAdminStats() {
+  return request('/api/v1/admin/stats');
+}
+
+export function getAdminMerchants() {
+  return request('/api/v1/admin/merchants');
+}
+
+export function toggleBanMerchant(id, data = {}) {
+  return request(`/api/v1/admin/merchants/${encodeURIComponent(id)}/ban`, jsonPost(data));
+}
+
+export function updateMerchantByAdmin(id, data) {
+  return request(`/api/v1/admin/merchants/${encodeURIComponent(id)}`, jsonPost(data, 'PUT'));
+}
+
+export function getAdminPayments(params = {}) {
+  return request(`/api/v1/admin/payments${toQuery(params)}`);
+}
+
+export function getAdminOrders(params = {}) {
+  return request(`/api/v1/admin/orders${toQuery(params)}`);
+}
+
+export function updateAdminProfile(data) {
+  return request('/api/v1/admin/profile', jsonPost(data, 'PUT'));
 }
 
 function toQuery(params) {

@@ -18,6 +18,7 @@ const { isWithinPaymentWindow } = require('../utils/paymentWindow');
 const { createPendingOrder } = require('../services/orderService');
 const { settleOrderFromVerifiedAlert } = require('../services/paymentSettlementService');
 const { decryptText } = require('../utils/encryption');
+const { subscribe: sseSubscribe } = require('../services/sseService');
 
 const UTR_REPORT_GRACE_MS = 24 * 60 * 60 * 1000;
 
@@ -104,7 +105,7 @@ async function publicCheckout(req, res, next) {
     const order = await Order.findOne({ orderId: parsedParams.data.orderId });
     if (!order) return res.status(404).json({ error: 'Order not found' });
     const merchant = await Merchant.findById(order.merchantId).select(
-      'name upiId',
+      'name upiId branding',
     );
     if (!merchant || !merchant.upiId) {
       return res.status(409).json({ error: 'Merchant payment details are not ready' });
@@ -115,16 +116,24 @@ async function publicCheckout(req, res, next) {
       await order.save();
     }
 
+    const shopName = merchant.branding?.displayName || merchant.name;
     const payableAmount = paiseToRupees(decimalToPaise(order.payableAmount));
     const params = new URLSearchParams({
       pa: merchant.upiId,
-      pn: merchant.name,
+      pn: shopName,
       am: payableAmount,
       tn: order.orderId,
       cu: 'INR',
     });
     return res.json({
-      merchantName: merchant.name,
+      merchantName: shopName,
+      branding: {
+        displayName: shopName,
+        brandColor: merchant.branding?.brandColor || '#126b58',
+        logoUrl: merchant.branding?.logoUrl || null,
+        tagline: merchant.branding?.tagline || null,
+        supportEmail: merchant.branding?.supportEmail || null,
+      },
       payableAmount,
       status: order.status,
       expiresAt: order.expiresAt,
@@ -241,11 +250,17 @@ async function submitCheckoutUtr(req, res, next) {
           String(unmatched.merchantId) === String(order.merchantId) &&
           unmatched.status === 'UNMATCHED' &&
           decimalToPaise(unmatched.amount) === decimalToPaise(order.payableAmount) &&
-          isWithinPaymentWindow({
+          (isWithinPaymentWindow({
             createdAt: order.createdAt,
             expiresAt: order.expiresAt,
             receivedAt: unmatched.receivedAt,
-          });
+          }) ||
+          (unmatched.createdAt &&
+            isWithinPaymentWindow({
+              createdAt: order.createdAt,
+              expiresAt: order.expiresAt,
+              receivedAt: unmatched.createdAt,
+            })));
         if (!isEligible) {
           const error = new Error('This UTR cannot be applied to this payment request');
           error.status = 409;
@@ -305,12 +320,59 @@ async function submitCheckoutUtr(req, res, next) {
   return res.status(result.confirmed ? 200 : 202).json(result);
 }
 
+/**
+ * GET /api/v1/checkout/:orderId/events
+ * Server-Sent Events endpoint.  The browser opens one long-lived connection
+ * here and receives a "status" event the moment the payment is confirmed,
+ * eliminating the need for repeated polling.
+ */
+async function checkoutEvents(req, res, next) {
+  const parsedParams = checkoutOrderParamsSchema.safeParse(req.params);
+  if (!parsedParams.success) return validationError(res, parsedParams.error);
+
+  const { orderId } = parsedParams.data;
+
+  try {
+    const order = await Order.findOne({ orderId });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    // If payment is already confirmed, reply immediately without opening SSE stream.
+    if (order.status === 'PAID') {
+      const payment = await Payment.findOne({ orderId }).select('_id utr');
+      res.json({ status: 'PAID', payment_id: payment?.id, utr: payment?.utr });
+      return;
+    }
+
+    // Open SSE stream.
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Accel-Buffering', 'no'); // disable nginx buffering
+    res.flushHeaders();
+
+    // Send an initial heartbeat so the browser knows the connection is alive.
+    res.write(': connected\n\n');
+
+    // Send a heartbeat every 25 s to keep the connection alive through proxies.
+    const heartbeat = setInterval(() => {
+      try { res.write(': ping\n\n'); } catch { clearInterval(heartbeat); }
+    }, 25000);
+
+    res.on('close', () => clearInterval(heartbeat));
+
+    // Register for push notifications.
+    sseSubscribe(orderId, res);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   createOrder,
   getOrder,
   listOrders,
   publicCheckout,
   checkoutStatus,
+  checkoutEvents,
   submitCheckoutUtr,
   serializeOrder,
 };

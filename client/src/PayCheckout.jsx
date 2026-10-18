@@ -179,12 +179,26 @@ export default function PayCheckout() {
   const [qrImage, setQrImage] = useState('');
   const [remainingMs, setRemainingMs] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [amountCopied, setAmountCopied] = useState(false);
   const [payment, setPayment] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [redirectIn, setRedirectIn] = useState(3);
   const notifiedRef = useRef(false);
   const copiedTimerRef = useRef(null);
+  const amountTimerRef = useRef(null);
   const upiId = useMemo(() => getUpiId(checkout?.upiLink || ''), [checkout?.upiLink]);
+
+  const copyAmount = useCallback(async () => {
+    if (!checkout?.payableAmount) return;
+    try {
+      await navigator.clipboard.writeText(String(checkout.payableAmount));
+      setAmountCopied(true);
+      if (amountTimerRef.current) window.clearTimeout(amountTimerRef.current);
+      amountTimerRef.current = window.setTimeout(() => setAmountCopied(false), 1800);
+    } catch {
+      setAmountCopied(false);
+    }
+  }, [checkout?.payableAmount]);
 
   const notifyParent = useCallback((type, details = {}) => {
     if (notifiedRef.current) return;
@@ -296,25 +310,84 @@ export default function PayCheckout() {
   useEffect(() => {
     if (!checkout || viewState !== 'waiting') return undefined;
     let active = true;
-    const poll = async () => {
-      try {
-        const result = await getCheckoutStatus(orderId);
+    let pollTimer = null;
+
+    // ── Fallback: light polling every 8 s in case SSE is unavailable ──────────
+    // This is a safety net only; in normal operation SSE pushes the status.
+    const schedulePollFallback = (delayMs = 8000) => {
+      if (!active) return;
+      pollTimer = window.setTimeout(async () => {
         if (!active) return;
-        if (result?.expiresAt && !checkout.expiresAt) {
-          setCheckout((current) => ({ ...current, expiresAt: result.expiresAt }));
+        try {
+          const result = await getCheckoutStatus(orderId);
+          if (!active) return;
+          if (result?.expiresAt && !checkout.expiresAt) {
+            setCheckout((c) => ({ ...c, expiresAt: result.expiresAt }));
+          }
+          if (result?.utrSubmitted && !checkout.utrSubmitted) {
+            setCheckout((c) => ({ ...c, utrSubmitted: true }));
+          }
+          if (outcomeFromStatus(result?.status) !== 'waiting') {
+            applyOutcome(result);
+            return; // stop scheduling further polls
+          }
+        } catch {
+          // Network hiccup – just retry next round
         }
-        if (result?.utrSubmitted && !checkout.utrSubmitted) {
-          setCheckout((current) => ({ ...current, utrSubmitted: true }));
+        schedulePollFallback(10000); // slow down after first check
+      }, delayMs);
+    };
+
+    // ── Primary: Server-Sent Events (server pushes; no repeated requests) ────
+    let es = null;
+    try {
+      es = new EventSource(`/api/v1/checkout/${encodeURIComponent(orderId)}/events`);
+
+      es.addEventListener('status', (event) => {
+        if (!active) return;
+        try {
+          const data = JSON.parse(event.data);
+          if (outcomeFromStatus(data?.status) !== 'waiting') {
+            // SSE gave us the result – fetch full status to get signature etc.
+            getCheckoutStatus(orderId).then((result) => {
+              if (active) applyOutcome(result);
+            }).catch(() => {
+              if (active) applyOutcome(data);
+            });
+          }
+        } catch {
+          // Malformed event; fallback poll will catch up
         }
-        if (outcomeFromStatus(result?.status) !== 'waiting') applyOutcome(result);
-      } catch {
-        // Keep the waiting state while transient network errors retry on the next interval.
+      });
+
+      es.onerror = () => {
+        // SSE failed or was refused (e.g. load-balancer drops long connections).
+        // Switch to fallback polling so the user still sees the result.
+        es?.close();
+        es = null;
+        schedulePollFallback(3000);
+      };
+    } catch {
+      // EventSource not supported (very rare) – go straight to fallback poll.
+      schedulePollFallback(3000);
+    }
+
+    // Tab visibility: trigger immediate status check when user comes back from UPI app
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && active) {
+        getCheckoutStatus(orderId).then((result) => {
+          if (!active) return;
+          if (outcomeFromStatus(result?.status) !== 'waiting') applyOutcome(result);
+        }).catch(() => {});
       }
     };
-    const timer = window.setInterval(poll, 3000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       active = false;
-      window.clearInterval(timer);
+      es?.close();
+      if (pollTimer) window.clearTimeout(pollTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [checkout, orderId, viewState, applyOutcome]);
 
@@ -365,12 +438,21 @@ export default function PayCheckout() {
     ? '—'
     : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
+  const brandColor = checkout?.branding?.brandColor || '#126b58';
+  const logoUrl = checkout?.branding?.logoUrl;
+  const tagline = checkout?.branding?.tagline;
+  const supportEmail = checkout?.branding?.supportEmail;
+  const merchantName = checkout?.merchantName || checkout?.branding?.displayName || 'Merchant';
+
   return (
     <main className="checkout-shell min-h-[100dvh] px-4 py-5 sm:px-6 sm:py-9">
       <div className="mx-auto max-w-[920px]">
         <header className="entrance mb-5 flex items-center justify-between px-1 sm:mb-7">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-9 w-9 place-items-center rounded-[12px] bg-[#126b58] text-[#eff9e8]">
+            <span
+              style={{ backgroundColor: brandColor }}
+              className="grid h-9 w-9 place-items-center rounded-[12px] text-[#eff9e8] shadow-xs"
+            >
               <svg viewBox="0 0 24 24" className="h-[21px] w-[21px]" fill="none" aria-hidden="true">
                 <path d="M5 7.5h14M5 12h14M5 16.5h8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
                 <circle cx="18" cy="17" r="3" fill="#c7e8a8" />
@@ -395,7 +477,8 @@ export default function PayCheckout() {
             <button
               type="button"
               onClick={() => setRetryCount((count) => count + 1)}
-              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#126b58] px-5 text-sm font-bold text-white transition-colors hover:bg-[#0b4f42]"
+              style={{ backgroundColor: brandColor }}
+              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold text-white transition-opacity hover:opacity-90"
             >
               <Icon name="refresh" className="h-4 w-4" />
               Try again
@@ -408,7 +491,7 @@ export default function PayCheckout() {
             </div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#9a712d]">Payment window closed</p>
             <h1 className="font-[var(--font-display)] text-[28px] font-semibold tracking-[-1.2px] text-[#142e2b]">This request has expired</h1>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#71817b]">No payment was confirmed. Return to {checkout?.merchantName || 'the merchant'} to request a fresh payment link.</p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#71817b]">No payment was confirmed. Return to {merchantName} to request a fresh payment link.</p>
             <div className="mx-auto mt-7 max-w-sm rounded-2xl bg-[#f6f8f2] px-5 py-4 text-left">
               <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#84928a]">Order reference</p>
               <p className="mt-1 break-all font-mono text-sm text-[#33554c]">{orderId}</p>
@@ -428,7 +511,7 @@ export default function PayCheckout() {
             </div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[#126b58]">Payment confirmed</p>
             <h1 className="font-[var(--font-display)] text-[30px] font-semibold tracking-[-1.3px] text-[#142e2b]">You’re all set.</h1>
-            <p className="mt-2 text-sm text-[#71817b]">Your payment was sent directly to {checkout?.merchantName || 'the merchant'}.</p>
+            <p className="mt-2 text-sm text-[#71817b]">Your payment was sent directly to {merchantName}.</p>
             <p className="mt-6 font-[var(--font-display)] text-[36px] font-bold tracking-[-1.8px] text-[#142e2b]">₹{formatAmount(checkout?.payableAmount)}</p>
             {payment?.utr && (
               <div className="mx-auto mt-6 max-w-sm rounded-2xl bg-[#f6f8f2] px-5 py-4 text-left">
@@ -442,72 +525,114 @@ export default function PayCheckout() {
           <div className="entrance grid overflow-hidden rounded-[28px] border border-[#e1e8e1] bg-[#fffefa] shadow-[0_24px_70px_rgba(25,61,48,.08)] md:grid-cols-[1fr_360px]">
             <section className="p-5 sm:p-9 md:p-10">
               <div className="mb-7 flex items-start justify-between gap-4">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[#87968d]">You’re paying</p>
                   <h1 className="mt-1.5 max-w-[390px] break-words font-[var(--font-display)] text-[25px] font-semibold leading-tight tracking-[-1.1px] text-[#142e2b] sm:text-[30px]">
-                    {checkout?.merchantName || 'Merchant'}
+                    {merchantName}
                   </h1>
+                  {tagline && (
+                    <p className="mt-1 text-xs text-[#6e8278] truncate">{tagline}</p>
+                  )}
                 </div>
-                <div className="mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-[15px] bg-[#e8f4e9] font-[var(--font-display)] text-lg font-bold text-[#126b58]">
-                  {(checkout?.merchantName || 'M').trim().charAt(0).toUpperCase()}
-                </div>
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={merchantName}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    className="mt-1 h-12 w-12 shrink-0 rounded-[16px] object-cover border border-[#e2ebe2] shadow-xs"
+                  />
+                ) : (
+                  <div
+                    style={{ backgroundColor: `${brandColor}18`, color: brandColor }}
+                    className="mt-1 grid h-12 w-12 shrink-0 place-items-center rounded-[16px] font-[var(--font-display)] text-lg font-bold border border-black/5 shadow-xs"
+                  >
+                    {merchantName.trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
 
-              <div className="rounded-[20px] border border-[#e6ebe3] bg-[#f8faf5] px-5 py-5 sm:px-6">
+              <div className="rounded-[20px] border border-[#e6ebe3] bg-gradient-to-br from-[#f8faf5] to-[#f2f7ef] p-5 sm:p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-[#71817b]">Amount to pay</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#71817b]">Exact payable amount</span>
                   {remainingMs !== null && (
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold tabular-nums ${remainingMs < 60000 ? 'bg-[#fbefdc] text-[#8c672a]' : 'bg-[#edf3eb] text-[#56756a]'}`}>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tabular-nums shadow-sm transition-colors ${
+                      remainingMs < 60000 
+                        ? 'bg-[#fbdfdf] text-[#b64c3c] animate-pulse border border-[#f5b8b8]' 
+                        : remainingMs < 180000
+                        ? 'bg-[#fbefdc] text-[#8c672a] border border-[#ecd2a8]'
+                        : 'bg-[#edf3eb] text-[#3e6858] border border-[#d6e5d4]'
+                    }`}>
                       <Icon name="clock" className="h-3.5 w-3.5" />
                       {formattedCountdown}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 font-[var(--font-display)] text-[38px] font-bold leading-none tracking-[-2px] text-[#142e2b] sm:text-[44px]">
-                  <span className="mr-1 text-[27px] font-semibold text-[#527169]">₹</span>{formatAmount(checkout?.payableAmount)}
-                </p>
-                <p className="mt-3 flex items-center gap-2 text-xs font-semibold text-[#126b58]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#126b58]" />
-                  Pay exactly this amount, including paise
-                </p>
+                <div className="mt-2 flex items-baseline justify-between gap-4">
+                  <p className="font-[var(--font-display)] text-[40px] font-bold leading-none tracking-[-2px] text-[#142e2b] sm:text-[46px]">
+                    <span className="mr-1 text-[28px] font-semibold" style={{ color: brandColor }}>₹</span>{formatAmount(checkout?.payableAmount)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={copyAmount}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#d9e4d8] bg-white px-3 py-1.5 text-xs font-bold text-[#126b58] shadow-sm transition hover:bg-[#edf5eb] active:scale-95"
+                    title="Copy exact amount"
+                  >
+                    <Icon name={amountCopied ? 'check' : 'copy'} className="h-3.5 w-3.5" />
+                    {amountCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 text-xs font-semibold text-[#126b58] border border-[#e1ece1]">
+                  <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
+                  <span>Important: Pay exactly ₹{formatAmount(checkout?.payableAmount)} (including paise) for instant verification.</span>
+                </div>
               </div>
 
               <div className="mt-6">
-                <p className="mb-3 text-[11px] font-bold uppercase tracking-[.14em] text-[#87968d]">Choose how to pay</p>
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[.14em] text-[#87968d]">One-click mobile UPI</p>
                 <a
                   href={checkout?.upiLink || undefined}
                   onClick={(event) => {
                     if (!checkout?.upiLink) event.preventDefault();
                   }}
-                  className={`flex min-h-[54px] items-center justify-between rounded-xl px-4 text-sm font-bold transition-colors ${checkout?.upiLink ? 'bg-[#126b58] text-white hover:bg-[#0b4f42]' : 'cursor-not-allowed bg-[#a8b8af] text-white'}`}
+                  style={checkout?.upiLink ? { backgroundColor: brandColor } : undefined}
+                  className={`group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-2xl px-5 text-sm font-bold shadow-md transition-all ${
+                    checkout?.upiLink
+                      ? 'text-white hover:brightness-105 hover:shadow-lg active:scale-[0.99]'
+                      : 'cursor-not-allowed bg-[#a8b8af] text-white'
+                  }`}
                   aria-disabled={!checkout?.upiLink}
                 >
-                  <span className="flex items-center gap-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/15">
-                      <Icon name="arrow" className="h-[17px] w-[17px]" />
+                  <span className="flex items-center gap-3.5">
+                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 shadow-inner group-hover:scale-105 transition-transform">
+                      <Icon name="arrow" className="h-5 w-5" />
                     </span>
-                    Pay with UPI app
+                    <span className="text-left">
+                      <span className="block text-[14px]">Pay with UPI App</span>
+                      <span className="block text-[11px] font-normal text-white/80">GPay · PhonePe · Paytm · BHIM · Cred</span>
+                    </span>
                   </span>
-                  <span className="text-[11px] font-semibold text-white/75">Opens app</span>
+                  <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+                    Tap to open
+                  </span>
                 </a>
               </div>
 
               <div className="my-5 flex items-center gap-3">
                 <span className="h-px flex-1 bg-[#e7ece5]" />
-                <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#9ba69f]">or use UPI ID</span>
+                <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#9ba69f]">or manual transfer via UPI ID</span>
                 <span className="h-px flex-1 bg-[#e7ece5]" />
               </div>
 
-              <div className="flex min-h-[58px] items-center gap-3 rounded-xl border border-[#e4eae2] bg-white px-3.5 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#93a097]">Merchant UPI ID</p>
-                  <p className="mt-0.5 truncate font-mono text-[13px] font-semibold text-[#294d43]">{upiId || 'UPI ID unavailable'}</p>
+              <div className="flex min-h-[60px] items-center gap-3 rounded-2xl border border-[#e4eae2] bg-white p-3 shadow-sm hover:border-[#ccd9cb] transition-colors">
+                <div className="min-w-0 flex-1 pl-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#93a097]">Merchant Verified UPI ID</p>
+                  <p className="mt-0.5 truncate font-mono text-[14px] font-semibold text-[#1e443a] select-all">{upiId || 'UPI ID unavailable'}</p>
                 </div>
                 <button
                   type="button"
                   onClick={copyUpiId}
                   disabled={!upiId}
-                  className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-[#126b58] transition-colors hover:bg-[#edf5eb] disabled:cursor-not-allowed disabled:text-[#a7b1aa]"
+                  className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border border-[#d3e2d3] bg-[#f7faf5] px-3.5 text-xs font-bold text-[#126b58] shadow-sm transition hover:bg-[#edf5eb] active:scale-95 disabled:cursor-not-allowed disabled:text-[#a7b1aa]"
                   aria-label={copied ? 'UPI ID copied' : 'Copy UPI ID'}
                 >
                   <Icon name={copied ? 'check' : 'copy'} className="h-4 w-4" />
@@ -537,7 +662,7 @@ export default function PayCheckout() {
               </div>
               <div className="qr-frame grid aspect-square w-full max-w-[272px] place-items-center rounded-[22px] border border-[#e9eee7] bg-[#fffefa] p-3.5">
                 {qrImage ? (
-                  <img src={qrImage} alt="UPI payment QR code" className="h-full w-full object-contain" />
+                  <img src={qrImage} alt="UPI payment QR code" className="h-full w-full object-contain select-none" />
                 ) : (
                   <div className="flex flex-col items-center px-5 text-center">
                     <div className="mb-3 h-8 w-8 rounded-lg border-2 border-[#c5d7c7] border-t-[#126b58] animate-spin" />
@@ -545,27 +670,26 @@ export default function PayCheckout() {
                   </div>
                 )}
               </div>
-              <div className="mt-5 flex items-center gap-2.5">
-                <span className="flex h-7 w-[42px] items-center justify-center gap-1 rounded-md border border-[#dde7dc] bg-[#fffefa]">
-                  <span className="h-2 w-2 rounded-full bg-[#126b58]" />
-                  <span className="h-2 w-2 rounded-full bg-[#eeb65a]" />
-                  <span className="h-2 w-2 rounded-full bg-[#a6c9a3]" />
+              <div className="mt-5 flex flex-col items-center gap-1.5 text-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d6e5d5] bg-white px-3 py-1 shadow-xs">
+                  <span className="radar-sweep h-2 w-2 rounded-full bg-[#22c55e]" />
+                  <span className="text-[11px] font-bold text-[#1a5b4c]">Live Bank Alert Listener Active</span>
                 </span>
-                <span className="text-xs font-semibold text-[#587368]">Scan with any UPI app</span>
+                <span className="text-[11px] font-medium text-[#678073]">Scan via PhonePe, GPay, Paytm or BHIM</span>
               </div>
-              <div className="mt-auto w-full border-t border-[#e2eade] pt-5">
+              <div className="mt-auto w-full border-t border-[#e2eade] pt-4">
                 {viewState === 'waiting' ? (
                   <div className="flex items-center justify-center gap-2.5 text-center">
-                    <span className="flex items-center gap-1">
-                      <i className="waiting-dot h-1.5 w-1.5 rounded-full bg-[#126b58]" />
-                      <i className="waiting-dot h-1.5 w-1.5 rounded-full bg-[#126b58]" />
-                      <i className="waiting-dot h-1.5 w-1.5 rounded-full bg-[#126b58]" />
+                    <span className="flex items-center gap-1.5">
+                      <i className="waiting-dot h-2 w-2 rounded-full bg-[#126b58]" />
+                      <i className="waiting-dot h-2 w-2 rounded-full bg-[#126b58]" />
+                      <i className="waiting-dot h-2 w-2 rounded-full bg-[#126b58]" />
                     </span>
-                    <span className="text-xs font-semibold text-[#527169]">Waiting for payment</span>
+                    <span className="text-xs font-bold text-[#23584a]">Waiting for bank confirmation…</span>
                   </div>
                 ) : null}
-                <p className="mt-2 text-center text-[10px] leading-4 text-[#8a9990]">
-                  Keep this page open while you complete the payment.
+                <p className="mt-1.5 text-center text-[10px] leading-4 text-[#8a9990]">
+                  Funds transfer instantly to the merchant. Do not refresh.
                 </p>
               </div>
             </aside>
@@ -575,7 +699,13 @@ export default function PayCheckout() {
         <footer className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 text-center text-[10px] font-medium text-[#8b9990]">
           <span>Powered by PopPay</span>
           <span aria-hidden="true">·</span>
-          <span>UPI payments go directly to the merchant</span>
+          <span>Direct UPI to {merchantName}</span>
+          {supportEmail && (
+            <>
+              <span aria-hidden="true">·</span>
+              <a href={`mailto:${supportEmail}`} className="underline hover:text-[#142e2b]">Support: {supportEmail}</a>
+            </>
+          )}
           <span aria-hidden="true">·</span>
           <span>Order {orderId.slice(0, 8)}</span>
         </footer>
