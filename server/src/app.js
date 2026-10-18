@@ -46,6 +46,21 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '32kb' }));
 app.use('/api/v1/auth', authLimiter);
 app.use('/api/v1', apiRoutes);
+app.use('/checkout.js', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+app.use('/pay', (req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *');
+  next();
+});
+const clientDist = path.resolve(__dirname, '../../client/dist');
+app.use(express.static(clientDist));
+app.get(/^\/(?!api\/|checkout\.js).*/, (req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
+
 app.get('/checkout.js', (req, res) => {
   res.type('application/javascript').sendFile(
     path.resolve(__dirname, '../../sdk/checkout.js'),
