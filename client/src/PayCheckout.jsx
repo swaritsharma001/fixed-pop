@@ -951,7 +951,7 @@ function PayCheckoutInner() {
                 }`}>
                   <div className="min-w-0 flex-1 pr-2">
                     <p className={`text-[9px] font-bold uppercase tracking-wider ${checkoutDark ? 'text-[#7e948a]' : 'text-slate-500'}`}>UPI ID</p>
-                    <p className={`truncate font-mono text-xs font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-slate-800'}`}>{upiId}</p>
+                    <p className={`break-all font-mono text-xs font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-slate-800'}`}>{upiId}</p>
                   </div>
                   <button
                     type="button"

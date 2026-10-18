@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PopPay Developer Guide & REST API Documentation</title>
+  <meta name="description" content="Complete developer documentation for PopPay - Instant direct UPI collection gateway. Endpoints, cURL, Node.js, Python, Webhooks and AI integration prompt." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #090e0c;
+      --bg-card: #0f1815;
+      --bg-card-hover: #14221d;
+      --bg-subtle: #12201b;
+      --border: #1a2d26;
+      --border-accent: rgba(52, 211, 153, 0.25);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #10b981;
+      --primary-glow: rgba(16, 185, 129, 0.15);
+      --primary-light: #34d399;
+      --amber: #f59e0b;
+      --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-display: 'Space Grotesk', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient glow background */
+    .bg-mesh {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 90%, rgba(5, 150, 105, 0.06) 0%, transparent 45%),
+        #090e0c;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Layout */
+    .docs-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      background: rgba(9, 14, 12, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 1.5rem 1.25rem;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      margin-bottom: 2rem;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10b981, #047857);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .brand-text {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+    .brand-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--primary-light);
+      padding: 2px 6px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-group { margin-bottom: 1.75rem; }
+    .nav-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+      padding-left: 0.5rem;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.65rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.825rem;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+    .nav-link:hover {
+      background: var(--bg-card);
+      color: var(--primary-light);
+      transform: translateX(2px);
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      max-width: 940px;
+      padding: 2.5rem 2rem 5rem 3rem;
+    }
+    @media (max-width: 768px) {
+      .content { padding: 1.5rem 1rem 4rem 1rem; }
+    }
+
+    /* Header Banner */
+    .doc-header {
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+    }
+    .doc-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--primary-glow);
+      border: 1px solid var(--border-accent);
+      color: var(--primary-light);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--primary);
+    }
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .doc-lead {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 720px;
+      line-height: 1.6;
+    }
+
+    /* Base URL Card */
+    .base-url-card {
+      margin: 1.5rem 0;
+      background: linear-gradient(145deg, #101c17, #0c1512);
+      border: 1px solid var(--border-accent);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .base-url-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary-light);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .base-url-val {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Section Styling */
+    section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 4rem;
+    }
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 1.75rem 0 0.75rem 0;
+      color: var(--text-main);
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 0.925rem;
+      line-height: 1.65;
+      margin-bottom: 1rem;
+    }
+
+    /* Endpoint Badge */
+    .endpoint {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.85rem;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+    }
+    .badge-post {
+      background: #047857;
+      color: #ecfdf5;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-get {
+      background: #0284c7;
+      color: #f0f9ff;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Code Blocks */
+    .code-container {
+      background: #050a08;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+    .code-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .copy-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .copy-btn:hover {
+      background: var(--bg-card-hover);
+      color: var(--primary-light);
+    }
+    pre {
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.825rem;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+    code { font-family: var(--font-mono); }
+
+    /* Tables */
+    .table-box {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin: 1.25rem 0;
+      background: var(--bg-card);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    th {
+      background: var(--bg-subtle);
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    tr:last-child td { border-bottom: none; }
+    .param-name {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--primary-light);
+    }
+    .param-req {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-left: 0.35rem;
+    }
+    .param-opt {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    /* AI Prompt Callout */
+    .ai-prompt-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 78, 59, 0.25));
+      border: 1px solid var(--border-accent);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      position: relative;
+    }
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--primary);
+      color: #064e3b;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Tab switcher */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: -1px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: #050a08;
+      border-color: var(--border) var(--border) transparent var(--border);
+      color: var(--primary-light);
+    }
+
+    /* Button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--primary);
+      color: #064e3b;
+      font-weight: 700;
+      font-size: 0.875rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
+    .btn:hover {
+      background: var(--primary-light);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-mesh"></div>
+
+  <div class="docs-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <a href="/" class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 7.5h14M5 12h14M5 16.5h8"/><circle cx="18" cy="17" r="3" fill="#a7f3d0"/></svg>
+        </div>
+        <span class="brand-text">poppay</span>
+        <span class="brand-badge">DOCS</span>
+      </a>
+
+      <div class="nav-group">
+        <p class="nav-title">Getting Started</p>
+        <a href="#quickstart" class="nav-link">⚡ Quick Start</a>
+        <a href="#ai-prompt" class="nav-link">🤖 AI Prompt for Cursor / Claude</a>
+        <a href="#base-url" class="nav-link">🌐 Base URLs & Endpoints</a>
+        <a href="#authentication" class="nav-link">🔑 Authentication</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-title">Core APIs</p>
+        <a href="#create-order" class="nav-link">POST /api/v1/orders</a>
+        <a href="#checkout-flow" class="nav-link">Hosted Checkout Redirection</a>
+        <a href="#check-status" class="nav-link">GET /api/v1/checkout/:id/status</a>
+        <a href="#webhooks" class="nav-link">Webhooks & HMAC Verification</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-title">Code Examples</p>
+        <a href="#example-curl" class="nav-link">cURL Example</a>
+        <a href="#example-node" class="nav-link">Node.js / Express</a>
+        <a href="#example-python" class="nav-link">Python / Requests</a>
+        <a href="#example-php" class="nav-link">PHP</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-title">Portal</p>
+        <a href="/dashboard" class="nav-link">← Merchant Dashboard</a>
+        <a href="/login" class="nav-link">Sign In / Sign Up</a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <div class="doc-header">
+        <div class="doc-pill">
+          <span class="pulse-dot"></span>
+          <span>v1.0 REST API · Live & Publicly Accessible</span>
+        </div>
+        <h1>PopPay Developer Documentation</h1>
+        <p class="doc-lead">
+          Integrate direct-to-bank UPI collections in minutes. 0% gateway fee, zero middleman custody, automatic real-time FamApp bank alert matching, and instant webhook delivery.
+        </p>
+
+        <div class="base-url-card" id="base-url">
+          <div>
+            <div class="base-url-label">Production API Base URL</div>
+            <div class="base-url-val">https://poppay.tech</div>
+          </div>
+          <div>
+            <button class="copy-btn" onclick="copyText('https://poppay.tech', this)">Copy Base URL</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Prompt Callout -->
+      <section id="ai-prompt">
+        <div class="ai-prompt-box">
+          <div class="ai-badge">🤖 AI Agent / Cursor / Claude Prompt</div>
+          <h2 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Give This Prompt to AI to Build Your Integration Instantly</h2>
+          <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1rem;">
+            Copy this snippet and paste it directly into Cursor, Claude 3.5, ChatGPT, or your favorite AI coding assistant. It contains everything the AI needs to integrate PopPay seamlessly into your app.
+          </p>
+
+          <div class="code-container">
+            <div class="code-header">
+              <span class="code-title">Copy & Paste Into Cursor / ChatGPT / Claude</span>
+              <button class="copy-btn" onclick="copySnippet('prompt-text', this)">Copy AI Prompt</button>
+            </div>
+            <pre id="prompt-text"><code>I want to integrate PopPay payment gateway into my application.
+Here is the official API specification:
+
+Base URL: https://poppay.tech
+API Endpoint: POST https://poppay.tech/api/v1/orders
+Authentication Header: Authorization: Bearer <POPPAY_SECRET_KEY>
+Content-Type: application/json
+
+Request Payload:
+{
+  "amount": "249.00",                     // Required: Amount in INR (string or number)
+  "receipt": "order_rcpt_1001",           // Optional: Internal order/invoice reference
+  "redirectUrl": "https://myshop.com/success" // Optional: URL to redirect customer after payment
+}
+
+Response Payload:
+{
+  "order_id": "pop_ord_...",              // Unique PopPay order ID
+  "checkoutUrl": "https://poppay.tech/pay/pop_ord_...", // Customer payment link
+  "payableAmount": "249.00",
+  "status": "CREATED",
+  "expiresAt": "2026-10-18T11:00:00.000Z"
+}
+
+Payment Flow:
+1. When user initiates checkout on my site, make a POST request to https://poppay.tech/api/v1/orders from server-side.
+2. Redirect user to order.checkoutUrl (opens branded PopPay checkout with 1-tap UPI apps like PhonePe, GPay, Paytm, and QR code).
+3. Set up a Webhook endpoint at POST /webhooks/poppay.
+   PopPay sends a POST request with header X-PopPay-Signature when payment is confirmed.
+   Verify the signature using HMAC-SHA256(raw_body, POPPAY_WEBHOOK_SECRET) === X-PopPay-Signature.
+   When valid and event === "payment.success", fulfill the order using event.order_id and event.utr.
+4. Provide a frontend poll/status check by calling GET https://poppay.tech/api/v1/checkout/<order_id>/status if needed.
+
+Please write clean, production-ready backend code to implement this flow.</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Authentication -->
+      <section id="authentication">
+        <h2>🔑 Authentication</h2>
+        <p>
+          PopPay authenticates API requests using Bearer tokens. Send your <code>POPPAY_SECRET_KEY</code> in the <code>Authorization</code> HTTP header.
+        </p>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">HTTP Header</span>
+            <button class="copy-btn" onclick="copyText('Authorization: Bearer pop_sec_your_secret_key', this)">Copy</button>
+          </div>
+          <pre><code>Authorization: Bearer pop_sec_live_abcdef1234567890</code></pre>
+        </div>
+        <p style="font-size: 0.85rem; color: #fbbf24;">
+          ⚠️ <strong>Security Note:</strong> Always keep your Secret Key on your backend server. Never expose it in client-side HTML, JavaScript or mobile app binaries.
+        </p>
+      </section>
+
+      <!-- Create Order Endpoint -->
+      <section id="create-order">
+        <h2>1. Create a Payment Order</h2>
+        <div class="endpoint">
+          <span class="badge-post">POST</span>
+          <span>https://poppay.tech/api/v1/orders</span>
+        </div>
+        <p>
+          Call this endpoint from your backend whenever a customer is ready to checkout. It generates a unique PopPay order and returns a <code>checkoutUrl</code>.
+        </p>
+
+        <h3>Request Parameters</h3>
+        <div class="table-box">
+          <table>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">amount</span><span class="param-req">REQUIRED</span></td>
+                <td>String / Number</td>
+                <td>Payment amount in INR (e.g. <code>"499.00"</code> or <code>499</code>).</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">receipt</span><span class="param-opt">OPTIONAL</span></td>
+                <td>String</td>
+                <td>Your internal invoice or order ID (e.g. <code>"INV-2026-001"</code>).</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">redirectUrl</span><span class="param-opt">OPTIONAL</span></td>
+                <td>String (URL)</td>
+                <td>URL to redirect customer to after payment is verified (e.g. <code>"https://shop.com/thank-you"</code>).</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">notes</span><span class="param-opt">OPTIONAL</span></td>
+                <td>Object</td>
+                <td>Key-value metadata dictionary (max 10 keys).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Response (201 Created)</h3>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">JSON Response</span>
+            <button class="copy-btn" onclick="copySnippet('order-res', this)">Copy</button>
+          </div>
+          <pre id="order-res"><code>{
+  "order_id": "pop_ord_8f4b23e198a2c10b",
+  "baseAmount": "499.00",
+  "payableAmount": "499.00",
+  "status": "CREATED",
+  "receipt": "INV-2026-001",
+  "checkoutUrl": "https://poppay.tech/pay/pop_ord_8f4b23e198a2c10b",
+  "expiresAt": "2026-10-18T10:50:00.000Z",
+  "createdAt": "2026-10-18T10:35:00.000Z"
+}</code></pre>
+        </div>
+      </section>
+
+      <!-- Hosted Checkout Flow -->
+      <section id="checkout-flow">
+        <h2>2. Customer Checkout Experience</h2>
+        <p>
+          Once your server receives the response, redirect your customer's browser to <code>order.checkoutUrl</code>:
+        </p>
+        <div class="code-container">
+          <pre><code>// Example Node.js redirect
+res.redirect(order.checkoutUrl);</code></pre>
+        </div>
+        <p>
+          On mobile devices, the customer can tap <strong>"Pay with UPI App"</strong> to launch <strong>PhonePe, Google Pay, Paytm, Cred, or BHIM</strong> in 1 click, or scan the dynamic QR code on desktop. PopPay automatically listens for bank credit alerts and verifies payment instantly.
+        </p>
+      </section>
+
+      <!-- Webhooks -->
+      <section id="webhooks">
+        <h2>3. Webhooks & Payment Reconciliation</h2>
+        <p>
+          Configure your Webhook URL in your PopPay Merchant Settings (e.g. <code>https://myshop.com/webhooks/poppay</code>). Whenever a payment is confirmed by the bank alert, PopPay sends an HTTP POST request with an HMAC-SHA256 signature in the <code>X-PopPay-Signature</code> header.
+        </p>
+
+        <h3>Webhook Payload</h3>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">Event: payment.success</span>
+            <button class="copy-btn" onclick="copySnippet('webhook-res', this)">Copy</button>
+          </div>
+          <pre id="webhook-res"><code>{
+  "event": "payment.success",
+  "order_id": "pop_ord_8f4b23e198a2c10b",
+  "payment_id": "pop_pay_71a93b49e102",
+  "amount": "499.00",
+  "utr": "428910284729",
+  "receivedAt": "2026-10-18T10:36:12.000Z"
+}</code></pre>
+        </div>
+
+        <h3>HMAC-SHA256 Signature Verification</h3>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">Node.js / Express Webhook Handler</span>
+            <button class="copy-btn" onclick="copySnippet('webhook-code', this)">Copy</button>
+          </div>
+          <pre id="webhook-code"><code>import express from "express";
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+const app = express();
+
+// IMPORTANT: Use express.raw({ type: "application/json" }) to verify exact raw bytes
+app.post(
+  "/webhooks/poppay",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const signature = req.get("X-PopPay-Signature") || "";
+    if (!/^[a-f0-9]{64}$/i.test(signature)) {
+      return res.status(401).send("Invalid signature format");
+    }
+
+    const expected = createHmac("sha256", process.env.POPPAY_WEBHOOK_SECRET)
+      .update(req.body)
+      .digest();
+
+    const received = Buffer.from(signature, "hex");
+
+    if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
+      return res.status(401).send("Signature mismatch");
+    }
+
+    const event = JSON.parse(req.body.toString("utf8"));
+    if (event.event === "payment.success") {
+      console.log(`Payment confirmed for Order: ${event.order_id}, UTR: ${event.utr}`);
+      // TODO: Idempotently fulfill order, activate subscription, or credit user account
+    }
+
+    // Always respond with 200 OK
+    return res.sendStatus(200);
+  }
+);</code></pre>
+        </div>
+      </section>
+
+      <!-- Check Order Status Endpoint -->
+      <section id="check-status">
+        <h2>4. Check Order Status (Public Polling)</h2>
+        <div class="endpoint">
+          <span class="badge-get">GET</span>
+          <span>https://poppay.tech/api/v1/checkout/:orderId/status</span>
+        </div>
+        <p>
+          Safe to call from frontend or backend without secret keys. Check whether a payment has transitioned from <code>PENDING</code> to <code>PAID</code>.
+        </p>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">JSON Response (When Paid)</span>
+          </div>
+          <pre><code>{
+  "orderId": "pop_ord_8f4b23e198a2c10b",
+  "status": "PAID",
+  "amount": "499.00",
+  "utr": "428910284729",
+  "paymentId": "pop_pay_71a93b49e102",
+  "signature": "1c7a8b...64charHexSignature"
+}</code></pre>
+        </div>
+      </section>
+
+      <!-- Code Examples -->
+      <section id="example-curl">
+        <h2>cURL Example</h2>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">Terminal</span>
+            <button class="copy-btn" onclick="copySnippet('curl-code', this)">Copy</button>
+          </div>
+          <pre id="curl-code"><code>curl -X POST "https://poppay.tech/api/v1/orders" \
+  -H "Authorization: Bearer pop_sec_your_secret_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": "499.00",
+    "receipt": "order_1001",
+    "redirectUrl": "https://myshop.com/thanks"
+  }'</code></pre>
+        </div>
+      </section>
+
+      <section id="example-node">
+        <h2>Node.js Example</h2>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">Node.js (Fetch)</span>
+            <button class="copy-btn" onclick="copySnippet('node-code', this)">Copy</button>
+          </div>
+          <pre id="node-code"><code>const response = await fetch("https://poppay.tech/api/v1/orders", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${process.env.POPPAY_SECRET_KEY}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    amount: "499.00",
+    receipt: "order_1001",
+    redirectUrl: "https://myshop.com/thanks"
+  })
+});
+
+if (!response.ok) {
+  throw new Error(`PopPay error: ${await response.text()}`);
+}
+
+const order = await response.json();
+console.log("Redirect customer to:", order.checkoutUrl);</code></pre>
+        </div>
+      </section>
+
+      <section id="example-python">
+        <h2>Python Example</h2>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-title">Python 3 (Requests)</span>
+            <button class="copy-btn" onclick="copySnippet('py-code', this)">Copy</button>
+          </div>
+          <pre id="py-code"><code>import os
+import requests
+
+response = requests.post(
+    "https://poppay.tech/api/v1/orders",
+    headers={
+        "Authorization": f"Bearer {os.environ['POPPAY_SECRET_KEY']}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "amount": "499.00",
+        "receipt": "order_1001",
+        "redirectUrl": "https://myshop.com/thanks"
+    }
+)
+response.raise_for_status()
+order = response.json()
+print("Redirect customer to:", order["checkoutUrl"])</code></pre>
+        </div>
+      </section>
+
+      <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); text-align: center;">
+        <p style="font-size: 0.8rem; color: var(--text-dim);">
+          PopPay Payment Engine · Direct UPI Collections · Base URL: <a href="https://poppay.tech" style="color: var(--primary-light);">https://poppay.tech</a>
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = orig, 1800);
+      });
+    }
+
+    function copySnippet(id, btn) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      navigator.clipboard.writeText(el.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = orig, 1800);
+      });
+    }
+  </script>
+</body>
+</html>

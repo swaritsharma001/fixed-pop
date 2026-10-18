@@ -8,12 +8,12 @@
   --ink: #0f172a;
   --muted: #64748b;
   --line: #e2e8f0;
-  --forest: #126b58;
-  --forest-dark: #0b4f42;
-  --mint: #dff3e9;
-  --lime: #c7e8a8;
-  --amber: #eeb65a;
-  --error: #b64c3c;
+  --forest: #10b981;
+  --forest-dark: #059669;
+  --mint: #ecfdf5;
+  --lime: #34d399;
+  --amber: #f59e0b;
+  --error: #ef4444;
   --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   font-family: var(--font-body);
@@ -25,14 +25,14 @@
 
 html.dark {
   color-scheme: dark;
-  --canvas: #090f0e;
-  --paper: #111a18;
-  --ink: #eaf3ee;
-  --muted: #8ca097;
-  --line: #1d2e29;
-  --forest: #1ea88a;
-  --forest-dark: #126b58;
-  --mint: #15332b;
+  --canvas: #070b0a;
+  --paper: #0e1714;
+  --ink: #f8fafc;
+  --muted: #94a3b8;
+  --line: #1a2d26;
+  --forest: #10b981;
+  --forest-dark: #059669;
+  --mint: #0f2820;
   --lime: #34d399;
 }
 

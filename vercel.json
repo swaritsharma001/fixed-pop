@@ -12,7 +12,19 @@
       "destination": "https://api.poppay.tech/checkout.js"
     },
     {
-      "source": "/((?!api/|checkout\\.js).*)",
+      "source": "/docs",
+      "destination": "/docs.html"
+    },
+    {
+      "source": "/developer",
+      "destination": "/docs.html"
+    },
+    {
+      "source": "/guide",
+      "destination": "/docs.html"
+    },
+    {
+      "source": "/((?!api/|checkout\\.js|docs\\.html).*)",
       "destination": "/index.html"
     }
   ],

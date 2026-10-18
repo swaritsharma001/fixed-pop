@@ -118,6 +118,20 @@ app.use('/pay', (req, res, next) => {
   next();
 });
 const clientDist = path.resolve(__dirname, '../../client/dist');
+const docsPath = path.resolve(__dirname, '../../client/public/docs.html');
+const distDocsPath = path.resolve(__dirname, '../../client/dist/docs.html');
+
+app.get(['/docs', '/docs.html', '/developer', '/guide', '/api/docs'], (req, res) => {
+  const fs = require('fs');
+  if (fs.existsSync(distDocsPath)) {
+    return res.sendFile(distDocsPath);
+  }
+  if (fs.existsSync(docsPath)) {
+    return res.sendFile(docsPath);
+  }
+  return res.redirect('/');
+});
+
 app.use(express.static(clientDist));
 app.get(/^\/(?!api\/|checkout\.js).*/, (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));

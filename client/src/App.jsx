@@ -16,6 +16,10 @@ export default function App() {
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/privacy" element={<PrivacyPage />} />
+      {/* Public Developer Guide (Accessible without login) */}
+      <Route path="/docs" element={<IntegrationPage isPublic={true} />} />
+      <Route path="/developer" element={<IntegrationPage isPublic={true} />} />
+      <Route path="/guide" element={<IntegrationPage isPublic={true} />} />
       <Route element={<PrivateArea />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/payment-links" element={<PaymentLinksPage />} />

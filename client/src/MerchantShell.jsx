@@ -58,8 +58,7 @@ function readCredentials() {
 
 export function useMerchant() {
   const value = useContext(MerchantContext);
-  if (!value) throw new Error('useMerchant must be used inside the merchant area');
-  return value;
+  return value || { merchant: null, setMerchant: () => {}, refreshMerchant: () => Promise.resolve(null) };
 }
 
 const navGroups = [

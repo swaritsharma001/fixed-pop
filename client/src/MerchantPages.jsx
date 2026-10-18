@@ -101,7 +101,7 @@ function StatTile({ label, value, caption, icon: Icon, accent = false, progress 
               </span>
             )}
           </div>
-          <p className={`mt-2.5 font-[var(--font-display)] text-[28px] xs:text-[32px] sm:text-[34px] font-bold leading-none tracking-[-1.5px] tabular-nums truncate ${
+          <p className={`mt-2.5 font-[var(--font-display)] text-[26px] xs:text-[30px] sm:text-[34px] font-bold leading-none tracking-[-1.5px] tabular-nums break-words sm:break-normal ${
             accent ? 'text-white' : 'text-slate-900 dark:text-white'
           }`}>
             {value}
@@ -187,7 +187,7 @@ function OnboardingCard({ merchant }) {
                 <p className={`text-xs font-bold ${done ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-white'}`}>
                   {label}
                 </p>
-                <p className="truncate text-[10px] text-slate-500 dark:text-[#7f9589]">{detail}</p>
+                <p className="text-[10px] text-slate-500 dark:text-[#7f9589] leading-snug">{detail}</p>
               </div>
               {!done && (
                 <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-emerald-600" />
@@ -362,7 +362,7 @@ export function DashboardPage() {
               <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 dark:border-[#1a2d26] bg-slate-50/70 dark:bg-[#12201b] p-3">
                 <div className="min-w-0 flex-1 pr-2">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#7f9589]">Your Active UPI Handle</p>
-                  <p className="truncate font-mono text-xs font-bold text-slate-900 dark:text-[#34d399]">{merchant.upiId}</p>
+                  <p className="break-all font-mono text-xs font-bold text-slate-900 dark:text-[#34d399] select-all">{merchant.upiId}</p>
                 </div>
                 <button
                   type="button"
@@ -415,7 +415,7 @@ export function DashboardPage() {
               <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 dark:border-[#1a2d26] bg-slate-50/70 dark:bg-[#12201b] p-3">
                 <div className="min-w-0 flex-1 pr-2">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#7f9589]">Public API Key</p>
-                  <p className="truncate font-mono text-xs font-bold text-slate-900 dark:text-[#34d399]">{merchant.publicKey}</p>
+                  <p className="break-all font-mono text-xs font-bold text-slate-900 dark:text-[#34d399] select-all">{merchant.publicKey}</p>
                 </div>
                 <button
                   type="button"
@@ -560,23 +560,49 @@ export function OrdersPage() {
       <PageHeading eyebrow="Collection activity" title="Orders" detail="A live ledger of the payment requests created for your business." />
       <Panel className="overflow-hidden">
         <PanelTitle title="Order ledger" detail={result ? `${result.total} ${result.total === 1 ? 'order' : 'orders'} in this view` : 'Most recent payment requests'} />
-        <div className="flex gap-2 overflow-x-auto border-b border-[#edf0eb] px-4 py-3 sm:px-5">
-          {ORDER_FILTERS.map(([value, label]) => <button key={value} type="button" onClick={() => changeFilter(value)} className={`shrink-0 rounded-full px-3.5 py-2 text-[11px] font-bold transition ${filter === value ? 'bg-[#174e41] text-white' : 'bg-[#f1f4ef] text-[#71827a] hover:bg-[#e8eee6]'}`}>{label}</button>)}
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 dark:border-white/10 px-4 py-3 sm:px-5">
+          {ORDER_FILTERS.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => changeFilter(value)}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                filter === value
+                  ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         {loading ? <TableLoading columns={5} /> : error ? <div className="p-5"><ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /></div> : !orders.length ? (
           <EmptyState icon={Clipboard} title={filter === 'ALL' ? 'No orders yet' : `No ${filter.toLowerCase()} orders`} detail={filter === 'ALL' ? 'Orders created with your PopPay secret key will show up here.' : 'Try another status filter to see a different set of orders.'} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
-              <thead><tr className="bg-[#f8faf6] text-[9px] font-bold uppercase tracking-[.13em] text-[#84928a]"><th className="px-5 py-3.5">Order / receipt</th><th className="px-4 py-3.5">Base amount</th><th className="px-4 py-3.5">Payable</th><th className="px-4 py-3.5">Expires</th><th className="px-5 py-3.5">Status</th></tr></thead>
-              <tbody className="divide-y divide-[#edf0eb]">
-                {orders.map((order) => <tr key={order.order_id} className="hover:bg-[#fbfcf9]">
-                  <td className="px-5 py-4"><p className="font-mono text-xs font-semibold text-[#294b40]">{order.order_id}</p><p className="mt-1 max-w-[210px] truncate text-[10px] text-[#84928a]">{order.receipt || 'No receipt reference'}</p></td>
-                  <td className="px-4 py-4 text-xs tabular-nums text-[#6e8076]">{formatMoney(order.baseAmount)}</td>
-                  <td className="px-4 py-4 text-xs font-bold tabular-nums text-[#24483a]">{formatMoney(order.payableAmount)}</td>
-                  <td className="px-4 py-4 text-[11px] text-[#7f8c84]">{formatDate(order.expiresAt, { time: true })}</td>
-                  <td className="px-5 py-4"><StatusBadge status={order.status} /></td>
-                </tr>)}
+              <thead>
+                <tr className="bg-slate-50 dark:bg-white/[0.03] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
+                  <th className="px-5 py-3.5">Order / receipt</th>
+                  <th className="px-4 py-3.5">Base amount</th>
+                  <th className="px-4 py-3.5">Payable</th>
+                  <th className="px-4 py-3.5">Expires</th>
+                  <th className="px-5 py-3.5">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                {orders.map((order) => (
+                  <tr key={order.order_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
+                    <td className="px-5 py-4">
+                      <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">{order.order_id}</p>
+                      <p className="mt-0.5 break-words text-[11px] text-slate-500 dark:text-slate-400">{order.receipt || 'No receipt reference'}</p>
+                    </td>
+                    <td className="px-4 py-4 text-xs tabular-nums text-slate-500 dark:text-slate-400">{formatMoney(order.baseAmount)}</td>
+                    <td className="px-4 py-4 text-xs font-bold tabular-nums text-slate-900 dark:text-white">{formatMoney(order.payableAmount)}</td>
+                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(order.expiresAt, { time: true })}</td>
+                    <td className="px-5 py-4"><StatusBadge status={order.status} /></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -616,16 +642,31 @@ export function PaymentsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[780px] border-collapse text-left">
-              <thead><tr className="bg-[#f8faf6] text-[9px] font-bold uppercase tracking-[.13em] text-[#84928a]"><th className="px-5 py-3.5">Payment</th><th className="px-4 py-3.5">Order</th><th className="px-4 py-3.5">UTR</th><th className="px-4 py-3.5">Verified by</th><th className="px-4 py-3.5">Received</th><th className="px-5 py-3.5 text-right">Amount</th></tr></thead>
-              <tbody className="divide-y divide-[#edf0eb]">
-                {payments.map((payment) => <tr key={payment.payment_id} className="hover:bg-[#fbfcf9]">
-                  <td className="px-5 py-4 font-mono text-[11px] text-[#59756a]">{payment.payment_id}</td>
-                  <td className="px-4 py-4 font-mono text-xs font-semibold text-[#294b40]">{payment.order_id}</td>
-                  <td className="px-4 py-4 font-mono text-xs text-[#71817b]">{payment.utr || '—'}</td>
-                  <td className="px-4 py-4 text-[11px] font-semibold text-[#557565]">{payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant bank app' : 'FamApp alert'}</td>
-                  <td className="px-4 py-4 text-[11px] text-[#71817b]">{formatDate(payment.receivedAt, { time: true })}</td>
-                  <td className="px-5 py-4 text-right text-xs font-bold tabular-nums text-[#24483a]">{formatMoney(payment.amount)}</td>
-                </tr>)}
+              <thead>
+                <tr className="bg-slate-50 dark:bg-white/[0.03] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
+                  <th className="px-5 py-3.5">Payment</th>
+                  <th className="px-4 py-3.5">Order</th>
+                  <th className="px-4 py-3.5">UTR</th>
+                  <th className="px-4 py-3.5">Verified by</th>
+                  <th className="px-4 py-3.5">Received</th>
+                  <th className="px-5 py-3.5 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                {payments.map((payment) => (
+                  <tr key={payment.payment_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
+                    <td className="px-5 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">{payment.payment_id}</td>
+                    <td className="px-4 py-4 font-mono text-xs font-bold text-slate-900 dark:text-white">{payment.order_id}</td>
+                    <td className="px-4 py-4 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">{payment.utr || '—'}</td>
+                    <td className="px-4 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit Alert'}
+                    </td>
+                    <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(payment.receivedAt, { time: true })}</td>
+                    <td className="px-5 py-4 text-right text-xs font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                      +{formatMoney(payment.amount)}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -2005,32 +2046,27 @@ export function BrandingPage() {
   );
 }
 
-const NODE_SNIPPET = `const response = await fetch(
-  \`\${process.env.POPPAY_API_BASE_URL}/api/v1/orders\`,
-  {
-    method: "POST",
-    headers: {
-      Authorization: \`Bearer \${process.env.POPPAY_SECRET_KEY}\`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      amount: "248.00",
-      receipt: "counter-order-1042",
-      redirectUrl: "https://shop.example/thanks",
-    }),
-  }
-);
+const NODE_SNIPPET = `// Production API Base URL: https://poppay.tech
+const response = await fetch("https://poppay.tech/api/v1/orders", {
+  method: "POST",
+  headers: {
+    Authorization: \`Bearer \${process.env.POPPAY_SECRET_KEY}\`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    amount: "248.00",
+    receipt: "counter-order-1042",
+    redirectUrl: "https://shop.example/thanks",
+  }),
+});
 
 if (!response.ok) throw new Error(await response.text());
 const order = await response.json();
-const checkoutUrl = new URL(
-  order.checkoutUrl,
-  process.env.POPPAY_API_BASE_URL
-).href;
 
-// Redirect the customer to checkoutUrl.`;
+// Redirect customer to PopPay hosted UPI checkout:
+console.log("Customer Checkout URL:", order.checkoutUrl);`;
 
-const CURL_SNIPPET = `curl -X POST "$POPPAY_API_BASE_URL/api/v1/orders" \\
+const CURL_SNIPPET = `curl -X POST "https://poppay.tech/api/v1/orders" \\
   -H "Authorization: Bearer $POPPAY_SECRET_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -2042,8 +2078,9 @@ const CURL_SNIPPET = `curl -X POST "$POPPAY_API_BASE_URL/api/v1/orders" \\
 const PYTHON_SNIPPET = `import os
 import requests
 
+# Production API Base URL: https://poppay.tech
 response = requests.post(
-    f"{os.environ['POPPAY_API_BASE_URL']}/api/v1/orders",
+    "https://poppay.tech/api/v1/orders",
     headers={
         "Authorization": f"Bearer {os.environ['POPPAY_SECRET_KEY']}",
         "Content-Type": "application/json"
@@ -2056,10 +2093,11 @@ response = requests.post(
 )
 response.raise_for_status()
 order = response.json()
-print("Checkout URL:", order["checkoutUrl"])`;
+print("Customer Checkout URL:", order["checkoutUrl"])`;
 
 const PHP_SNIPPET = `<?php
-$ch = curl_init(getenv('POPPAY_API_BASE_URL') . '/api/v1/orders');
+// Production API Base URL: https://poppay.tech
+$ch = curl_init('https://poppay.tech/api/v1/orders');
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_POST => true,
@@ -2075,10 +2113,10 @@ curl_setopt_array($ch, [
 ]);
 $order = json_decode(curl_exec($ch), true);
 curl_close($ch);
-echo "Checkout URL: " . $order['checkoutUrl'];`;
+echo "Customer Checkout URL: " . $order['checkoutUrl'];`;
 
 const POLL_SNIPPET = `const response = await fetch(
-  \`\${process.env.POPPAY_API_BASE_URL}/api/v1/checkout/\${orderId}/status\`
+  \`https://poppay.tech/api/v1/checkout/\${orderId}/status\`
 );
 if (!response.ok) throw new Error(await response.text());
 const payment = await response.json();
@@ -2139,11 +2177,11 @@ app.post(
 function GuideSection({ id, number, eyebrow, title, children }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <div className="mb-3 flex items-center gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e8f1e5] font-mono text-[11px] font-bold text-[#527b62]">{number}</span>
+      <div className="mb-3.5 flex items-center gap-3">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-emerald-500/15 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{number}</span>
         <div>
-          <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#83958b]">{eyebrow}</p>
-          <h2 className="mt-0.5 font-[var(--font-display)] text-[21px] font-semibold tracking-[-.7px] text-[#183a31] sm:text-[24px]">{title}</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-500 dark:text-slate-400">{eyebrow}</p>
+          <h2 className="mt-0.5 font-[var(--font-display)] text-xl font-bold tracking-[-.5px] text-slate-900 dark:text-white sm:text-2xl">{title}</h2>
         </div>
       </div>
       <div className="space-y-4">{children}</div>
@@ -2153,15 +2191,15 @@ function GuideSection({ id, number, eyebrow, title, children }) {
 
 function GuideCode({ label, code, copied, onCopy, compact = false }) {
   return (
-    <div className="overflow-hidden rounded-[16px] border border-[#264d42] bg-[#163a32]">
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-        <p className="text-[10px] font-bold uppercase tracking-[.11em] text-[#bdd2c5]">{label}</p>
-        <button type="button" onClick={onCopy} className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/[.07] px-2.5 text-[10px] font-bold text-[#e1eee2] transition-colors hover:bg-white/[.14]" aria-label={`Copy ${label} example`}>
-          {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-[#060b09]">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5 bg-white/[.03]">
+        <p className="text-[10px] font-bold uppercase tracking-[.11em] text-emerald-400">{label}</p>
+        <button type="button" onClick={onCopy} className="inline-flex min-h-7 shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/[.07] px-2.5 text-[10px] font-bold text-slate-200 transition hover:bg-white/[.14]" aria-label={`Copy ${label} example`}>
+          {copied ? <Check className="h-3 w-3 text-emerald-400" aria-hidden="true" /> : <Copy className="h-3 w-3" aria-hidden="true" />}
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre className={`max-w-full overflow-x-auto p-4 font-mono text-[10px] leading-[1.75] text-[#e1ece2] sm:text-[11px] ${compact ? 'max-h-[360px]' : ''}`}><code>{code}</code></pre>
+      <pre className={`max-w-full overflow-x-auto p-4 font-mono text-xs leading-relaxed text-slate-200 ${compact ? 'max-h-[360px]' : ''}`}><code>{code}</code></pre>
     </div>
   );
 }
@@ -2177,12 +2215,12 @@ const GUIDE_NAV = [
   ['troubleshooting', 'Troubleshooting'],
 ];
 
-export function IntegrationPage() {
+export function IntegrationPage({ isPublic = false }) {
   const { merchant } = useMerchant();
   const [language, setLanguage] = useState('node');
   const [copied, setCopied] = useState('');
   const code = language === 'node' ? NODE_SNIPPET : language === 'python' ? PYTHON_SNIPPET : language === 'php' ? PHP_SNIPPET : CURL_SNIPPET;
-  const publicKeySnippet = `const POPPAY_PUBLIC_KEY = ${JSON.stringify(merchant.publicKey || '')};`;
+  const publicKey = merchant?.publicKey || 'pop_pub_live_your_key_here';
 
   async function copy(text, label) {
     try {
@@ -2196,41 +2234,78 @@ export function IntegrationPage() {
 
   return (
     <div className="page-enter pb-16">
+      {/* Standalone HTML Announcement Pill */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 sm:p-4">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-500 text-white font-bold text-xs">
+            AI
+          </span>
+          <div>
+            <p className="text-xs font-bold text-slate-900 dark:text-white">
+              Public Standalone HTML Documentation Available
+            </p>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300">
+              Directly shareable with AI agents (Cursor, Claude, ChatGPT) and public crawlers without login.
+            </p>
+          </div>
+        </div>
+        <a
+          href="/docs.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold shadow-2xs transition"
+        >
+          <span>Open Plain HTML Docs</span>
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </div>
+
       <PageHeading
-        eyebrow="PopPay API · v1"
-        title="Developer guide"
-        detail="A practical path from your first order request to a verified UPI payment. Every secret stays on your server."
-        action={<Link to="/settings" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d9e4d8] bg-[#fffefa] px-4 text-xs font-bold text-[#315f4e] transition hover:bg-[#edf4eb]"><KeyRound className="h-4 w-4" />Credentials & webhooks</Link>}
+        eyebrow="PopPay API · v1.0"
+        title="Developer Guide & REST API"
+        detail="A practical path from your first order request to a verified UPI payment. Base URL: https://poppay.tech"
+        action={
+          merchant ? (
+            <Link to="/settings" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-4 text-xs font-bold text-slate-800 dark:text-white shadow-2xs transition hover:bg-slate-50">
+              <KeyRound className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Credentials & Webhooks</span>
+            </Link>
+          ) : (
+            <Link to="/login" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white shadow-2xs transition">
+              <span>Sign In to Get Keys</span>
+            </Link>
+          )
+        }
       />
 
-      <section className="relative mb-6 overflow-hidden rounded-[22px] border border-[#174e41] bg-[#174e41] p-5 text-white panel-shadow sm:p-7">
+      <section className="relative mb-6 overflow-hidden rounded-2xl border border-emerald-600/30 bg-gradient-to-br from-[#0c2f24] via-[#09221a] to-[#061410] p-5 text-white shadow-md sm:p-7">
         <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border border-white/10" />
         <div className="pointer-events-none absolute -right-4 -top-12 h-44 w-44 rounded-full border border-white/[.08]" />
         <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,.7fr)] lg:items-end">
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-[.19em] text-[#c2d9c7]">From request to reconciled</p>
-            <h2 className="mt-2 max-w-2xl font-[var(--font-display)] text-[25px] font-semibold leading-tight tracking-[-1px] sm:text-[31px]">One server request. A hosted UPI checkout. A payment you can prove.</h2>
-            <p className="mt-2 max-w-xl text-xs leading-5 text-[#c6d9cf]">Create orders with your server credential, let PopPay handle the payment screen, then verify every success independently.</p>
+            <p className="text-[9px] font-bold uppercase tracking-[.19em] text-emerald-300">Base URL: https://poppay.tech</p>
+            <h2 className="mt-2 max-w-2xl font-[var(--font-display)] text-[24px] font-bold leading-tight tracking-[-1px] sm:text-[30px]">One server request. A hosted UPI checkout. Instant bank reconciliation.</h2>
+            <p className="mt-2 max-w-xl text-xs leading-5 text-slate-300">Create orders with your server credential, let PopPay handle the payment screen, then verify every success independently.</p>
           </div>
-          <div className="rounded-[16px] border border-white/15 bg-white/[.07] p-4">
+          <div className="rounded-xl border border-white/15 bg-white/[.07] p-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[9px] font-bold uppercase tracking-[.14em] text-[#c3d8ca]">Current merchant public key</p>
-              <span className="rounded-full bg-[#c7e8a8] px-2 py-1 text-[8px] font-bold uppercase tracking-[.1em] text-[#174e41]">Public</span>
+              <p className="text-[10px] font-bold uppercase tracking-[.14em] text-emerald-300">Current merchant public key</p>
+              <span className="rounded-full bg-emerald-500/30 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[.1em] text-emerald-300">Public</span>
             </div>
-            <code className="mt-2 block break-all font-mono text-[11px] leading-5 text-white">{merchant.publicKey || 'Not available for this account'}</code>
-            <p className="mt-2 text-[10px] leading-4 text-[#c3d8ca]">This value is read from your signed-in merchant profile. It identifies your account; it does not authenticate API requests.</p>
+            <code className="mt-2 block break-all font-mono text-[11px] leading-5 text-white">{publicKey}</code>
+            <p className="mt-2 text-[10px] leading-4 text-slate-300">This key identifies your merchant profile in frontend checkout instances.</p>
           </div>
         </div>
         <div className="relative mt-6 grid gap-2 border-t border-white/15 pt-4 sm:grid-cols-4">
           {[
-            ['01', 'Create', 'POST /orders'],
+            ['01', 'Create', 'POST /api/v1/orders'],
             ['02', 'Checkout', 'Hosted UPI page'],
             ['03', 'Verify', 'Signed status'],
             ['04', 'Fulfil', 'Webhook + idempotency'],
           ].map(([number, label, detail]) => (
             <div key={number} className="flex items-center gap-3 rounded-xl px-2 py-2">
-              <span className="font-mono text-[10px] font-bold text-[#c7e8a8]">{number}</span>
-              <div><p className="text-[11px] font-bold text-white">{label}</p><p className="mt-0.5 text-[9px] text-[#c0d4c8]">{detail}</p></div>
+              <span className="font-mono text-[11px] font-bold text-emerald-400">{number}</span>
+              <div><p className="text-xs font-bold text-white">{label}</p><p className="mt-0.5 text-[10px] text-slate-300">{detail}</p></div>
             </div>
           ))}
         </div>
