@@ -36,7 +36,7 @@ export function PaymentLinksPage() {
   const [amount, setAmount] = useState('');
   const [receipt, setReceipt] = useState('');
   const [redirectUrl, setRedirectUrl] = useState('');
-  const [expiresInMins, setExpiresInMins] = useState(1440); // 24 hours default
+  const [expiresInMins, setExpiresInMins] = useState(null); // null = standard backend default (not forced)
   const [creating, setCreating] = useState(false);
 
   // Newly Created Link Modal
@@ -78,13 +78,31 @@ export function PaymentLinksPage() {
       const payload = {
         amount: String(amount).trim(),
         receipt: receipt.trim(),
-        expiresInMins: Number(expiresInMins) || 1440,
       };
       if (redirectUrl.trim()) {
         payload.redirectUrl = redirectUrl.trim();
       }
+      if (expiresInMins) {
+        payload.expiresInMins = Number(expiresInMins);
+      }
 
-      const created = await createPaymentLink(payload);
+      let created;
+      try {
+        created = await createPaymentLink(payload);
+      } catch (err) {
+        // If the backend has not yet been updated and rejects unknown fields, cleanly retry with standard payload
+        if (payload.expiresInMins) {
+          const fallbackPayload = {
+            amount: payload.amount,
+            receipt: payload.receipt,
+          };
+          if (payload.redirectUrl) fallbackPayload.redirectUrl = payload.redirectUrl;
+          created = await createPaymentLink(fallbackPayload);
+        } else {
+          throw err;
+        }
+      }
+
       const fullUrl = created.checkoutUrl?.startsWith('http')
         ? created.checkoutUrl
         : `${window.location.origin}${created.checkoutUrl?.startsWith('/') ? '' : '/'}${created.checkoutUrl}`;
@@ -101,6 +119,7 @@ export function PaymentLinksPage() {
       setAmount('');
       setReceipt('');
       setRedirectUrl('');
+      setExpiresInMins(null);
       setCreateOpen(false);
       setMessage({ tone: 'success', text: `Payment link created for ₹${created.payableAmount}!` });
       loadLinks();
@@ -206,13 +225,13 @@ export function PaymentLinksPage() {
               </label>
               <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { mins: 1440, label: '24 Hours', badge: 'Recommended', detail: 'Best for WhatsApp' },
-                  { mins: 4320, label: '3 Days', badge: null, detail: 'Longer invoice' },
+                  { mins: null, label: 'Default', badge: 'Standard', detail: 'Normal window' },
+                  { mins: 1440, label: '24 Hours', badge: 'Extended', detail: 'Best for WhatsApp' },
+                  { mins: 4320, label: '3 Days', badge: null, detail: 'Long invoice' },
                   { mins: 60, label: '1 Hour', badge: null, detail: 'Short window' },
-                  { mins: 15, label: '15 Minutes', badge: null, detail: 'Flash sale' },
                 ].map((opt) => (
                   <button
-                    key={opt.mins}
+                    key={opt.label}
                     type="button"
                     onClick={() => setExpiresInMins(opt.mins)}
                     className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition active:scale-95 ${
