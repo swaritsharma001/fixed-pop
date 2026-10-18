@@ -71,6 +71,41 @@ test('FamApp received-credit receipt text with an amount below ten rupees parses
   assert.equal(parsed.paidAt.toISOString(), '2026-10-17T16:21:00.000Z');
 });
 
+test('FamApp email without UTR line falls back to Transaction ID and parses amounts like 2.0', () => {
+  const sample = `
+    Hey Merchant,
+    You have received
+    ₹2.0
+    from Rohit Kumar
+    Transaction ID : FMPU01a14a01-335b-7488-916c-160083a6400a
+    Date : 07:15 PM IST, 18 October 2026
+  `;
+  const parsed = parseFamAppEmail(sample);
+  assert.ok(parsed);
+  assert.equal(parsed.type, 'credit');
+  assert.equal(parsed.amount, '2.0');
+  assert.equal(parsed.utr, 'FMPU01a14a01-335b-7488-916c-160083a6400a');
+  assert.equal(parsed.txnId, 'FMPU01a14a01-335b-7488-916c-160083a6400a');
+  assert.equal(parsed.counterparty, 'Rohit Kumar');
+});
+
+test('FamApp email with paise suffix like 3.02 parses accurately', () => {
+  const sample = `
+    Hey Merchant,
+    You have received
+    ₹3.02
+    from Customer
+    Transaction ID : FMP-302-XYZ
+    Date : 07:15 PM IST, 18 October 2026
+    UTR : 987654321098
+  `;
+  const parsed = parseFamAppEmail(sample);
+  assert.ok(parsed);
+  assert.equal(parsed.type, 'credit');
+  assert.equal(parsed.amount, '3.02');
+  assert.equal(parsed.utr, '987654321098');
+});
+
 test('FamApp parser rejects unrecognised messages and only trusts FamApp DKIM pass', () => {
   assert.equal(parseFamAppEmail('Your balance is now ₹100.00'), null);
   assert.equal(dkimPassForFamApp('mx.google.com; dkim=pass header.i=@famapp.in'), true);

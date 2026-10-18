@@ -27,13 +27,13 @@ function parseGenericPaymentEmail(input) {
     text.match(/(?:ref(?:erence)?\s*(?:no\.?|id)?)\s*[:=]?\s*(\d{12})\b/i) ||
     text.match(/\b(\d{12})\b/);
 
-  if (!amountMatch || !utrMatch) return null;
+  const txnMatch = text.match(/(?:transaction\s*id|txn\s*id)\s*[:=]?\s*([A-Za-z0-9_-]+)/i);
+  const utr = utrMatch ? utrMatch[1] : (txnMatch ? txnMatch[1] : null);
+  const txnId = txnMatch ? txnMatch[1] : (utr ? `TXN_${utr}` : null);
+
+  if (!amountMatch || !utr) return null;
 
   const amount = amountMatch[1].replace(/,/g, '');
-  const utr = utrMatch[1];
-
-  const txnMatch = text.match(/(?:transaction\s*id|txn\s*id)\s*[:=]?\s*([A-Za-z0-9_-]+)/i);
-  const txnId = txnMatch ? txnMatch[1] : `TXN_${utr}`;
 
   let paidAt = new Date();
   const dateMatch = text.match(/Date\s*:\s*(.+?)(?=\s*UTR\s*:|\s*Updated\s*:|$)/i);

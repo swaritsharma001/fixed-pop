@@ -30,28 +30,47 @@ function parseFamAppEmail(input) {
 
   const debit = /\byou have successfully paid\b|\bsuccessfully paid\b/i.test(text);
   const credit =
-    /\byou\s+(?:have\s+)?received\b|\breceived\s+₹|\bcredited\b|\bmoney received\b|\bhas sent you\b|\bsent you\s+₹/i.test(
+    /\byou\s+(?:have\s+)?received\b|\breceived\s+₹|\bcredited\b|\bmoney received\b|\bhas sent you\b|\bsent you\s+₹|\bpayment received\b|\btransfer received\b/i.test(
       text,
     );
   if (!debit && !credit) return null;
 
-  const amountMatch = text.match(/₹\s*([\d,]+(?:\.\d{1,2})?)/);
-  const transactionMatch = text.match(
-    /Transaction\s*ID\s*:\s*(.+?)(?=\s*Date\s*:|\s*UTR\s*:|$)/i,
-  );
-  const dateMatch = text.match(/Date\s*:\s*(.+?)(?=\s*UTR\s*:|$)/i);
-  const utrMatch = text.match(/UTR\s*:\s*(\d{12})\b/i);
-  if (!amountMatch || !transactionMatch || !dateMatch || !utrMatch) return null;
+  const amountMatch =
+    text.match(/₹\s*([\d,]+(?:\.\d{1,2})?)/) ||
+    text.match(/(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d{1,2})?)/i) ||
+    text.match(/\b(?:received|paid|credited|amount)\s+(?:of\s+)?(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d{1,2})?)/i) ||
+    text.match(/([\d,]+(?:\.\d{1,2})?)\s*(?:₹|rs\.?|inr|\brupees?\b)/i);
+
+  const transactionMatch =
+    text.match(/Transaction\s*ID\s*:\s*(.+?)(?=\s*Date\s*:|\s*UTR\s*:|$)/i) ||
+    text.match(/(?:transaction\s*id|txn\s*id)\s*[:=]?\s*([A-Za-z0-9_-]+)/i) ||
+    text.match(/\b(FMP[A-Za-z0-9_-]+)\b/i);
+
+  if (!amountMatch || !transactionMatch) return null;
 
   const amount = amountMatch[1].replace(/,/g, '');
   const txnId = transactionMatch[1].replace(/\s+/g, '');
-  const dateText = dateMatch[1].trim();
-  const paidAt = dayjs.tz(
-    dateText,
-    'hh:mm A [IST], D MMMM YYYY',
-    'Asia/Kolkata',
-  );
-  if (!paidAt.isValid() || !txnId) return null;
+  if (!txnId) return null;
+
+  const utrMatch =
+    text.match(/UTR\s*:\s*(\d{12})\b/i) ||
+    text.match(/(?:upi\s*ref(?:erence)?(?:\s*no\.?|\s*id)?|ref\s*no\.?)\s*[:=]?\s*(\d{12})\b/i) ||
+    text.match(/\b(\d{12})\b/);
+
+  // If FamApp email does not include a 12-digit UTR, use the unique FamApp transaction ID
+  const utr = utrMatch ? utrMatch[1] : txnId;
+
+  const dateMatch = text.match(/Date\s*:\s*(.+?)(?=\s*UTR\s*:|$)/i);
+  let paidAt = new Date();
+  if (dateMatch) {
+    const dateText = dateMatch[1].trim();
+    const parsedDate = dayjs.tz(
+      dateText,
+      'hh:mm A [IST], D MMMM YYYY',
+      'Asia/Kolkata',
+    );
+    if (parsedDate.isValid()) paidAt = parsedDate.toDate();
+  }
 
   const partyMatch = text.match(
     /\b(?:to|from|by)\s+(.+?)(?=\s*Transaction\s*ID\s*:|\s*Date\s*:|\s*UTR\s*:|$)/i,
@@ -63,10 +82,10 @@ function parseFamAppEmail(input) {
   return {
     type: debit ? 'debit' : 'credit',
     amount,
-    utr: utrMatch[1],
+    utr,
     txnId,
     counterparty,
-    paidAt: paidAt.toDate(),
+    paidAt,
   };
 }
 

@@ -7,9 +7,15 @@ const { parseRupeesToPaise, paiseToRupees } = require('../utils/money');
 const { paymentExpirySearchLowerBound } = require('../utils/paymentWindow');
 const { settleOrderFromVerifiedAlert } = require('./paymentSettlementService');
 
-function chooseMatchingOrder(candidates, utr) {
+function chooseMatchingOrder(candidates, utr, amountDecimal = null) {
   const reportedUtrMatches = candidates.filter((order) => order.reportedUtr === utr);
   if (reportedUtrMatches.length === 1) return reportedUtrMatches[0];
+  if (amountDecimal) {
+    const exactPayable = candidates.filter(
+      (order) => order.payableAmount && order.payableAmount.toString() === amountDecimal.toString(),
+    );
+    if (exactPayable.length === 1) return exactPayable[0];
+  }
   if (candidates.length === 1) return candidates[0];
   return null;
 }
@@ -35,13 +41,14 @@ async function matchIncomingPayment({
   receivedAt,
 }) {
   const amountPaise = parseRupeesToPaise(amount);
-  if (!/^\d{12}$/.test(String(utr))) {
-    throw new TypeError('UTR must contain exactly 12 digits');
+  const utrString = String(utr || '').trim();
+  if (!utrString) {
+    throw new TypeError('UTR or transaction reference is required');
   }
   if (!(receivedAt instanceof Date) || Number.isNaN(receivedAt.getTime())) {
     throw new TypeError('Payment time must be a valid date');
   }
-  if (await isDuplicateMessageOrUtr(gmailMessageId, utr)) {
+  if (await isDuplicateMessageOrUtr(gmailMessageId, utrString)) {
     return { matched: false, duplicate: true };
   }
 
@@ -61,7 +68,7 @@ async function matchIncomingPayment({
         return;
       }
       await ProcessedEmail.create(
-        [{ merchantId, gmailMessageId, utr, receivedAt }],
+        [{ merchantId, gmailMessageId, utr: utrString, receivedAt }],
         { session },
       );
 
@@ -75,23 +82,51 @@ async function matchIncomingPayment({
       }).session(session);
 
       if (!candidates.length) {
-        // Fallback: match order active when alert was received by system
+        // Fallback 1: match by baseAmount if order used a unique paise suffix (e.g. ₹3.00 base, ₹3.02 payable)
         candidates = await Order.find({
           merchantId,
           status: { $in: ['PENDING', 'EXPIRED'] },
-          payableAmount: amountDecimal,
+          baseAmount: amountDecimal,
+          createdAt: { $lte: new Date(receivedAt.getTime() + minuteTolerance) },
+          expiresAt: { $gte: paymentExpirySearchLowerBound(receivedAt) },
+        }).session(session);
+      }
+
+      if (!candidates.length) {
+        // Fallback 2: match order active when alert was received by system (by payableAmount or baseAmount)
+        candidates = await Order.find({
+          merchantId,
+          status: { $in: ['PENDING', 'EXPIRED'] },
+          $or: [
+            { payableAmount: amountDecimal },
+            { baseAmount: amountDecimal },
+          ],
           createdAt: { $lte: new Date(Date.now() + 59999) },
           expiresAt: { $gte: paymentExpirySearchLowerBound(new Date()) },
         }).session(session);
       }
-      const order = chooseMatchingOrder(candidates, utr);
+
+      if (!candidates.length && utrString) {
+        // Fallback 3: if customer explicitly reported this UTR or transaction ID on checkout
+        const reportedOrder = await Order.findOne({
+          merchantId,
+          status: { $in: ['PENDING', 'EXPIRED'] },
+          reportedUtr: utrString,
+          expiresAt: { $gte: paymentExpirySearchLowerBound(receivedAt) },
+        }).session(session);
+        if (reportedOrder) {
+          candidates = [reportedOrder];
+        }
+      }
+
+      const order = chooseMatchingOrder(candidates, utrString, amountDecimal);
 
       if (!order) {
         await UnmatchedPayment.create(
           [
             {
               merchantId,
-              utr,
+              utr: utrString,
               amount: amountDecimal,
               gmailMessageId,
               receivedAt,
@@ -108,7 +143,7 @@ async function matchIncomingPayment({
         session,
         merchantId,
         order,
-        utr,
+        utr: utrString,
         amount: amountDecimal,
         gmailMessageId,
         receivedAt,
