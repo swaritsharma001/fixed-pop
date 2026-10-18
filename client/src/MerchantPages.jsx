@@ -151,7 +151,7 @@ export function DashboardPage() {
   return (
     <div className="page-enter">
       {connected && <Notice>Gmail is connected. You can edit the allowed sender list in settings.</Notice>}
-      <PageHeading eyebrow={dateLabel} title={`Good day, ${merchant.name.split(' ')[0]}.`} detail="Your collection desk, clear at a glance." action={<Link to="/integration" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#126b58] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42]"><FileCode2 className="h-4 w-4" />Integration guide</Link>} />
+      <PageHeading eyebrow={dateLabel} title={`Good day, ${merchant.name.split(' ')[0]}.`} detail="Your collection desk, clear at a glance." action={<Link to="/integration" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#126b58] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42]"><FileCode2 className="h-4 w-4" />Developer guide</Link>} />
       <div className="space-y-5">
         <OnboardingCard merchant={merchant} />
         {error ? <ErrorState message={error} onRetry={() => setRetryKey((key) => key + 1)} /> : loading ? (
@@ -296,12 +296,20 @@ export function PaymentsPage() {
   );
 }
 
-function orderFitsPayment(order, payment) {
+function orderFitsPayment(order, payment, verificationGraceMs = 10 * 60 * 1000) {
   const sameAmount = Number(order.payableAmount) === Number(payment.amount);
   const receivedAt = new Date(payment.receivedAt).getTime();
   const createdAt = new Date(order.createdAt).getTime();
   const expiresAt = new Date(order.expiresAt).getTime();
-  return sameAmount && Number.isFinite(receivedAt) && Number.isFinite(createdAt) && Number.isFinite(expiresAt) && receivedAt >= createdAt && receivedAt <= expiresAt;
+  const graceMs = Number.isFinite(Number(verificationGraceMs))
+    ? Number(verificationGraceMs)
+    : 10 * 60 * 1000;
+  return sameAmount
+    && Number.isFinite(receivedAt)
+    && Number.isFinite(createdAt)
+    && Number.isFinite(expiresAt)
+    && receivedAt >= createdAt
+    && receivedAt <= expiresAt + graceMs;
 }
 
 export function UnmatchedPage() {
@@ -453,7 +461,9 @@ export function UnmatchedPage() {
         ) : (
           <div className="divide-y divide-[#edf0eb]">
             {payments.map((payment) => {
-              const candidates = pendingOrders.filter((order) => orderFitsPayment(order, payment));
+              const candidates = pendingOrders.filter((order) => (
+                orderFitsPayment(order, payment, data?.verificationGraceMs)
+              ));
               const selected = selections[payment.id] || '';
               return (
                 <article key={payment.id} className="grid gap-4 px-5 py-5 sm:grid-cols-[minmax(170px,1fr)_minmax(270px,1.1fr)_auto] sm:items-center sm:px-6">
@@ -468,7 +478,7 @@ export function UnmatchedPage() {
                       <option value="">{candidates.length ? 'Select an order' : 'No amount and time match found'}</option>
                       {candidates.map((order) => <option key={order.order_id} value={order.order_id}>{order.receipt || order.order_id} · {formatMoney(order.payableAmount)} · {order.order_id}</option>)}
                     </select>
-                    {candidates.length === 0 && <p className="mt-1.5 text-[10px] leading-4 text-[#9a6b43]">Only orders with the same amount and valid payment window can be claimed.</p>}
+                    {candidates.length === 0 && <p className="mt-1.5 text-[10px] leading-4 text-[#9a6b43]">Order amount and IST transaction time must match, including the 10-minute verification grace.</p>}
                   </div>
                   <button type="button" disabled={!selected || claiming === payment.id} onClick={() => claim(payment)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#174e41] px-4 text-xs font-bold text-white transition hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-45">
                     {claiming === payment.id ? <Spinner small /> : <Link2 className="h-4 w-4" />}Match payment
@@ -553,7 +563,7 @@ export function UnmatchedPage() {
             ))}
           </div>
           <p className="border-t border-[#edf0eb] px-5 py-3 text-[10px] leading-5 text-[#89968e] sm:px-6">
-            Confirm only after checking the UTR, exact amount, and transfer time in your bank or UPI account. The transfer time must fall within the order’s payment window. PopPay records this as merchant-verified.
+            Confirm only after checking the UTR, exact amount, and transfer time in your bank or UPI account. The IST transfer time must be between order creation and 10 minutes after expiry. PopPay records this as merchant-verified.
           </p>
         </Panel>
       )}
@@ -892,7 +902,7 @@ const checkoutUrl = new URL(
   process.env.POPPAY_API_BASE_URL
 ).href;
 
-// Send checkoutUrl to your customer.`;
+// Redirect the customer to checkoutUrl.`;
 
 const CURL_SNIPPET = `curl -X POST "$POPPAY_API_BASE_URL/api/v1/orders" \\
   -H "Authorization: Bearer $POPPAY_SECRET_KEY" \\
@@ -903,59 +913,371 @@ const CURL_SNIPPET = `curl -X POST "$POPPAY_API_BASE_URL/api/v1/orders" \\
     "redirectUrl": "https://shop.example/thanks"
   }'`;
 
+const POLL_SNIPPET = `const response = await fetch(
+  \`\${process.env.POPPAY_API_BASE_URL}/api/v1/checkout/\${orderId}/status\`
+);
+if (!response.ok) throw new Error(await response.text());
+const payment = await response.json();
+
+if (payment.status === "PAID") {
+  // Verify payment.signature on your server before fulfillment.
+  // Do not trust a browser redirect or postMessage as proof.
+}`;
+
+const VERIFY_SNIPPET = `import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verifyPopPayPayment(orderId, paymentId, signature) {
+  if (!/^[a-f0-9]{64}$/i.test(signature || "")) return false;
+  const expected = createHmac(
+    "sha256",
+    process.env.POPPAY_SIGNING_SECRET
+  )
+    .update(\`\${orderId}|\${paymentId}\`, "utf8")
+    .digest();
+  const received = Buffer.from(signature, "hex");
+  return received.length === expected.length &&
+    timingSafeEqual(received, expected);
+}
+
+// Use orderId from the status URL you requested.`;
+
+const WEBHOOK_SNIPPET = `import express from "express";
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+// Mount this route before express.json() consumes the body.
+app.post(
+  "/webhooks/poppay",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const signature = req.get("X-PopPay-Signature") || "";
+    if (!/^[a-f0-9]{64}$/i.test(signature)) {
+      return res.sendStatus(401);
+    }
+
+    const expected = createHmac(
+      "sha256",
+      process.env.POPPAY_WEBHOOK_SECRET
+    ).update(req.body).digest();
+    const received = Buffer.from(signature, "hex");
+    if (received.length !== expected.length ||
+        !timingSafeEqual(received, expected)) {
+      return res.sendStatus(401);
+    }
+
+    const event = JSON.parse(req.body.toString("utf8"));
+    if (event.event === "payment.success") {
+      // Idempotently record event.order_id / event.payment_id.
+    }
+    return res.sendStatus(200);
+  }
+);`;
+
+function GuideSection({ id, number, eyebrow, title, children }) {
+  return (
+    <section id={id} className="scroll-mt-24">
+      <div className="mb-3 flex items-center gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e8f1e5] font-mono text-[11px] font-bold text-[#527b62]">{number}</span>
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-[.16em] text-[#83958b]">{eyebrow}</p>
+          <h2 className="mt-0.5 font-[var(--font-display)] text-[21px] font-semibold tracking-[-.7px] text-[#183a31] sm:text-[24px]">{title}</h2>
+        </div>
+      </div>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
+}
+
+function GuideCode({ label, code, copied, onCopy, compact = false }) {
+  return (
+    <div className="overflow-hidden rounded-[16px] border border-[#264d42] bg-[#163a32]">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+        <p className="text-[10px] font-bold uppercase tracking-[.11em] text-[#bdd2c5]">{label}</p>
+        <button type="button" onClick={onCopy} className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/[.07] px-2.5 text-[10px] font-bold text-[#e1eee2] transition-colors hover:bg-white/[.14]" aria-label={`Copy ${label} example`}>
+          {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <pre className={`max-w-full overflow-x-auto p-4 font-mono text-[10px] leading-[1.75] text-[#e1ece2] sm:text-[11px] ${compact ? 'max-h-[360px]' : ''}`}><code>{code}</code></pre>
+    </div>
+  );
+}
+
+const GUIDE_NAV = [
+  ['start', 'Start here'],
+  ['authentication', 'Authentication'],
+  ['create-order', 'Create an order'],
+  ['hosted-checkout', 'Hosted checkout'],
+  ['verify-payment', 'Verify payment'],
+  ['webhooks', 'Webhooks'],
+  ['security', 'Security'],
+  ['troubleshooting', 'Troubleshooting'],
+];
+
 export function IntegrationPage() {
   const { merchant } = useMerchant();
   const [language, setLanguage] = useState('node');
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState('');
   const code = language === 'node' ? NODE_SNIPPET : CURL_SNIPPET;
+  const publicKeySnippet = `const POPPAY_PUBLIC_KEY = ${JSON.stringify(merchant.publicKey || '')};`;
 
-  async function copy() {
+  async function copy(text, label) {
     try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(text);
+      setCopied(label);
+      window.setTimeout(() => setCopied(''), 1800);
     } catch {
-      setCopied(false);
+      setCopied('');
     }
   }
 
   return (
-    <div className="page-enter">
-      <PageHeading eyebrow="Developer setup" title="Integration" detail="Create a payment request from your server, then send the returned hosted checkout link to your customer." />
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,.75fr)]">
-        <Panel className="overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0eb] px-5 py-4 sm:px-6">
-            <div><h2 className="text-sm font-bold text-[#203d36]">Create an order</h2><p className="mt-1 text-xs text-[#84928a]">Use your secret key on your server only.</p></div>
-            <div className="flex rounded-lg bg-[#f0f3ed] p-1">
-              <button type="button" onClick={() => setLanguage('node')} className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${language === 'node' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a]'}`}>Node.js</button>
-              <button type="button" onClick={() => setLanguage('curl')} className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${language === 'curl' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a]'}`}>cURL</button>
-            </div>
-          </div>
-          <div className="relative bg-[#163a32] p-4 sm:p-6">
-            <button type="button" onClick={copy} className="absolute right-3 top-3 inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-white/15 bg-white/[.07] px-2.5 text-[10px] font-bold text-[#d6e5d9] hover:bg-white/[.13]">{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copied ? 'Copied' : 'Copy code'}</button>
-            <pre className="overflow-x-auto pt-9 font-mono text-[11px] leading-[1.8] text-[#d5e6d9] sm:text-xs"><code>{code}</code></pre>
-          </div>
-          <div className="grid gap-3 p-5 sm:grid-cols-3 sm:p-6">
-            {[['01', 'Create server-side', 'Keep the secret key in an environment variable.'], ['02', 'Send the checkout URL', 'Use the returned checkoutUrl as your customer’s payment link.'], ['03', 'Confirm the webhook', 'Verify the signature before changing your order state.']].map(([number, title, detail]) => <div key={number} className="rounded-xl bg-[#f6f8f3] p-3.5"><p className="font-mono text-[10px] font-bold text-[#84a08e]">{number}</p><p className="mt-2 text-xs font-bold text-[#355a4d]">{title}</p><p className="mt-1 text-[10px] leading-4 text-[#84928a]">{detail}</p></div>)}
-          </div>
-        </Panel>
+    <div className="page-enter pb-16">
+      <PageHeading
+        eyebrow="PopPay API · v1"
+        title="Developer guide"
+        detail="A practical path from your first order request to a verified UPI payment. Every secret stays on your server."
+        action={<Link to="/settings" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d9e4d8] bg-[#fffefa] px-4 text-xs font-bold text-[#315f4e] transition hover:bg-[#edf4eb]"><KeyRound className="h-4 w-4" />Credentials & webhooks</Link>}
+      />
 
-        <div className="space-y-4">
-          <Panel className="overflow-hidden">
-            <PanelTitle title="Account identifiers" detail="Safe to use when identifying this account." />
-            <div className="space-y-4 p-5">
-              <div><p className="text-[9px] font-bold uppercase tracking-[.13em] text-[#87968d]">Merchant ID</p><code className="mt-1.5 block break-all font-mono text-xs text-[#355a4d]">{merchant.id}</code></div>
-              <div><p className="text-[9px] font-bold uppercase tracking-[.13em] text-[#87968d]">Public key</p><code className="mt-1.5 block break-all font-mono text-xs text-[#355a4d]">{merchant.publicKey || 'Not available'}</code></div>
-              <Link to="/settings" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#126b58] hover:underline">Manage API credentials <ArrowRight className="h-3 w-3" /></Link>
-            </div>
-          </Panel>
-          <div className="rounded-[20px] border border-[#e8dfc6] bg-[#fff8e8] p-5">
-            <div className="flex items-start gap-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-[#9a712d]"><KeyRound className="h-4 w-4" /></span><div><h2 className="text-xs font-bold text-[#735c33]">Never expose a secret in the browser</h2><p className="mt-1.5 text-[11px] leading-5 text-[#8b754d]">The secret key authorizes order creation. Keep it on a trusted server and never include it in client-side JavaScript or a mobile app bundle.</p></div></div>
+      <section className="relative mb-6 overflow-hidden rounded-[22px] border border-[#174e41] bg-[#174e41] p-5 text-white panel-shadow sm:p-7">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border border-white/10" />
+        <div className="pointer-events-none absolute -right-4 -top-12 h-44 w-44 rounded-full border border-white/[.08]" />
+        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,.7fr)] lg:items-end">
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[.19em] text-[#c2d9c7]">From request to reconciled</p>
+            <h2 className="mt-2 max-w-2xl font-[var(--font-display)] text-[25px] font-semibold leading-tight tracking-[-1px] sm:text-[31px]">One server request. A hosted UPI checkout. A payment you can prove.</h2>
+            <p className="mt-2 max-w-xl text-xs leading-5 text-[#c6d9cf]">Create orders with your server credential, let PopPay handle the payment screen, then verify every success independently.</p>
           </div>
-          <div className="rounded-[20px] border border-[#dce8dc] bg-[#edf5eb] p-5">
-            <p className="flex items-center gap-2 text-xs font-bold text-[#426b57]"><Webhook className="h-4 w-4" />Webhook handling</p>
-            <p className="mt-2 text-[11px] leading-5 text-[#668271]">PopPay sends <code className="rounded bg-white/70 px-1 py-0.5 font-mono text-[10px]">payment.success</code> with order and payment references. Set your HTTPS destination in settings and verify the signature before fulfilling.</p>
-            <Link to="/settings" className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-[#126b58] hover:underline">Configure webhook <ArrowRight className="h-3 w-3" /></Link>
+          <div className="rounded-[16px] border border-white/15 bg-white/[.07] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[9px] font-bold uppercase tracking-[.14em] text-[#c3d8ca]">Current merchant public key</p>
+              <span className="rounded-full bg-[#c7e8a8] px-2 py-1 text-[8px] font-bold uppercase tracking-[.1em] text-[#174e41]">Public</span>
+            </div>
+            <code className="mt-2 block break-all font-mono text-[11px] leading-5 text-white">{merchant.publicKey || 'Not available for this account'}</code>
+            <p className="mt-2 text-[10px] leading-4 text-[#c3d8ca]">This value is read from your signed-in merchant profile. It identifies your account; it does not authenticate API requests.</p>
+          </div>
+        </div>
+        <div className="relative mt-6 grid gap-2 border-t border-white/15 pt-4 sm:grid-cols-4">
+          {[
+            ['01', 'Create', 'POST /orders'],
+            ['02', 'Checkout', 'Hosted UPI page'],
+            ['03', 'Verify', 'Signed status'],
+            ['04', 'Fulfil', 'Webhook + idempotency'],
+          ].map(([number, label, detail]) => (
+            <div key={number} className="flex items-center gap-3 rounded-xl px-2 py-2">
+              <span className="font-mono text-[10px] font-bold text-[#c7e8a8]">{number}</span>
+              <div><p className="text-[11px] font-bold text-white">{label}</p><p className="mt-0.5 text-[9px] text-[#c0d4c8]">{detail}</p></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-1 lg:hidden" aria-label="Developer guide sections">
+        {GUIDE_NAV.map(([id, label]) => <a key={id} href={`#${id}`} className="shrink-0 rounded-full border border-[#dce6dc] bg-[#fffefa] px-3 py-2 text-[10px] font-bold text-[#4f7161] hover:border-[#9cbda4] hover:text-[#126b58]">{label}</a>)}
+      </div>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)]">
+        <aside className="sticky top-[78px] hidden rounded-[18px] border border-[#e1e8e1] bg-[#fffefa] p-3 panel-shadow lg:block">
+          <p className="px-2 pb-2 pt-1 text-[9px] font-bold uppercase tracking-[.15em] text-[#87968d]">On this page</p>
+          <nav className="space-y-1" aria-label="Developer guide sections">
+            {GUIDE_NAV.map(([id, label], index) => <a key={id} href={`#${id}`} className="flex min-h-9 items-center gap-2.5 rounded-lg px-2 text-[10px] font-semibold text-[#62786d] transition-colors hover:bg-[#f0f5ee] hover:text-[#126b58]"><span className="font-mono text-[9px] text-[#9aaa9f]">{String(index + 1).padStart(2, '0')}</span>{label}</a>)}
+          </nav>
+          <div className="mt-3 border-t border-[#edf0eb] px-2 pt-3">
+            <Link to="/settings" className="inline-flex items-center gap-1 text-[10px] font-bold text-[#126b58] hover:underline">Open settings <ArrowRight className="h-3 w-3" /></Link>
+          </div>
+        </aside>
+
+        <div className="min-w-0 space-y-9">
+          <GuideSection id="start" number="01" eyebrow="Before you build" title="Start with the right keys">
+            <Panel className="overflow-hidden">
+              <PanelTitle title="One identifier, three private credentials" detail="Put server-only values in your deployment environment, not source code." />
+              <div className="grid gap-0 divide-y divide-[#edf0eb] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                <div className="p-5">
+                  <p className="flex items-center gap-2 text-xs font-bold text-[#315f4e]"><CheckCircle2 className="h-4 w-4 text-[#4d8a67]" />Public key</p>
+                  <p className="mt-2 text-[11px] leading-5 text-[#73847a]">Safe to use in client configuration as a merchant identifier. Current value comes from <code className="rounded bg-[#f0f4ee] px-1 py-0.5 font-mono text-[10px]">merchant.publicKey</code>.</p>
+                  <GuideCode label="Current account · client-safe" code={publicKeySnippet} copied={copied === 'public-key'} onCopy={() => copy(publicKeySnippet, 'public-key')} compact />
+                </div>
+                <div className="p-5">
+                  <p className="flex items-center gap-2 text-xs font-bold text-[#785e30]"><KeyRound className="h-4 w-4" />Server credentials</p>
+                  <ul className="mt-2 space-y-1.5 text-[11px] leading-5 text-[#73847a]">
+                    <li><code className="font-mono text-[10px] text-[#355a4d]">POPPAY_SECRET_KEY</code> — order API authentication.</li>
+                    <li><code className="font-mono text-[10px] text-[#355a4d]">POPPAY_SIGNING_SECRET</code> — signed payment-status verification.</li>
+                    <li><code className="font-mono text-[10px] text-[#355a4d]">POPPAY_WEBHOOK_SECRET</code> — incoming webhook HMAC verification.</li>
+                  </ul>
+                  <p className="mt-2 rounded-lg border border-[#f0dfb7] bg-[#fff8e8] px-3 py-2 text-[10px] leading-4 text-[#80612d]">These secret values are shown once during account onboarding or after credential rotation in Settings. They cannot be recovered from the normal profile. If any are lost, rotate credentials and replace the environment values.</p>
+                </div>
+              </div>
+              <div className="border-t border-[#edf0eb] bg-[#f8faf6] px-5 py-3 text-[10px] leading-5 text-[#73847a]">
+                Set <code className="rounded bg-white px-1 py-0.5 font-mono">POPPAY_API_BASE_URL</code> to the PopPay deployment origin. Add the three secret variables to your server’s secret manager; never prefix them as frontend/build variables.
+              </div>
+            </Panel>
+          </GuideSection>
+
+          <GuideSection id="authentication" number="02" eyebrow="Server to server" title="Authenticate with a bearer secret">
+            <div className="grid gap-4 xl:grid-cols-[1fr_.72fr]">
+              <Panel className="overflow-hidden">
+                <PanelTitle title="API authentication" detail="All /api/v1/orders calls are authenticated server-side." />
+                <div className="space-y-3 p-5">
+                  <div className="rounded-xl border border-[#dce8dc] bg-[#f4f8f1] p-3.5">
+                    <p className="font-mono text-[11px] font-bold text-[#355a4d]">Authorization: Bearer $POPPAY_SECRET_KEY</p>
+                    <p className="mt-1.5 text-[10px] leading-4 text-[#74877c]">PopPay hashes the bearer key to identify the merchant. Missing, malformed, or invalid keys receive HTTP 401.</p>
+                  </div>
+                  <p className="text-[11px] leading-5 text-[#74847b]">The public key is not a substitute for this credential. Keep the secret key only in trusted server runtime memory and send it over HTTPS.</p>
+                </div>
+              </Panel>
+              <div className="rounded-[18px] border border-[#e8dfc6] bg-[#fff8e8] p-5">
+                <div className="flex items-start gap-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-[#9a712d]"><ShieldCheck className="h-4 w-4" /></span><div><h3 className="text-xs font-bold text-[#735c33]">Keep credentials out of builds</h3><p className="mt-1.5 text-[11px] leading-5 text-[#8b754d]">Never put secrets in browser code, public repositories, logs, analytics, mobile bundles, or customer-visible errors. Rotate immediately if exposed.</p></div></div>
+              </div>
+            </div>
+          </GuideSection>
+
+          <GuideSection id="create-order" number="03" eyebrow="First API call" title="Create an order on your server">
+            <Panel className="overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0eb] px-5 py-4 sm:px-6">
+                <div><h3 className="text-sm font-bold text-[#203d36]">POST /api/v1/orders</h3><p className="mt-1 text-xs text-[#84928a]">Accepts JSON; amount is INR with up to two decimal places.</p></div>
+                <div className="flex rounded-lg bg-[#f0f3ed] p-1" role="tablist" aria-label="Request example language">
+                  <button type="button" role="tab" aria-selected={language === 'node'} onClick={() => setLanguage('node')} className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${language === 'node' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a]'}`}>Node.js</button>
+                  <button type="button" role="tab" aria-selected={language === 'curl'} onClick={() => setLanguage('curl')} className={`rounded-md px-3 py-1.5 text-[10px] font-bold ${language === 'curl' ? 'bg-white text-[#275a46] shadow-sm' : 'text-[#84928a]'}`}>cURL</button>
+                </div>
+              </div>
+              <div className="p-4 sm:p-5">
+                <GuideCode label={`${language === 'node' ? 'Node.js' : 'cURL'} · create an order`} code={code} copied={copied === 'create-order'} onCopy={() => copy(code, 'create-order')} compact />
+              </div>
+              <div className="grid gap-0 border-t border-[#edf0eb] sm:grid-cols-3 sm:divide-x sm:divide-[#edf0eb]">
+                <div className="p-4 sm:px-5"><p className="font-mono text-[9px] font-bold text-[#739483]">REQUEST</p><p className="mt-1 text-[10px] leading-4 text-[#718279]"><code>amount</code> is required (minimum ₹1.00); <code>receipt</code> is required (up to 120 characters); optional <code>redirectUrl</code> must be HTTPS.</p></div>
+                <div className="border-t border-[#edf0eb] p-4 sm:border-t-0 sm:px-5"><p className="font-mono text-[9px] font-bold text-[#739483]">RESPONSE · 201</p><p className="mt-1 text-[10px] leading-4 text-[#718279]"><code>order_id</code>, <code>baseAmount</code>, <code>payableAmount</code>, <code>status</code>, <code>expiresAt</code>, and <code>checkoutUrl</code>.</p></div>
+                <div className="border-t border-[#edf0eb] p-4 sm:border-t-0 sm:px-5"><p className="font-mono text-[9px] font-bold text-[#739483]">IMPORTANT</p><p className="mt-1 text-[10px] leading-4 text-[#718279]">PopPay reserves a unique payable amount by adding paise to the base amount. Charge/display the returned <code>payableAmount</code>, not the requested base.</p></div>
+              </div>
+              <div className="border-t border-[#edf0eb] px-5 py-4">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#819087]">Illustrative 201 response</p>
+                <pre className="overflow-x-auto rounded-xl bg-[#f4f7f1] p-3.5 font-mono text-[10px] leading-5 text-[#426554]"><code>{`{
+  "order_id": "order_example12345",
+  "baseAmount": "248.00",
+  "payableAmount": "248.37",
+  "status": "PENDING",
+  "expiresAt": "<ISO-8601 expiry>",
+  "checkoutUrl": "/pay/order_example12345"
+}`}</code></pre>
+                <p className="mt-2 text-[9px] leading-4 text-[#87958c]">The sample values are illustrative; the real order ID, payable amount, expiry and checkout path come from PopPay.</p>
+              </div>
+            </Panel>
+            <div className="rounded-xl border border-[#dce8dc] bg-[#edf5eb] px-4 py-3 text-[10px] leading-5 text-[#557866]"><strong className="font-bold text-[#315f4e]">Example response shape:</strong> <code className="break-all font-mono">{"{ order_id, baseAmount, payableAmount, status: 'PENDING', expiresAt, checkoutUrl }"}</code>. The checkout URL is returned as a path (for example <code className="font-mono">/pay/order_…</code>); resolve it against the PopPay origin before redirecting.</div>
+          </GuideSection>
+
+          <GuideSection id="hosted-checkout" number="04" eyebrow="Customer experience" title="Send the hosted checkout link">
+            <Panel className="overflow-hidden">
+              <PanelTitle title="PopPay handles the payment screen" detail="No payment form or UPI credential belongs in your storefront." />
+              <div className="grid gap-4 p-5 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">
+                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">1 · Create on server</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">POST /api/v1/orders with your bearer key.</p></div>
+                <ArrowRight className="hidden h-4 w-4 text-[#90a99a] sm:block" />
+                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">2 · Share checkoutUrl</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">Redirect, link, or send the hosted URL.</p></div>
+                <ArrowRight className="hidden h-4 w-4 text-[#90a99a] sm:block" />
+                <div className="rounded-xl bg-[#f5f8f2] p-3.5"><p className="text-[10px] font-bold text-[#355a4d]">3 · Customer pays</p><p className="mt-1 text-[10px] leading-4 text-[#7b8b82]">The hosted page presents the UPI payment instructions.</p></div>
+              </div>
+              <div className="border-t border-[#edf0eb] px-5 py-4 text-[11px] leading-5 text-[#718279]">
+                The order starts as <code className="rounded bg-[#f0f4ee] px-1 py-0.5 font-mono text-[10px]">PENDING</code> and the checkout window is 10 minutes. The hosted page can collect a 12-digit UTR report; a report is not proof of payment. PopPay will verify/match the transfer and move the order to <code className="rounded bg-[#f0f4ee] px-1 py-0.5 font-mono text-[10px]">PAID</code> only after confirmation.
+              </div>
+            </Panel>
+          </GuideSection>
+
+          <GuideSection id="verify-payment" number="05" eyebrow="Trust, not redirects" title="Poll status and verify the signature">
+            <div className="rounded-[18px] border border-[#e8dfc6] bg-[#fff8e8] p-4 sm:p-5">
+              <div className="flex items-start gap-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-[#9a712d]"><Clock3 className="h-4 w-4" /></span><div><h3 className="text-xs font-bold text-[#735c33]">Keep a 10-minute verification grace</h3><p className="mt-1.5 text-[11px] leading-5 text-[#806b43]">Checkout stays open for 10 minutes. A trusted FamApp transfer timestamp is accepted through the following 10-minute verification grace. The email’s Date line is parsed explicitly as Asia/Kolkata (IST) and compared as UTC; server timezone and email delivery delay do not shift that transaction timestamp. Keep your own order awaiting verification through the grace, and fulfil only after a server-verified signed status is <code className="font-mono text-[10px]">PAID</code>.</p></div></div>
+            </div>
+            <Panel className="overflow-hidden">
+              <PanelTitle title="GET /api/v1/checkout/:orderId/status" detail="Public status endpoint; no merchant secret is sent to the customer’s browser." />
+              <div className="grid gap-4 p-5 xl:grid-cols-[.85fr_1fr]">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#819087]">Response changes by state</p>
+                  <ul className="mt-2 space-y-2 text-[11px] leading-5 text-[#718279]">
+                    <li><code className="font-mono text-[#355a4d]">PENDING</code> — keep waiting; includes <code>expiresAt</code> and <code>utrSubmitted</code>.</li>
+                    <li><code className="font-mono text-[#355a4d]">EXPIRED</code> — checkout window ended; do not infer a failed transfer from this alone.</li>
+                    <li><code className="font-mono text-[#355a4d]">PAID</code> — includes <code>payment_id</code>, <code>utr</code>, and <code>signature</code>; verify before fulfilment.</li>
+                  </ul>
+                  <p className="mt-3 text-[10px] leading-4 text-[#84928a]">The hosted checkout polls every 3 seconds. Your server may poll at a measured interval and stop after PAID or after your verification grace and reconciliation policy.</p>
+                </div>
+                <GuideCode label="Poll status · server-side" code={POLL_SNIPPET} copied={copied === 'poll'} onCopy={() => copy(POLL_SNIPPET, 'poll')} compact />
+              </div>
+              <div className="border-t border-[#edf0eb] p-5">
+                <div className="mb-3"><h3 className="text-xs font-bold text-[#294b40]">Verify the paid response</h3><p className="mt-1 text-[10px] leading-4 text-[#84928a]">PopPay signs the UTF-8 message <code className="font-mono text-[#355a4d]">order_id|payment_id</code> with HMAC-SHA256 and your signing secret. Compare in constant time on your server.</p></div>
+                <GuideCode label="HMAC-SHA256 · signing secret stays in env" code={VERIFY_SNIPPET} copied={copied === 'verify'} onCopy={() => copy(VERIFY_SNIPPET, 'verify')} compact />
+              </div>
+            </Panel>
+            <div className="rounded-xl border border-[#dce8dc] bg-[#edf5eb] px-4 py-3 text-[10px] leading-5 text-[#557866]"><strong className="font-bold text-[#315f4e]">UTR verification path:</strong> the hosted page submits <code className="font-mono">POST /api/v1/checkout/:orderId/utr</code> with <code className="font-mono">{"{ \"utr\": \"12 digits\" }"}</code>. A new report is accepted for review (HTTP 202); a matching verified transfer can return confirmed/PAID. Keep polling status—never fulfil based on the UTR string alone.</div>
+          </GuideSection>
+
+          <GuideSection id="webhooks" number="06" eyebrow="Event delivery" title="Set up a signed webhook">
+            <Panel className="overflow-hidden">
+              <PanelTitle title="payment.success" detail="Configure your HTTPS endpoint in Settings → Webhook destination." action={<Link to="/settings" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[#dce5dc] px-3 text-[10px] font-bold text-[#39725a] hover:bg-[#f2f6ef]">Open settings <ExternalLink className="h-3.5 w-3.5" /></Link>} />
+              <div className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,.9fr)]">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#819087]">Payload shape</p>
+                  <pre className="mt-2 overflow-x-auto rounded-xl bg-[#f4f7f1] p-3.5 font-mono text-[10px] leading-5 text-[#426554]"><code>{`{
+  "event": "payment.success",
+  "order_id": "order_…",
+  "payment_id": "…",
+  "utr": "12-digit reference",
+  "amount": "248.37",
+  "paid_at": "ISO-8601 timestamp"
+}`}</code></pre>
+                  <ul className="mt-3 space-y-1.5 text-[10px] leading-5 text-[#74847b]">
+                    <li>PopPay sends a POST with <code className="font-mono text-[#355a4d]">X-PopPay-Signature</code> (hex HMAC-SHA256).</li>
+                    <li>Sign the exact raw request bytes using <code className="font-mono text-[#355a4d]">POPPAY_WEBHOOK_SECRET</code>; do not parse and re-serialize before checking.</li>
+                    <li>Return a 2xx promptly. Make event processing idempotent using <code className="font-mono text-[#355a4d]">payment_id</code> or <code className="font-mono text-[#355a4d]">order_id</code>.</li>
+                  </ul>
+                </div>
+                <GuideCode label="Express raw-body HMAC verification" code={WEBHOOK_SNIPPET} copied={copied === 'webhook'} onCopy={() => copy(WEBHOOK_SNIPPET, 'webhook')} compact />
+              </div>
+              <div className="border-t border-[#edf0eb] bg-[#f8faf6] px-5 py-3 text-[10px] leading-5 text-[#73847a]">Non-2xx responses and timeouts are retried with increasing backoff, up to six delivery attempts. Check Settings → Webhook attempts for response codes and retry history. Status polling remains the reliable reconciliation fallback.</div>
+            </Panel>
+          </GuideSection>
+
+          <GuideSection id="security" number="07" eyebrow="Production checklist" title="Ship with these safeguards">
+            <Panel className="overflow-hidden">
+              <div className="divide-y divide-[#edf0eb]">
+                {[
+                  ['Secrets live only on the server', 'Use a secret manager or protected deployment variables. Never log auth headers, webhook secrets, or signing material.'],
+                  ['Verify before fulfilment', 'Confirm PAID using the signed status response or a valid webhook HMAC. Never trust a redirect, query string, iframe message, or UTR report on its own.'],
+                  ['Make events idempotent', 'A webhook can be delivered more than once. Store processed payment IDs and make repeated events safe.'],
+                  ['Use HTTPS everywhere', 'The API base, customer redirect URL, and webhook receiver should use HTTPS.'],
+                  ['Rotate safely', 'Lost or exposed credentials cannot be read back from your profile. Rotate in Settings, replace all three secret environment values, and redeploy; old credentials stop working immediately.'],
+                ].map(([title, detail], index) => (
+                  <div key={title} className="flex gap-3 px-5 py-4">
+                    <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[#e8f1e5] text-[#4d8060]"><Check className="h-3.5 w-3.5" /></span>
+                    <div><h3 className="text-[11px] font-bold text-[#355a4d]">{title}</h3><p className="mt-1 text-[10px] leading-5 text-[#7b8b82]">{detail}</p></div>
+                    <span className="ml-auto hidden font-mono text-[9px] text-[#9baa9f] sm:block">0{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </GuideSection>
+
+          <GuideSection id="troubleshooting" number="08" eyebrow="When something goes wrong" title="Troubleshooting">
+            <Panel className="overflow-hidden">
+              <div className="divide-y divide-[#edf0eb]">
+                {[
+                  ['401 · Secret key authentication required', 'Check the Authorization: Bearer header and confirm the server environment contains the current POPPAY_SECRET_KEY. Never send the public key as bearer auth.'],
+                  ['409 · Merchant payment details are not ready', 'Add and save a receiving UPI ID in Settings, then retry checkout.'],
+                  ['429 · Could not reserve a unique payable amount', 'There may be too many simultaneous pending orders sharing the same base amount. Retry with backoff; do not create repeated checkout links rapidly.'],
+                  ['410 · Payment request is too old to verify', 'The verification/report window has closed. Reconcile the transfer against your bank account and contact the merchant before issuing a replacement request.'],
+                  ['Webhook signature mismatch', 'Use the exact raw bytes, the current POPPAY_WEBHOOK_SECRET, the X-PopPay-Signature header, and HMAC-SHA256. Check middleware order and avoid JSON re-serialization.'],
+                  ['Customer returned, but status is not PAID', 'Keep the order unfulfilled. Poll the status endpoint through the verification grace, then inspect your payments and unmatched transfers in PopPay.'],
+                ].map(([title, detail]) => (
+                  <details key={title} className="group px-5 py-3.5">
+                    <summary className="flex min-h-8 cursor-pointer list-none items-center gap-3 text-[11px] font-bold text-[#355a4d] marker:hidden">
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[#f1f5ee] text-[#668775] transition-transform group-open:rotate-90"><ArrowRight className="h-3 w-3" /></span>
+                      {title}
+                    </summary>
+                    <p className="ml-8 mt-1.5 max-w-3xl text-[10px] leading-5 text-[#7b8b82]">{detail}</p>
+                  </details>
+                ))}
+              </div>
+            </Panel>
+          </GuideSection>
+
+          <div className="flex flex-col gap-3 rounded-[18px] border border-[#dce8dc] bg-[#edf5eb] p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-xs font-bold text-[#355a4d]">Ready to configure your live integration?</p><p className="mt-1 text-[10px] leading-4 text-[#73877b]">Set your HTTPS webhook URL and manage credentials in merchant settings.</p></div>
+            <Link to="/settings" className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#174e41] px-4 text-[11px] font-bold text-white transition hover:bg-[#0b4f42]">Open settings <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
         </div>
       </div>

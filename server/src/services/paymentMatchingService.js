@@ -4,7 +4,15 @@ const Payment = require('../models/Payment');
 const ProcessedEmail = require('../models/ProcessedEmail');
 const UnmatchedPayment = require('../models/UnmatchedPayment');
 const { parseRupeesToPaise, paiseToRupees } = require('../utils/money');
+const { paymentExpirySearchLowerBound } = require('../utils/paymentWindow');
 const { settleOrderFromVerifiedAlert } = require('./paymentSettlementService');
+
+function chooseMatchingOrder(candidates, utr) {
+  const reportedUtrMatches = candidates.filter((order) => order.reportedUtr === utr);
+  if (reportedUtrMatches.length === 1) return reportedUtrMatches[0];
+  if (candidates.length === 1) return candidates[0];
+  return null;
+}
 
 async function isDuplicateMessageOrUtr(gmailMessageId, utr) {
   const [processed, payment, unmatched] = await Promise.all([
@@ -65,13 +73,14 @@ async function matchIncomingPayment({
         { session },
       );
 
-      const order = await Order.findOne({
+      const candidates = await Order.find({
         merchantId,
         status: { $in: ['PENDING', 'EXPIRED'] },
         payableAmount: amountDecimal,
         createdAt: { $lte: receivedAt },
-        expiresAt: { $gte: receivedAt },
+        expiresAt: { $gte: paymentExpirySearchLowerBound(receivedAt) },
       }).session(session);
+      const order = chooseMatchingOrder(candidates, utr);
 
       if (!order) {
         await UnmatchedPayment.create(
@@ -113,4 +122,8 @@ async function matchIncomingPayment({
   return matchResult || { matched: false, duplicate: true };
 }
 
-module.exports = { matchIncomingPayment, isDuplicateMessageOrUtr };
+module.exports = {
+  matchIncomingPayment,
+  isDuplicateMessageOrUtr,
+  chooseMatchingOrder,
+};

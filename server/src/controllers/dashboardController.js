@@ -14,6 +14,11 @@ const {
   reportedUtrConfirmationSchema,
 } = require('../validators/dashboardSchemas');
 const { decimalToPaise, paiseToRupees } = require('../utils/money');
+const {
+  PAYMENT_VERIFICATION_GRACE_MS,
+  isWithinPaymentWindow,
+  paymentExpirySearchLowerBound,
+} = require('../utils/paymentWindow');
 const { settleOrderFromVerifiedAlert } = require('../services/paymentSettlementService');
 
 function indiaDayBounds(date = new Date()) {
@@ -172,6 +177,7 @@ async function listUnmatched(req, res, next) {
         reportedUtr: order.reportedUtr || null,
         reportedUtrAt: order.reportedUtrAt,
       })),
+      verificationGraceMs: PAYMENT_VERIFICATION_GRACE_MS,
       page,
       limit,
       total,
@@ -210,7 +216,7 @@ async function claimUnmatched(req, res, next) {
         status: { $in: ['PENDING', 'EXPIRED'] },
         payableAmount: unmatched.amount,
         createdAt: { $lte: unmatched.receivedAt },
-        expiresAt: { $gte: unmatched.receivedAt },
+        expiresAt: { $gte: paymentExpirySearchLowerBound(unmatched.receivedAt) },
       }).session(session);
       if (!order) {
         const error = new Error('No pending order matches this amount and payment time');
@@ -288,11 +294,14 @@ async function confirmReportedUtr(req, res, next) {
         throw error;
       }
       if (
-        receivedAt < order.createdAt ||
-        receivedAt > order.expiresAt ||
+        !isWithinPaymentWindow({
+          createdAt: order.createdAt,
+          expiresAt: order.expiresAt,
+          receivedAt,
+        }) ||
         receivedAt > new Date()
       ) {
-        const error = new Error('The transfer time is outside this order’s payment window');
+        const error = new Error('The transfer time is outside this order’s payment window and 10-minute verification grace');
         error.status = 409;
         throw error;
       }

@@ -14,6 +14,7 @@ const {
   submitCheckoutUtrSchema,
 } = require('../validators/orderSchemas');
 const { decimalToPaise, paiseToRupees } = require('../utils/money');
+const { isWithinPaymentWindow } = require('../utils/paymentWindow');
 const { createPendingOrder } = require('../services/orderService');
 const { settleOrderFromVerifiedAlert } = require('../services/paymentSettlementService');
 const { decryptText } = require('../utils/encryption');
@@ -240,8 +241,11 @@ async function submitCheckoutUtr(req, res, next) {
           String(unmatched.merchantId) === String(order.merchantId) &&
           unmatched.status === 'UNMATCHED' &&
           decimalToPaise(unmatched.amount) === decimalToPaise(order.payableAmount) &&
-          unmatched.receivedAt >= order.createdAt &&
-          unmatched.receivedAt <= order.expiresAt;
+          isWithinPaymentWindow({
+            createdAt: order.createdAt,
+            expiresAt: order.expiresAt,
+            receivedAt: unmatched.receivedAt,
+          });
         if (!isEligible) {
           const error = new Error('This UTR cannot be applied to this payment request');
           error.status = 409;

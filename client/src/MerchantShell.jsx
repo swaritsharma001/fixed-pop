@@ -61,7 +61,7 @@ const navGroups = [
     label: 'Manage',
     links: [
       { to: '/settings', label: 'Settings', icon: Settings2 },
-      { to: '/integration', label: 'Integration', icon: Code2 },
+      { to: '/integration', label: 'Developer guide', icon: Code2 },
     ],
   },
 ];
