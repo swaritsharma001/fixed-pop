@@ -96,14 +96,14 @@ function CopyButton({ text, label = 'Copy', className = '' }) {
     <button
       type="button"
       onClick={handleCopy}
-      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
+      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold transition active:scale-95 ${
         copied
-          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
-          : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[.08]'
+          ? 'bg-[var(--pulse-mint)]/15 text-[var(--pulse-mint)] font-bold'
+          : 'text-[var(--pulse-muted)] hover:text-[var(--pulse-ink)] hover:bg-[var(--pulse-panel-2)]'
       } ${className}`}
       title={copied ? 'Copied to clipboard!' : `Copy ${label}`}
     >
-      {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+      {copied ? <Check className="h-3 w-3 text-[var(--pulse-mint)]" /> : <Copy className="h-3 w-3" />}
       <span>{copied ? 'Copied' : label}</span>
     </button>
   );
@@ -113,28 +113,28 @@ function StatTile({ label, value, caption, icon: Icon, accent = false, progress 
   return (
     <div
       title={tooltip || label}
-      className={`relative overflow-hidden rounded-2xl border p-5 sm:p-6 transition-all ${
+      className={`pulse-entrance-card relative overflow-hidden transition-all ${
         accent
-          ? 'border-emerald-600/40 bg-gradient-to-br from-[#0c2f24] via-[#0b2820] to-[#071a15] text-white shadow-md'
-          : 'border-slate-200/90 dark:border-[#1a2d26] bg-white dark:bg-[#0e1714] text-slate-900 dark:text-white panel-shadow hover:border-slate-300 dark:hover:border-[#243d34]'
+          ? 'pulse-card-hero'
+          : 'pulse-card'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className={`text-[11px] font-bold uppercase tracking-wider ${accent ? 'text-emerald-300' : 'text-slate-500 dark:text-[#8aa096]'}`}>
+            <p className="pulse-eyebrow text-[11px]">
               {label}
             </p>
             {badge && (
-              <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
-                accent ? 'bg-white/20 text-white' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-              }`}>
+              <span className="rounded-full bg-[var(--pulse-panel-2)] border border-[var(--pulse-line)] px-2 py-0.5 text-[9px] font-bold text-[var(--pulse-mint)]">
                 {badge}
               </span>
             )}
           </div>
-          <p className={`mt-2 font-[var(--font-display)] text-[22px] xs:text-[25px] sm:text-[28px] font-bold leading-tight tracking-[-0.02em] tabular-nums break-words sm:break-normal ${
-            accent ? 'text-white' : 'text-slate-900 dark:text-white'
+          <p className={`mt-2 tabular-nums break-words sm:break-normal ${
+            accent
+              ? 'pulse-hero-num text-[24px] xs:text-[27px] sm:text-[32px]'
+              : 'font-[var(--font-display)] text-[22px] xs:text-[25px] sm:text-[28px] font-bold tracking-[-0.02em] text-[var(--pulse-ink)]'
           }`}>
             {value}
           </p>
@@ -142,8 +142,10 @@ function StatTile({ label, value, caption, icon: Icon, accent = false, progress 
         <span
           title={tooltip || label}
           aria-label={tooltip || label}
-          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-2xs ${
-            accent ? 'bg-emerald-500 text-white' : 'bg-emerald-50 dark:bg-[#142621] text-emerald-600 dark:text-emerald-400'
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl shadow-xs ${
+            accent
+              ? 'bg-[var(--pulse-gradient)] text-white'
+              : 'bg-[var(--pulse-panel-2)] text-[var(--pulse-mint)] border border-[var(--pulse-line)]'
           }`}
         >
           <Icon className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
@@ -151,24 +153,21 @@ function StatTile({ label, value, caption, icon: Icon, accent = false, progress 
       </div>
 
       {progress !== null && (
-        <div className="mt-3.5 w-full bg-slate-100 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+        <div className="mt-3.5 w-full bg-[var(--pulse-panel-2)] h-1.5 rounded-full overflow-hidden border border-[var(--pulse-line)]">
           <div
-            className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+            className="bg-[var(--pulse-mint)] h-full rounded-full transition-all duration-500"
             style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
           />
         </div>
       )}
 
-      <p className={`mt-3.5 text-xs font-medium leading-relaxed ${accent ? 'text-emerald-200/80' : 'text-slate-500 dark:text-[#8aa096]'}`}>
+      <p className="mt-3.5 text-xs font-normal leading-relaxed text-[var(--pulse-muted)]">
         {caption}
       </p>
-
-      {accent && (
-        <div className="absolute -bottom-8 -right-8 h-28 w-28 rounded-full bg-emerald-500/10 blur-xl pointer-events-none" />
-      )}
     </div>
   );
 }
+
 
 function OnboardingCard({ merchant }) {
   const tasks = [
@@ -181,25 +180,25 @@ function OnboardingCard({ merchant }) {
   const percentage = Math.round((complete / tasks.length) * 100);
 
   return (
-    <Panel className="border-emerald-200/70 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50/40 via-white to-transparent dark:from-emerald-950/20 dark:via-[#0e1714] dark:to-[#0e1714]">
+    <Panel className="border-[var(--pulse-line)] bg-[var(--pulse-panel)]">
       <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_360px] lg:items-center">
         <div>
           <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--pulse-mint)]/15 text-[var(--pulse-mint)]">
               <CheckCircle2 className="h-4 w-4" />
             </span>
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">
+            <p className="pulse-eyebrow text-[10px] text-[var(--pulse-mint)]">
               Setup Guide · {complete} of {tasks.length} Completed ({percentage}%)
             </p>
           </div>
-          <h2 className="mt-2.5 font-[var(--font-display)] text-[20px] font-bold tracking-[-.6px] text-slate-900 dark:text-white">
+          <h2 className="mt-2.5 font-[var(--font-display)] text-[20px] font-bold tracking-[-0.02em] text-[var(--pulse-ink)]">
             Get your instant UPI collection engine ready
           </h2>
-          <p className="mt-1 text-xs text-slate-600 dark:text-[#95ab9f] leading-relaxed">
+          <p className="mt-1 text-xs text-[var(--pulse-ink-2)] leading-relaxed">
             Complete these essential steps so incoming customer payments match and settle directly to your bank account with zero delay.
           </p>
-          <div className="mt-3.5 max-w-xs w-full bg-slate-200 dark:bg-white/10 h-2 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />
+          <div className="mt-3.5 max-w-xs w-full bg-[var(--pulse-panel-2)] border border-[var(--pulse-line)] h-2 rounded-full overflow-hidden">
+            <div className="bg-[var(--pulse-gradient)] h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%` }} />
           </div>
         </div>
 
@@ -210,23 +209,23 @@ function OnboardingCard({ merchant }) {
               to={to}
               className={`group flex items-center gap-3 rounded-xl border p-2.5 transition ${
                 done
-                  ? 'border-emerald-200/60 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-950/10'
-                  : 'border-slate-200 dark:border-[#1f342c] bg-white dark:bg-[#12201b] hover:border-emerald-400 dark:hover:border-emerald-500 shadow-2xs'
+                  ? 'border-[var(--pulse-line)] bg-[var(--pulse-panel-2)]/60'
+                  : 'border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] hover:border-[var(--pulse-pink)]/40 shadow-xs'
               }`}
             >
               <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
-                done ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-[#192b25] text-slate-600 dark:text-[#8ea299]'
+                done ? 'bg-[var(--pulse-mint)] text-white' : 'bg-[var(--pulse-panel)] text-[var(--pulse-muted)]'
               }`}>
                 {done ? <Check className="h-4 w-4 stroke-[2.5]" /> : <Icon className="h-4 w-4" />}
               </span>
               <div className="min-w-0 flex-1">
-                <p className={`text-xs font-bold ${done ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-white'}`}>
+                <p className={`text-xs font-bold ${done ? 'text-[var(--pulse-muted)] line-through' : 'text-[var(--pulse-ink)]'}`}>
                   {label}
                 </p>
-                <p className="text-[10px] text-slate-500 dark:text-[#7f9589] leading-snug">{detail}</p>
+                <p className="text-[10px] text-[var(--pulse-muted)] leading-snug">{detail}</p>
               </div>
               {!done && (
-                <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-emerald-600" />
+                <ArrowRight className="h-4 w-4 text-[var(--pulse-muted)] transition group-hover:translate-x-0.5 group-hover:text-[var(--pulse-mint)]" />
               )}
             </Link>
           ))}
@@ -317,15 +316,15 @@ export function DashboardPage() {
               type="button"
               onClick={refresh}
               disabled={refreshing}
-              className="inline-flex min-h-[48px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-5 text-sm sm:text-xs font-semibold text-slate-800 dark:text-[#cbe3d7] shadow-2xs hover:bg-slate-50 dark:hover:bg-white/10 transition active:scale-95 disabled:opacity-60"
+              className="btn-secondary-pulse inline-flex min-h-[48px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 px-5 text-sm sm:text-xs font-semibold disabled:opacity-60"
               title="Refresh dashboard stats"
             >
-              <RefreshCw className={`h-4 w-4 sm:h-3.5 sm:w-3.5 text-emerald-600 dark:text-emerald-400 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 sm:h-3.5 sm:w-3.5 text-[var(--pulse-mint)] ${refreshing ? 'animate-spin' : ''}`} />
               <span>{refreshing ? 'Refreshing…' : 'Refresh'}</span>
             </button>
             <Link
               to="/payment-links"
-              className="inline-flex min-h-[48px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 text-sm sm:text-xs font-bold text-white shadow-2xs transition active:scale-95"
+              className="btn-primary-pulse inline-flex min-h-[48px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 px-5 text-sm sm:text-xs font-bold"
             >
               <Plus className="h-4 w-4" />
               <span>Create Payment Link</span>
@@ -342,10 +341,10 @@ export function DashboardPage() {
         <ErrorState message={error} onRetry={refresh} />
       ) : loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="skeleton h-[145px] rounded-2xl" />
-          <div className="skeleton h-[145px] rounded-2xl" />
-          <div className="skeleton h-[145px] rounded-2xl" />
-          <div className="skeleton h-[145px] rounded-2xl" />
+          <div className="pulse-skeleton h-[145px] rounded-[22px]" />
+          <div className="pulse-skeleton h-[145px] rounded-[22px]" />
+          <div className="pulse-skeleton h-[145px] rounded-[22px]" />
+          <div className="pulse-skeleton h-[145px] rounded-[22px]" />
         </div>
       ) : stats ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -392,31 +391,31 @@ export function DashboardPage() {
         <Panel className="p-5 sm:p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              <span className="pulse-eyebrow text-[11px] text-[var(--pulse-mint)]">
                 Direct UPI Collection
               </span>
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+              <span className="rounded-full bg-[var(--pulse-panel-2)] border border-[var(--pulse-line)] px-2 py-0.5 text-[10px] font-bold text-[var(--pulse-mint)]">
                 0% Gateway Fee
               </span>
             </div>
-            <h3 className="mt-2 font-[var(--font-display)] text-lg font-bold text-slate-900 dark:text-white">
+            <h3 className="mt-2 font-[var(--font-display)] text-lg font-bold text-[var(--pulse-ink)]">
               Instant Payment Links & QR
             </h3>
-            <p className="mt-1 text-xs text-slate-600 dark:text-[#91a79c] leading-relaxed">
+            <p className="mt-1 text-xs text-[var(--pulse-ink-2)] leading-relaxed">
               Generate customizable payment links with exact amounts and dynamic QR codes for 1-tap mobile UPI checkout.
             </p>
             {merchant.upiId && (
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 dark:border-[#1a2d26] bg-slate-50/70 dark:bg-[#12201b] p-3">
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] p-3">
                 <div className="min-w-0 flex-1 pr-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#7f9589]">Your Active UPI Handle</p>
-                  <p className="break-all font-mono text-xs font-bold text-slate-900 dark:text-[#34d399] select-all">{merchant.upiId}</p>
+                  <p className="pulse-eyebrow text-[10px]">Your Active UPI Handle</p>
+                  <p className="break-all font-mono text-xs font-bold text-[var(--pulse-mint)] select-all">{merchant.upiId}</p>
                 </div>
                 <button
                   type="button"
                   onClick={copyUpi}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-white hover:bg-slate-50"
+                  className="btn-secondary-pulse inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold"
                 >
-                  {copiedUpi ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedUpi ? <Check className="h-3.5 w-3.5 text-[var(--pulse-mint)]" /> : <Copy className="h-3.5 w-3.5" />}
                   <span>{copiedUpi ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
@@ -425,16 +424,16 @@ export function DashboardPage() {
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               to="/payment-links"
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold shadow-2xs hover:bg-slate-800 transition"
+              className="btn-secondary-pulse inline-flex min-h-10 items-center justify-center gap-2 px-4 py-2 text-xs font-bold"
             >
               <Link2 className="h-3.5 w-3.5" />
               <span>Create Payment Link</span>
             </Link>
             <Link
               to="/branding"
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-4 py-2 text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-50 transition"
+              className="btn-secondary-pulse inline-flex min-h-10 items-center justify-center gap-2 px-4 py-2 text-xs font-bold"
             >
-              <Palette className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <Palette className="h-3.5 w-3.5 text-[var(--pulse-pink)]" />
               <span>Brand Checkout</span>
             </Link>
           </div>
@@ -444,32 +443,32 @@ export function DashboardPage() {
         <Panel className="p-5 sm:p-6 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              <span className="pulse-eyebrow text-[11px] text-[var(--pulse-violet)]">
                 Developer Docs
               </span>
-              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="flex items-center gap-1.5 rounded-full border border-[var(--pulse-mint)]/20 bg-[var(--pulse-mint)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--pulse-mint)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--pulse-mint)] animate-pulse" />
                 <span>API Ready</span>
               </div>
             </div>
-            <h3 className="mt-2 font-[var(--font-display)] text-lg font-bold text-slate-900 dark:text-white">
+            <h3 className="mt-2 font-[var(--font-display)] text-lg font-bold text-[var(--pulse-ink)]">
               REST API & Webhooks
             </h3>
-            <p className="mt-1 text-xs text-slate-600 dark:text-[#91a79c] leading-relaxed">
+            <p className="mt-1 text-xs text-[var(--pulse-ink-2)] leading-relaxed">
               Integrate PopPay into your website, app, or server with simple JSON endpoints and signed webhook notifications.
             </p>
             {merchant.publicKey && (
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 dark:border-[#1a2d26] bg-slate-50/70 dark:bg-[#12201b] p-3">
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] p-3">
                 <div className="min-w-0 flex-1 pr-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-[#7f9589]">Public API Key</p>
-                  <p className="break-all font-mono text-xs font-bold text-slate-900 dark:text-[#34d399] select-all">{merchant.publicKey}</p>
+                  <p className="pulse-eyebrow text-[10px]">Public API Key</p>
+                  <p className="break-all font-mono text-xs font-bold text-[var(--pulse-ink)] select-all">{merchant.publicKey}</p>
                 </div>
                 <button
                   type="button"
                   onClick={copyPublicKey}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-white hover:bg-slate-50"
+                  className="btn-secondary-pulse inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold"
                 >
-                  {copiedKey ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedKey ? <Check className="h-3.5 w-3.5 text-[var(--pulse-mint)]" /> : <Copy className="h-3.5 w-3.5" />}
                   <span>{copiedKey ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
@@ -478,16 +477,16 @@ export function DashboardPage() {
           <div className="mt-5 flex flex-wrap gap-2.5">
             <Link
               to="/docs"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold shadow-2xs hover:bg-slate-800 transition"
+              className="btn-secondary-pulse inline-flex items-center gap-2 px-4 py-2 text-xs font-bold"
             >
-              <FileCode2 className="h-3.5 w-3.5" />
+              <FileCode2 className="h-3.5 w-3.5 text-[var(--pulse-sky)]" />
               <span>View API Documentation</span>
             </Link>
             <Link
               to="/settings"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-4 py-2 text-xs font-bold text-slate-800 dark:text-white hover:bg-slate-50 transition"
+              className="btn-secondary-pulse inline-flex items-center gap-2 px-4 py-2 text-xs font-bold"
             >
-              <Webhook className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <Webhook className="h-3.5 w-3.5 text-[var(--pulse-violet)]" />
               <span>Configure Webhook</span>
             </Link>
           </div>
@@ -502,7 +501,7 @@ export function DashboardPage() {
           action={
             <Link
               to="/payments"
-              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+              className="inline-flex items-center gap-1 text-xs font-bold text-[var(--pulse-mint)] hover:underline"
             >
               <span>View all payments</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
@@ -513,38 +512,48 @@ export function DashboardPage() {
           <TableLoading columns={4} />
         ) : error ? (
           <div className="p-5">
-            <p className="text-xs text-slate-500">Recent payments unavailable until dashboard refresh succeeds.</p>
+            <p className="text-xs text-[var(--pulse-muted)]">Recent payments unavailable until dashboard refresh succeeds.</p>
           </div>
         ) : recent.length ? (
-          <div className="divide-y divide-slate-100 dark:divide-[#172b24]">
+          <div className="divide-y divide-[var(--pulse-line)]">
             {recent.map((payment) => (
               <div
                 key={payment.payment_id}
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4 sm:px-6 hover:bg-slate-50/70 dark:hover:bg-white/[.02] transition"
+                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4 sm:px-6 hover:bg-[var(--pulse-panel-2)] transition"
               >
                 <div className="flex items-center gap-3.5 min-w-[200px]">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-5 w-5" />
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--pulse-gradient)] text-white font-bold text-xs shadow-xs">
+                    ₹
                   </span>
                   <div>
-                    <p className="font-mono text-xs font-bold text-slate-900 dark:text-white">
+                    <p className="font-mono text-xs font-bold text-[var(--pulse-ink)]">
                       {payment.order_id}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-[#8aa096]">
-                      UTR: <span className="font-mono font-semibold">{payment.utr || '—'}</span> · {formatDate(payment.receivedAt, { time: true })}
+                    <p className="mt-0.5 text-[11px] text-[var(--pulse-muted)]">
+                      UTR: <span className="font-mono font-semibold text-[var(--pulse-ink)]">{payment.utr || '—'}</span> · {formatDate(payment.receivedAt, { time: true })}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                     payment.verificationMethod === 'MERCHANT_MANUAL'
-                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
-                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                      ? 'bg-[var(--pulse-warning)]/10 text-[var(--pulse-warning)] border border-[var(--pulse-warning)]/20'
+                      : 'bg-[var(--pulse-positive)]/10 text-[var(--pulse-positive)] border border-[var(--pulse-positive)]/20'
                   }`}>
-                    {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit Alert'}
+                    {payment.verificationMethod === 'MERCHANT_MANUAL' ? (
+                      <>
+                        <Clock3 className="h-3 w-3" />
+                        <span>Merchant Verified</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowUpRight className="h-3 w-3" />
+                        <span>FamApp Credit Alert</span>
+                      </>
+                    )}
                   </span>
-                  <p className="font-[var(--font-display)] text-base font-bold tabular-nums text-emerald-700 dark:text-emerald-400 text-right">
+                  <p className="font-[var(--font-display)] text-base font-extrabold tabular-nums text-[var(--pulse-ink)] text-right">
                     +{formatMoney(payment.amount)}
                   </p>
                 </div>
@@ -559,7 +568,7 @@ export function DashboardPage() {
             action={
               <Link
                 to="/payment-links"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-xs font-bold shadow-2xs transition"
+                className="btn-primary-pulse inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Create your first payment link</span>
@@ -611,7 +620,7 @@ export function OrdersPage() {
         action={
           <Link
             to="/payment-links"
-            className="inline-flex min-h-[44px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white shadow-2xs transition active:scale-95 w-full sm:w-auto"
+            className="btn-primary-pulse inline-flex min-h-[44px] sm:min-h-0 sm:h-10 items-center justify-center gap-2 px-4 text-xs font-bold w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             <span>New Payment Link</span>
@@ -624,16 +633,16 @@ export function OrdersPage() {
           detail={result ? `${result.total} ${result.total === 1 ? 'order' : 'orders'} in this view` : 'Most recent payment requests'}
         />
         {/* Filter Pills with Horizontal Scroll on Mobile */}
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 dark:border-white/10 px-4 py-3 sm:px-6 custom-scrollbar">
+        <div className="flex gap-2 overflow-x-auto border-b border-[var(--pulse-line)] px-4 py-3 sm:px-6 custom-scrollbar">
           {ORDER_FILTERS.map(([value, label]) => (
             <button
               key={value}
               type="button"
               onClick={() => changeFilter(value)}
-              className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-bold transition active:scale-95 ${
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition active:scale-95 ${
                 filter === value
-                  ? 'bg-emerald-600 text-white shadow-2xs'
-                  : 'bg-slate-100 dark:bg-white/[.04] text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-white/[.08] hover:text-slate-900 dark:hover:text-white'
+                  ? 'pulse-toggle-active'
+                  : 'bg-[var(--pulse-panel-2)] text-[var(--pulse-muted)] hover:text-[var(--pulse-ink)]'
               }`}
             >
               {label}
@@ -660,46 +669,46 @@ export function OrdersPage() {
         ) : (
           <>
             {/* Mobile Card View (< sm screens) */}
-            <div className="divide-y divide-slate-100 dark:divide-white/[.06] sm:hidden">
+            <div className="divide-y divide-[var(--pulse-line)] sm:hidden">
               {orders.map((order) => (
-                <div key={order.order_id} className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-white/[.02] transition">
+                <div key={order.order_id} className="p-4 space-y-3 hover:bg-[var(--pulse-panel-2)] transition">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-xs font-bold text-slate-900 dark:text-white truncate">
+                        <span className="font-mono text-xs font-bold text-[var(--pulse-ink)] truncate">
                           {order.order_id}
                         </span>
                         <CopyButton text={order.order_id} label="" />
                       </div>
-                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      <p className="mt-0.5 text-[11px] text-[var(--pulse-muted)] truncate">
                         {order.receipt ? `Receipt: ${order.receipt}` : 'No receipt reference'}
                       </p>
                     </div>
                     <StatusBadge status={order.status} />
                   </div>
 
-                  <div className="flex items-baseline justify-between rounded-xl bg-slate-50/70 dark:bg-white/[.03] p-2.5">
+                  <div className="flex items-baseline justify-between rounded-xl bg-[var(--pulse-panel-2)] border border-[var(--pulse-line)] p-2.5">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Payable</p>
-                      <p className="font-[var(--font-display)] text-base font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                      <p className="pulse-eyebrow text-[10px]">Payable</p>
+                      <p className="font-[var(--font-display)] text-base font-extrabold text-[var(--pulse-ink)] tabular-nums">
                         {formatMoney(order.payableAmount)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Base Amount</p>
-                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
+                      <p className="pulse-eyebrow text-[10px]">Base Amount</p>
+                      <p className="text-xs font-semibold text-[var(--pulse-muted)] tabular-nums">
                         {formatMoney(order.baseAmount)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                  <div className="flex items-center justify-between text-[11px] text-[var(--pulse-muted)] pt-0.5">
                     <span className="flex items-center gap-1">
-                      <Clock3 className="h-3 w-3 text-slate-400" />
+                      <Clock3 className="h-3 w-3 text-[var(--pulse-muted)]" />
                       Expires: {formatDate(order.expiresAt, { time: true })}
                     </span>
                     {order.redirectUrl && (
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold truncate max-w-[140px]">
+                      <span className="text-[10px] text-[var(--pulse-mint)] font-semibold truncate max-w-[140px]">
                         Redirect configured
                       </span>
                     )}
@@ -712,7 +721,7 @@ export function OrdersPage() {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full min-w-[720px] border-collapse text-left">
                 <thead>
-                  <tr className="bg-slate-50/70 dark:bg-white/[0.02] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
+                  <tr className="bg-[var(--pulse-panel)] text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-muted)] border-b border-[var(--pulse-line)]">
                     <th className="px-6 py-3.5">Order / receipt</th>
                     <th className="px-4 py-3.5">Base amount</th>
                     <th className="px-4 py-3.5">Payable amount</th>
@@ -720,21 +729,21 @@ export function OrdersPage() {
                     <th className="px-6 py-3.5 text-right">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                <tbody className="divide-y divide-[var(--pulse-line)]">
                   {orders.map((order) => (
-                    <tr key={order.order_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
+                    <tr key={order.order_id} className="hover:bg-[var(--pulse-panel-2)] transition">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-xs font-bold text-slate-900 dark:text-white">{order.order_id}</span>
+                          <span className="font-mono text-xs font-bold text-[var(--pulse-ink)]">{order.order_id}</span>
                           <CopyButton text={order.order_id} label="" />
                         </div>
-                        <p className="mt-0.5 break-words text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 break-words text-[11px] text-[var(--pulse-muted)]">
                           {order.receipt || 'No receipt reference'}
                         </p>
                       </td>
-                      <td className="px-4 py-4 text-xs tabular-nums text-slate-500 dark:text-slate-400">{formatMoney(order.baseAmount)}</td>
-                      <td className="px-4 py-4 text-xs font-bold tabular-nums text-slate-900 dark:text-white">{formatMoney(order.payableAmount)}</td>
-                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(order.expiresAt, { time: true })}</td>
+                      <td className="px-4 py-4 text-xs tabular-nums text-[var(--pulse-muted)]">{formatMoney(order.baseAmount)}</td>
+                      <td className="px-4 py-4 text-xs font-extrabold tabular-nums text-[var(--pulse-ink)]">{formatMoney(order.payableAmount)}</td>
+                      <td className="px-4 py-4 text-xs text-[var(--pulse-muted)]">{formatDate(order.expiresAt, { time: true })}</td>
                       <td className="px-6 py-4 text-right"><StatusBadge status={order.status} /></td>
                     </tr>
                   ))}
@@ -795,41 +804,51 @@ export function PaymentsPage() {
         ) : (
           <>
             {/* Mobile Card View (< sm screens) */}
-            <div className="divide-y divide-slate-100 dark:divide-white/[.06] sm:hidden">
+            <div className="divide-y divide-[var(--pulse-line)] sm:hidden">
               {payments.map((payment) => (
-                <div key={payment.payment_id} className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-white/[.02] transition">
+                <div key={payment.payment_id} className="p-4 space-y-3 hover:bg-[var(--pulse-panel-2)] transition">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-[var(--font-display)] text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      <p className="font-[var(--font-display)] text-lg font-bold text-[var(--pulse-positive)] tabular-nums">
                         +{formatMoney(payment.amount)}
                       </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-[var(--pulse-muted)] mt-0.5">
                         {formatDate(payment.receivedAt, { time: true })}
                       </p>
                     </div>
                     <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                         payment.verificationMethod === 'MERCHANT_MANUAL'
-                          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                          ? 'bg-[var(--pulse-warning)]/10 text-[var(--pulse-warning)] border border-[var(--pulse-warning)]/20'
+                          : 'bg-[var(--pulse-positive)]/10 text-[var(--pulse-positive)] border border-[var(--pulse-positive)]/20'
                       }`}
                     >
-                      {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit'}
+                      {payment.verificationMethod === 'MERCHANT_MANUAL' ? (
+                        <>
+                          <Clock3 className="h-3 w-3" />
+                          <span>Merchant Verified</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowUpRight className="h-3 w-3" />
+                          <span>FamApp Credit</span>
+                        </>
+                      )}
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 rounded-xl bg-slate-50/70 dark:bg-white/[.03] p-2.5 text-xs">
+                  <div className="space-y-1.5 rounded-xl bg-[var(--pulse-panel-2)] border border-[var(--pulse-line)] p-2.5 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Order</span>
+                      <span className="pulse-eyebrow text-[10px]">Order</span>
                       <div className="flex items-center gap-1">
-                        <span className="font-mono font-bold text-slate-900 dark:text-white">{payment.order_id}</span>
+                        <span className="font-mono font-bold text-[var(--pulse-ink)]">{payment.order_id}</span>
                         <CopyButton text={payment.order_id} label="" />
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">UTR / Ref</span>
+                      <span className="pulse-eyebrow text-[10px]">UTR / Ref</span>
                       <div className="flex items-center gap-1">
-                        <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{payment.utr || '—'}</span>
+                        <span className="font-mono font-semibold text-[var(--pulse-mint)]">{payment.utr || '—'}</span>
                         {payment.utr && <CopyButton text={payment.utr} label="" />}
                       </div>
                     </div>
@@ -842,7 +861,7 @@ export function PaymentsPage() {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full min-w-[780px] border-collapse text-left">
                 <thead>
-                  <tr className="bg-slate-50/70 dark:bg-white/[0.02] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-white/10">
+                  <tr className="bg-[var(--pulse-panel)] text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-muted)] border-b border-[var(--pulse-line)]">
                     <th className="px-6 py-3.5">Payment ID</th>
                     <th className="px-4 py-3.5">Matched Order</th>
                     <th className="px-4 py-3.5">Bank UTR</th>
@@ -851,40 +870,50 @@ export function PaymentsPage() {
                     <th className="px-6 py-3.5 text-right">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+                <tbody className="divide-y divide-[var(--pulse-line)]">
                   {payments.map((payment) => (
-                    <tr key={payment.payment_id} className="hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition">
-                      <td className="px-6 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                    <tr key={payment.payment_id} className="hover:bg-[var(--pulse-panel-2)] transition">
+                      <td className="px-6 py-4 font-mono text-[11px] text-[var(--pulse-muted)]">
                         <div className="flex items-center gap-1">
                           <span>{payment.payment_id}</span>
                           <CopyButton text={payment.payment_id} label="" />
                         </div>
                       </td>
-                      <td className="px-4 py-4 font-mono text-xs font-bold text-slate-900 dark:text-white">
+                      <td className="px-4 py-4 font-mono text-xs font-bold text-[var(--pulse-ink)]">
                         <div className="flex items-center gap-1">
                           <span>{payment.order_id}</span>
                           <CopyButton text={payment.order_id} label="" />
                         </div>
                       </td>
-                      <td className="px-4 py-4 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      <td className="px-4 py-4 font-mono text-xs font-semibold text-[var(--pulse-mint)]">
                         <div className="flex items-center gap-1">
                           <span>{payment.utr || '—'}</span>
                           {payment.utr && <CopyButton text={payment.utr} label="" />}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <td className="px-4 py-4 text-xs font-semibold">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                             payment.verificationMethod === 'MERCHANT_MANUAL'
-                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
-                              : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-[var(--pulse-warning)]/10 text-[var(--pulse-warning)] border border-[var(--pulse-warning)]/20'
+                              : 'bg-[var(--pulse-positive)]/10 text-[var(--pulse-positive)] border border-[var(--pulse-positive)]/20'
                           }`}
                         >
-                          {payment.verificationMethod === 'MERCHANT_MANUAL' ? 'Merchant Verified' : 'FamApp Credit Alert'}
+                          {payment.verificationMethod === 'MERCHANT_MANUAL' ? (
+                            <>
+                              <Clock3 className="h-3 w-3" />
+                              <span>Merchant Verified</span>
+                            </>
+                          ) : (
+                            <>
+                              <ArrowUpRight className="h-3 w-3" />
+                              <span>FamApp Credit Alert</span>
+                            </>
+                          )}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">{formatDate(payment.receivedAt, { time: true })}</td>
-                      <td className="px-6 py-4 text-right text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                      <td className="px-4 py-4 text-xs text-[var(--pulse-muted)]">{formatDate(payment.receivedAt, { time: true })}</td>
+                      <td className="px-6 py-4 text-right text-sm font-extrabold tabular-nums text-[var(--pulse-positive)]">
                         +{formatMoney(payment.amount)}
                       </td>
                     </tr>
@@ -1085,7 +1114,7 @@ export function UnmatchedPage() {
             }
           />
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+          <div className="divide-y divide-[var(--pulse-line)]">
             {payments.map((payment) => {
               const candidates = pendingOrders.filter((order) => (
                 orderFitsPayment(order, payment, data?.verificationGraceMs)
@@ -1094,37 +1123,37 @@ export function UnmatchedPage() {
               return (
                 <article
                   key={payment.id}
-                  className="grid gap-4 p-5 sm:p-6 sm:grid-cols-[minmax(180px,1fr)_minmax(280px,1.2fr)_auto] sm:items-center hover:bg-slate-50/50 dark:hover:bg-white/[.02] transition"
+                  className="grid gap-4 p-5 sm:p-6 sm:grid-cols-[minmax(180px,1fr)_minmax(280px,1.2fr)_auto] sm:items-center hover:bg-[var(--pulse-panel-2)] transition"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2.5">
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--pulse-warning)]/15 text-[var(--pulse-warning)]">
                         <ArrowDownRight className="h-4 w-4" />
                       </span>
-                      <span className="font-[var(--font-display)] text-xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      <span className="font-[var(--font-display)] text-xl font-extrabold tracking-tight text-[var(--pulse-ink)] tabular-nums">
                         {formatMoney(payment.amount)}
                       </span>
                     </div>
                     <div className="mt-2 flex items-center gap-1.5">
-                      <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <span className="font-mono text-xs font-semibold text-[var(--pulse-mint)]">
                         UTR: {payment.utr || '—'}
                       </span>
                       {payment.utr && <CopyButton text={payment.utr} label="" />}
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 text-[11px] text-[var(--pulse-muted)]">
                       Received {formatDate(payment.receivedAt, { time: true })}
                     </p>
                   </div>
 
                   <div>
-                    <label htmlFor={`match-${payment.id}`} className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <label htmlFor={`match-${payment.id}`} className="pulse-eyebrow mb-1.5 block text-[10px]">
                       Choose matching order
                     </label>
                     <select
                       id={`match-${payment.id}`}
                       value={selected}
                       onChange={(event) => setSelections((current) => ({ ...current, [payment.id]: event.target.value }))}
-                      className="h-11 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3.5 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                      className="h-11 w-full rounded-xl border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] px-3.5 text-xs text-[var(--pulse-ink)] outline-none focus:border-[var(--pulse-mint)] focus:ring-2 focus:ring-[var(--pulse-mint)]/20"
                     >
                       <option value="">{candidates.length ? 'Select an order to match' : 'No amount/time match found'}</option>
                       {candidates.map((order) => (
@@ -1134,7 +1163,7 @@ export function UnmatchedPage() {
                       ))}
                     </select>
                     {candidates.length === 0 && (
-                      <p className="mt-1.5 text-[11px] leading-4 text-amber-600 dark:text-amber-400">
+                      <p className="mt-1.5 text-[11px] leading-4 text-[var(--pulse-warning)]">
                         Order amount and IST transaction time must match within the 10-minute grace window.
                       </p>
                     )}
@@ -1144,7 +1173,7 @@ export function UnmatchedPage() {
                     type="button"
                     disabled={!selected || claiming === payment.id}
                     onClick={() => claim(payment)}
-                    className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 text-xs font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 shadow-2xs"
+                    className="btn-primary-pulse inline-flex min-h-[44px] items-center justify-center gap-2 px-5 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {claiming === payment.id ? <Spinner small /> : <Link2 className="h-4 w-4" />}
                     <span>Match Payment</span>
@@ -1162,41 +1191,41 @@ export function UnmatchedPage() {
             title="Customer UTR reports"
             detail={`${utrReports.length} reference${utrReports.length === 1 ? '' : 's'} awaiting bank verification or FamApp alert`}
           />
-          <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
+          <div className="divide-y divide-[var(--pulse-line)]">
             {utrReports.map((order) => (
               <article key={order.order_id} className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,1.2fr)] lg:items-center">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-[var(--font-display)] text-lg font-bold text-slate-900 dark:text-white">
+                    <span className="font-[var(--font-display)] text-lg font-bold text-[var(--pulse-ink)]">
                       {formatMoney(order.payableAmount)}
                     </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <span className="text-xs text-[var(--pulse-muted)] font-medium">
                       ({order.receipt || 'No receipt reference'})
                     </span>
                   </div>
                   <div className="mt-2 flex items-center gap-1.5">
-                    <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="font-mono text-xs font-bold text-[var(--pulse-mint)]">
                       Reported UTR: {order.reportedUtr}
                     </span>
                     <CopyButton text={order.reportedUtr} label="" />
                   </div>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="font-mono text-[11px] text-[var(--pulse-muted)]">
                       {order.order_id}
                     </span>
                     <CopyButton text={order.order_id} label="" />
                   </div>
-                  <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-2 text-[11px] text-[var(--pulse-muted)]">
                     Submitted {order.reportedUtrAt ? formatDate(order.reportedUtrAt, { time: true }) : 'recently'} · Pending verification
                   </p>
                 </div>
 
                 <form
-                  className="space-y-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[.02] p-4 sm:p-5"
+                  className="space-y-3.5 rounded-2xl border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] p-4 sm:p-5"
                   onSubmit={(event) => { event.preventDefault(); confirmReportedPayment(order); }}
                 >
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-muted)]">
                       Amount shown in bank (₹)
                       <input
                         type="text"
@@ -1207,10 +1236,10 @@ export function UnmatchedPage() {
                         value={bankConfirmations[order.order_id]?.amount || ''}
                         onChange={(event) => updateBankConfirmation(order.order_id, { amount: event.target.value })}
                         placeholder="0.00"
-                        className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                        className="mt-1.5 h-10 w-full rounded-xl border border-[var(--pulse-line)] bg-[var(--pulse-panel)] px-3 text-xs text-[var(--pulse-ink)] outline-none focus:border-[var(--pulse-mint)] focus:ring-2 focus:ring-[var(--pulse-mint)]/20"
                       />
                     </label>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-muted)]">
                       Transfer time (IST)
                       <input
                         type="datetime-local"
@@ -1218,17 +1247,17 @@ export function UnmatchedPage() {
                         required
                         value={bankConfirmations[order.order_id]?.receivedAt || ''}
                         onChange={(event) => updateBankConfirmation(order.order_id, { receivedAt: event.target.value })}
-                        className="mt-1.5 h-10 w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#12201b] px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                        className="mt-1.5 h-10 w-full rounded-xl border border-[var(--pulse-line)] bg-[var(--pulse-panel)] px-3 text-xs text-[var(--pulse-ink)] outline-none focus:border-[var(--pulse-mint)] focus:ring-2 focus:ring-[var(--pulse-mint)]/20"
                       />
                     </label>
                   </div>
-                  <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                  <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-5 text-[var(--pulse-ink-2)]">
                     <input
                       type="checkbox"
                       required
                       checked={Boolean(bankConfirmations[order.order_id]?.verified)}
                       onChange={(event) => updateBankConfirmation(order.order_id, { verified: event.target.checked })}
-                      className="mt-0.5 h-4 w-4 shrink-0 rounded accent-emerald-600"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded accent-[var(--pulse-mint)]"
                     />
                     <span>I personally verified this exact UTR and credited amount in my bank account.</span>
                   </label>
@@ -1236,7 +1265,7 @@ export function UnmatchedPage() {
                     <button
                       type="submit"
                       disabled={confirmingUtr === order.order_id}
-                      className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 text-xs font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 shadow-2xs"
+                      className="btn-primary-pulse inline-flex min-h-[42px] flex-1 items-center justify-center gap-2 px-4 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {confirmingUtr === order.order_id ? <Spinner small /> : <ShieldCheck className="h-4 w-4" />}
                       <span>Confirm Bank Payment</span>
@@ -1245,7 +1274,7 @@ export function UnmatchedPage() {
                       type="button"
                       disabled={clearingUtr === order.order_id}
                       onClick={() => clearReportedPayment(order)}
-                      className="min-h-[42px] rounded-xl border border-red-200 dark:border-red-900/40 bg-white dark:bg-transparent px-4 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="min-h-[42px] rounded-xl border border-[var(--pulse-critical)]/30 bg-transparent px-4 text-xs font-bold text-[var(--pulse-critical)] hover:bg-[var(--pulse-critical)]/10 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {clearingUtr === order.order_id ? 'Clearing…' : 'Clear UTR'}
                     </button>
@@ -1254,7 +1283,7 @@ export function UnmatchedPage() {
               </article>
             ))}
           </div>
-          <div className="border-t border-slate-100 dark:border-white/10 px-5 sm:px-6 py-3.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          <div className="border-t border-[var(--pulse-line)] px-5 sm:px-6 py-3.5 text-xs text-[var(--pulse-muted)] leading-relaxed">
             Confirm only after checking the UTR, exact amount, and transfer time in your bank or UPI account. PopPay records this as merchant-verified.
           </div>
         </Panel>
