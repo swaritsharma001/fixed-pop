@@ -163,7 +163,7 @@ function ConfettiShower() {
   );
 }
 
-function UtrSubmission({ orderId, alreadySubmitted, onConfirmed }) {
+function UtrSubmission({ orderId, alreadySubmitted, onConfirmed, checkoutDark }) {
   const [utr, setUtr] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(alreadySubmitted);
@@ -196,19 +196,21 @@ function UtrSubmission({ orderId, alreadySubmitted, onConfirmed }) {
   }
 
   return (
-    <section className="mt-6 rounded-2xl border border-[#e4eae2] bg-[#f9fbf6] p-4 sm:p-5">
-      <p className="text-xs font-bold text-[#294b40]">Paid but not confirmed?</p>
-      <p className="mt-1 text-[11px] leading-5 text-[#74867b]">
+    <section className={`mt-6 rounded-2xl border p-4 sm:p-5 transition-colors ${
+      checkoutDark ? 'border-[#1e342c] bg-[#14231f]' : 'border-slate-200 bg-slate-50/80'
+    }`}>
+      <p className={`text-xs font-bold ${checkoutDark ? 'text-white' : 'text-slate-900'}`}>Paid but not confirmed?</p>
+      <p className={`mt-1 text-[11px] sm:text-xs leading-relaxed ${checkoutDark ? 'text-[#8ca097]' : 'text-slate-600'}`}>
         Enter the 12-digit UTR from your payment receipt (not the transaction ID). We’ll verify it with the merchant’s payment alert.
       </p>
       {submitted && (
-        <p className="mt-3 rounded-lg bg-[#eaf4e9] px-3 py-2 text-[11px] leading-5 text-[#416c54]" role="status">
+        <p className="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-[11px] sm:text-xs leading-relaxed text-emerald-600 dark:text-emerald-400 font-medium" role="status">
           A UTR has been submitted for this order. You can submit a corrected UTR if needed.
         </p>
       )}
-      {message && <p className="mt-3 text-[11px] leading-5 text-[#416c54]" role="status">{message}</p>}
-      {error && <p className="mt-3 text-[11px] leading-5 text-[#a34f40]" role="alert">{error}</p>}
-      <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
+      {message && <p className="mt-3 text-[11px] sm:text-xs leading-relaxed text-emerald-600 dark:text-emerald-400 font-medium" role="status">{message}</p>}
+      {error && <p className="mt-3 text-[11px] sm:text-xs leading-relaxed text-red-500 font-medium" role="alert">{error}</p>}
+      <form onSubmit={submit} className="mt-3 flex flex-col gap-2.5 sm:flex-row">
         <label className="sr-only" htmlFor={`utr-${orderId}`}>12-digit UTR</label>
         <input
           id={`utr-${orderId}`}
@@ -219,12 +221,20 @@ function UtrSubmission({ orderId, alreadySubmitted, onConfirmed }) {
           value={utr}
           onChange={(event) => setUtr(event.target.value.replace(/\D/g, '').slice(0, 12))}
           placeholder="Enter 12-digit UTR"
-          className="h-11 min-w-0 flex-1 rounded-xl border border-[#dce5dc] bg-white px-3.5 font-mono text-sm text-[#294b40] outline-none focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+          className={`h-11 min-w-0 flex-1 rounded-xl border px-3.5 font-mono text-sm outline-none transition ${
+            checkoutDark
+              ? 'border-[#223932] bg-[#0d1614] text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10'
+              : 'border-slate-200 bg-white text-slate-900 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10'
+          }`}
         />
         <button
           type="submit"
           disabled={submitting || utr.length !== 12}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-[#174e41] px-4 text-xs font-bold text-white hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-50"
+          className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl px-5 text-xs font-bold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
+            checkoutDark
+              ? 'bg-[#1ea88a] text-white hover:bg-[#188c73]'
+              : 'bg-slate-900 text-white hover:bg-slate-800'
+          }`}
         >
           {submitting ? 'Checking…' : 'Submit UTR'}
         </button>
@@ -246,6 +256,7 @@ function PayCheckoutInner() {
   const [retryCount, setRetryCount] = useState(0);
   const [redirectIn, setRedirectIn] = useState(3);
   const [checkoutDark, setCheckoutDark] = useState(false);
+  const [mobileTab, setMobileTab] = useState('upi');
 
   useEffect(() => {
     if (checkout?.branding?.checkoutTheme === 'dark') {
@@ -559,13 +570,14 @@ function PayCheckoutInner() {
                 <svg className="h-3.5 w-3.5 text-[#126b58]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
               )}
             </button>
-            <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold tracking-[.02em] ${
+            <div className={`flex items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold tracking-[.02em] ${
               checkoutDark
                 ? 'border-[#1f342d] bg-[#12221d] text-[#8ca097]'
-                : 'border-[#dce7dd] bg-[#f9fbf6] text-[#527169]'
+                : 'border-slate-200 bg-white text-slate-600 shadow-2xs'
             }`}>
-              <Icon name="lock" className="h-[13px] w-[13px]" />
-              SECURE CHECKOUT
+              <Icon name="lock" className="h-[13px] w-[13px] text-emerald-500" />
+              <span className="hidden xs:inline">SECURE CHECKOUT</span>
+              <span className="xs:hidden">SECURE</span>
             </div>
           </div>
         </header>
@@ -609,6 +621,7 @@ function PayCheckoutInner() {
                 orderId={orderId}
                 alreadySubmitted={checkout?.utrSubmitted}
                 onConfirmed={applyOutcome}
+                checkoutDark={checkoutDark}
               />
             </div>
           </section>
@@ -655,22 +668,53 @@ function PayCheckoutInner() {
             {payment?.redirectUrl && <p className="mt-6 text-xs text-[#71817b]">Taking you back in {redirectIn} seconds…</p>}
           </section>
         ) : (
-          <div className={`entrance grid overflow-hidden rounded-[28px] border md:grid-cols-[1fr_360px] ${
+          <div className={`entrance overflow-hidden rounded-[24px] sm:rounded-[28px] border md:grid md:grid-cols-[1fr_360px] ${
             checkoutDark
               ? 'border-[#1d2f29] bg-[#111a18] shadow-[0_24px_70px_rgba(0,0,0,.6)] text-[#eaf3ee]'
-              : 'border-[#e1e8e1] bg-[#fffefa] shadow-[0_24px_70px_rgba(25,61,48,.08)]'
+              : 'border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,.06)] text-slate-900'
           }`}>
-            <section className="p-5 sm:p-9 md:p-10">
-              <div className="mb-7 flex items-start justify-between gap-4">
+            {/* Mobile Tab Selector (hidden on desktop) */}
+            <div className={`md:hidden flex border-b p-1.5 gap-1.5 ${
+              checkoutDark ? 'border-[#1e342c] bg-[#0d1614]' : 'border-slate-200 bg-slate-100/80'
+            }`}>
+              <button
+                type="button"
+                onClick={() => setMobileTab('upi')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                  mobileTab === 'upi'
+                    ? (checkoutDark ? 'bg-[#152722] text-[#34d399] shadow-xs' : 'bg-white text-slate-900 shadow-sm border border-slate-200/90')
+                    : (checkoutDark ? 'text-[#7e948a] hover:text-white' : 'text-slate-600 hover:text-slate-900')
+                }`}
+              >
+                <Icon name="arrow" className="h-3.5 w-3.5" />
+                <span>Pay via UPI App</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileTab('qr')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                  mobileTab === 'qr'
+                    ? (checkoutDark ? 'bg-[#152722] text-[#34d399] shadow-xs' : 'bg-white text-slate-900 shadow-sm border border-slate-200/90')
+                    : (checkoutDark ? 'text-[#7e948a] hover:text-white' : 'text-slate-600 hover:text-slate-900')
+                }`}
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM17 17h4v4h-4zM14 20v1M20 14v3"/></svg>
+                <span>Scan QR Code</span>
+              </button>
+            </div>
+
+            {/* Main UPI & Details Column */}
+            <section className={`p-4 xs:p-5 sm:p-8 md:p-9 ${mobileTab !== 'upi' ? 'hidden md:block' : 'block'}`}>
+              <div className="mb-6 flex items-start justify-between gap-3.5">
                 <div className="min-w-0 flex-1">
-                  <p className={`text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#7e948a]' : 'text-[#87968d]'}`}>You’re paying</p>
-                  <h1 className={`mt-1.5 max-w-[390px] break-words font-[var(--font-display)] text-[25px] font-semibold leading-tight tracking-[-1.1px] sm:text-[30px] ${
-                    checkoutDark ? 'text-white' : 'text-[#142e2b]'
+                  <p className={`text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#7e948a]' : 'text-slate-500'}`}>You’re paying</p>
+                  <h1 className={`mt-1 break-words font-[var(--font-display)] text-[22px] xs:text-[25px] sm:text-[30px] font-semibold leading-tight tracking-[-1px] ${
+                    checkoutDark ? 'text-white' : 'text-slate-900'
                   }`}>
                     {merchantName}
                   </h1>
                   {tagline && (
-                    <p className={`mt-1 text-xs truncate ${checkoutDark ? 'text-[#8ca097]' : 'text-[#6e8278]'}`}>{tagline}</p>
+                    <p className={`mt-1.5 break-words text-xs leading-relaxed ${checkoutDark ? 'text-[#8ca097]' : 'text-slate-600'}`}>{tagline}</p>
                   )}
                 </div>
                 {logoUrl ? (
@@ -678,15 +722,15 @@ function PayCheckoutInner() {
                     src={logoUrl}
                     alt={merchantName}
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    className={`mt-1 h-12 w-12 shrink-0 rounded-[16px] object-cover border shadow-xs ${
-                      checkoutDark ? 'border-[#223932]' : 'border-[#e2ebe2]'
+                    className={`mt-1 h-11 w-11 xs:h-12 xs:w-12 shrink-0 rounded-2xl object-cover border shadow-xs ${
+                      checkoutDark ? 'border-[#223932]' : 'border-slate-200'
                     }`}
                   />
                 ) : (
                   <div
                     style={{ backgroundColor: `${brandColor}22`, color: brandColor }}
-                    className={`mt-1 grid h-12 w-12 shrink-0 place-items-center rounded-[16px] font-[var(--font-display)] text-lg font-bold border shadow-xs ${
-                      checkoutDark ? 'border-[#223932]' : 'border-black/5'
+                    className={`mt-1 grid h-11 w-11 xs:h-12 xs:w-12 shrink-0 place-items-center rounded-2xl font-[var(--font-display)] text-lg font-bold border shadow-xs ${
+                      checkoutDark ? 'border-[#223932]' : 'border-slate-200'
                     }`}
                   >
                     {merchantName.trim().charAt(0).toUpperCase()}
@@ -694,39 +738,40 @@ function PayCheckoutInner() {
                 )}
               </div>
 
-              <div className={`rounded-[20px] border p-5 sm:p-6 shadow-sm transition-colors ${
+              {/* Exact Payable Amount Card */}
+              <div className={`rounded-2xl border p-4 sm:p-5 shadow-xs transition-colors ${
                 checkoutDark
                   ? 'border-[#1e332c] bg-gradient-to-br from-[#14231f] to-[#0f1a17]'
-                  : 'border-[#e6ebe3] bg-gradient-to-br from-[#f8faf5] to-[#f2f7ef]'
+                  : 'border-slate-200/90 bg-gradient-to-br from-slate-50 to-white'
               }`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className={`text-xs font-semibold uppercase tracking-wider ${checkoutDark ? 'text-[#8ba096]' : 'text-[#71817b]'}`}>Exact payable amount</span>
+                  <span className={`text-[11px] font-semibold uppercase tracking-wider ${checkoutDark ? 'text-[#8ba096]' : 'text-slate-600'}`}>Exact payable amount</span>
                   {remainingMs !== null && (
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold tabular-nums shadow-sm transition-colors ${
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums shadow-2xs transition-colors ${
                       remainingMs < 60000 
-                        ? checkoutDark ? 'bg-[#3c1717] text-[#f87171] border border-[#5a2525] animate-pulse' : 'bg-[#fbdfdf] text-[#b64c3c] border border-[#f5b8b8] animate-pulse'
+                        ? checkoutDark ? 'bg-[#3c1717] text-[#f87171] border border-[#5a2525] animate-pulse' : 'bg-red-50 text-red-600 border border-red-200 animate-pulse'
                         : remainingMs < 180000
-                        ? checkoutDark ? 'bg-[#382a12] text-[#fbbf24] border border-[#573f18]' : 'bg-[#fbefdc] text-[#8c672a] border border-[#ecd2a8]'
-                        : checkoutDark ? 'bg-[#152e25] text-[#34d399] border border-[#1d4336]' : 'bg-[#edf3eb] text-[#3e6858] border border-[#d6e5d4]'
+                        ? checkoutDark ? 'bg-[#382a12] text-[#fbbf24] border border-[#573f18]' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        : checkoutDark ? 'bg-[#152e25] text-[#34d399] border border-[#1d4336]' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     }`}>
-                      <Icon name="clock" className="h-3.5 w-3.5" />
+                      <Icon name="clock" className="h-3 w-3" />
                       {formattedCountdown}
                     </span>
                   )}
                 </div>
-                <div className="mt-2 flex items-baseline justify-between gap-4">
-                  <p className={`font-[var(--font-display)] text-[40px] font-bold leading-none tracking-[-2px] sm:text-[46px] ${
-                    checkoutDark ? 'text-white' : 'text-[#142e2b]'
+                <div className="mt-2.5 flex items-baseline justify-between gap-3">
+                  <p className={`break-all font-[var(--font-display)] text-[32px] xs:text-[38px] sm:text-[46px] font-bold leading-none tracking-[-1.5px] ${
+                    checkoutDark ? 'text-white' : 'text-slate-900'
                   }`}>
-                    <span className="mr-1 text-[28px] font-semibold" style={{ color: brandColor }}>₹</span>{formatAmount(checkout?.payableAmount)}
+                    <span className="mr-1 text-[24px] xs:text-[28px] font-semibold" style={{ color: brandColor }}>₹</span>{formatAmount(checkout?.payableAmount)}
                   </p>
                   <button
                     type="button"
                     onClick={copyAmount}
-                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 ${
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-2xs transition active:scale-95 ${
                       checkoutDark
                         ? 'border-[#223932] bg-[#172a24] text-[#34d399] hover:bg-[#1f372f]'
-                        : 'border-[#d9e4d8] bg-white text-[#126b58] hover:bg-[#edf5eb]'
+                        : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
                     }`}
                     title="Copy exact amount"
                   >
@@ -734,18 +779,19 @@ function PayCheckoutInner() {
                     {amountCopied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
-                <div className={`mt-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold border ${
+                <div className={`mt-3 flex items-start sm:items-center gap-2 rounded-xl px-3 py-2 text-[11px] sm:text-xs font-semibold border ${
                   checkoutDark
                     ? 'bg-[#152520] border-[#1f382f] text-[#34d399]'
-                    : 'bg-white/70 border-[#e1ece1] text-[#126b58]'
+                    : 'bg-emerald-50/90 border-emerald-200 text-emerald-800'
                 }`}>
-                  <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
-                  <span>Important: Pay exactly ₹{formatAmount(checkout?.payableAmount)} (including paise) for instant verification.</span>
+                  <span className="mt-0.5 sm:mt-0 h-2 w-2 shrink-0 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="leading-snug">Important: Pay exactly ₹{formatAmount(checkout?.payableAmount)} (including paise) for instant verification.</span>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <p className={`mb-3 text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#7e948a]' : 'text-[#87968d]'}`}>One-click mobile UPI</p>
+              {/* 1-Click UPI Payment Button */}
+              <div className="mt-5 sm:mt-6">
+                <p className={`mb-2.5 text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#7e948a]' : 'text-slate-500'}`}>One-click mobile UPI</p>
                 <a
                   href={checkout?.upiLink || undefined}
                   onClick={(event) => {
@@ -755,85 +801,122 @@ function PayCheckoutInner() {
                     backgroundColor: brandColor,
                     boxShadow: `0 8px 24px ${brandColor}40`
                   } : undefined}
-                  className={`group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-2xl px-5 text-sm font-bold shadow-md transition-all btn-sheen ${
+                  className={`group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-2xl px-4 xs:px-5 text-sm font-bold shadow-md transition-all btn-sheen ${
                     checkout?.upiLink
                       ? 'text-white hover:brightness-105 hover:shadow-lg active:scale-[0.99]'
-                      : 'cursor-not-allowed bg-[#a8b8af] text-white'
+                      : 'cursor-not-allowed bg-slate-300 dark:bg-[#253932] text-white'
                   }`}
                   aria-disabled={!checkout?.upiLink}
                 >
-                  <span className="flex items-center gap-3.5">
-                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 shadow-inner group-hover:scale-105 transition-transform">
+                  <span className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/20 shadow-inner group-hover:scale-105 transition-transform">
                       <Icon name="arrow" className="h-5 w-5" />
                     </span>
                     <span className="text-left">
                       <span className="block text-[14px]">Pay with UPI App</span>
-                      <span className="block text-[11px] font-normal text-white/80">GPay · PhonePe · Paytm · BHIM · Cred</span>
+                      <span className="block text-[11px] font-normal text-white/80">Tap to open installed UPI app</span>
                     </span>
                   </span>
-                  <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+                  <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold backdrop-blur-sm whitespace-nowrap">
                     Tap to open
                   </span>
                 </a>
+
+                {/* Branded Quick-Tap App Shortcuts for Mobile */}
+                <div className="mt-2.5 grid grid-cols-4 gap-2">
+                  {[
+                    { name: 'PhonePe', color: 'from-[#5f259f]/10 to-[#5f259f]/5', text: 'text-[#5f259f] dark:text-[#a874e8]', border: 'border-[#5f259f]/20' },
+                    { name: 'Google Pay', color: 'from-blue-500/10 to-blue-500/5', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/20' },
+                    { name: 'Paytm', color: 'from-[#00baf2]/10 to-[#00baf2]/5', text: 'text-[#008cc0] dark:text-[#00baf2]', border: 'border-[#00baf2]/20' },
+                    { name: 'Cred / Other', color: 'from-emerald-500/10 to-emerald-500/5', text: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-500/20' },
+                  ].map((app) => (
+                    <a
+                      key={app.name}
+                      href={checkout?.upiLink || undefined}
+                      onClick={(e) => { if (!checkout?.upiLink) e.preventDefault(); }}
+                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border bg-gradient-to-b ${app.color} ${app.border} text-center transition active:scale-95 hover:brightness-105`}
+                    >
+                      <span className={`text-[11px] font-bold ${app.text}`}>{app.name}</span>
+                    </a>
+                  ))}
+                </div>
               </div>
 
+              {/* Divider */}
               <div className="my-5 flex items-center gap-3">
-                <span className={`h-px flex-1 ${checkoutDark ? 'bg-[#1d2f29]' : 'bg-[#e7ece5]'}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#71857b]' : 'text-[#9ba69f]'}`}>or manual transfer via UPI ID</span>
-                <span className={`h-px flex-1 ${checkoutDark ? 'bg-[#1d2f29]' : 'bg-[#e7ece5]'}`} />
+                <span className={`h-px flex-1 ${checkoutDark ? 'bg-[#1d2f29]' : 'bg-slate-200'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#71857b]' : 'text-slate-400'}`}>or manual transfer via UPI ID</span>
+                <span className={`h-px flex-1 ${checkoutDark ? 'bg-[#1d2f29]' : 'bg-slate-200'}`} />
               </div>
 
-              <div className={`flex min-h-[60px] items-center gap-3 rounded-2xl border p-3 shadow-sm transition-colors ${
+              {/* Verified UPI ID Box (with break-all, never truncated) */}
+              <div className={`flex min-h-[58px] items-center gap-2.5 xs:gap-3 rounded-2xl border p-3 shadow-2xs transition-colors ${
                 checkoutDark
                   ? 'border-[#1e332c] bg-[#14221f] hover:border-[#2a473e]'
-                  : 'border-[#e4eae2] bg-white hover:border-[#ccd9cb]'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
               }`}>
                 <div className="min-w-0 flex-1 pl-1">
-                  <p className={`text-[10px] font-bold uppercase tracking-[.12em] ${checkoutDark ? 'text-[#7e948a]' : 'text-[#93a097]'}`}>Merchant Verified UPI ID</p>
-                  <p className={`mt-0.5 truncate font-mono text-[14px] font-semibold select-all ${checkoutDark ? 'text-[#34d399]' : 'text-[#1e443a]'}`}>{upiId || 'UPI ID unavailable'}</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-[.12em] ${checkoutDark ? 'text-[#7e948a]' : 'text-slate-500'}`}>Merchant Verified UPI ID</p>
+                  <p className={`mt-0.5 break-all font-mono text-[13px] sm:text-[14px] font-semibold select-all ${checkoutDark ? 'text-[#34d399]' : 'text-emerald-800'}`}>{upiId || 'UPI ID unavailable'}</p>
                 </div>
                 <button
                   type="button"
                   onClick={copyUpiId}
                   disabled={!upiId}
-                  className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-xs font-bold shadow-sm transition active:scale-95 disabled:cursor-not-allowed ${
+                  className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 xs:gap-2 rounded-xl border px-3 xs:px-3.5 text-xs font-bold shadow-2xs transition active:scale-95 disabled:cursor-not-allowed ${
                     checkoutDark
                       ? 'border-[#223932] bg-[#182b25] text-[#34d399] hover:bg-[#203a31] disabled:text-[#52635b]'
-                      : 'border-[#d3e2d3] bg-[#f7faf5] text-[#126b58] hover:bg-[#edf5eb] disabled:text-[#a7b1aa]'
+                      : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 disabled:text-slate-400'
                   }`}
                   aria-label={copied ? 'UPI ID copied' : 'Copy UPI ID'}
                 >
-                  <Icon name={copied ? 'check' : 'copy'} className="h-4 w-4" />
+                  <Icon name={copied ? 'check' : 'copy'} className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
 
-              <div className={`mt-6 flex items-start gap-3 rounded-xl px-4 py-3.5 ${checkoutDark ? 'bg-[#14221f] text-[#8aa095]' : 'bg-[#f4f7f1] text-[#73857b]'}`}>
-                <div className={`mt-0.5 ${checkoutDark ? 'text-[#34d399]' : 'text-[#678477]'}`}>
+              {/* Security & Direct Payment Notice */}
+              <div className={`mt-5 flex items-start gap-3 rounded-xl border px-3.5 py-3 ${
+                checkoutDark
+                  ? 'border-[#1e342c] bg-[#14221f] text-[#8aa095]'
+                  : 'border-slate-200/80 bg-slate-50/90 text-slate-600'
+              }`}>
+                <div className="mt-0.5 text-emerald-600 dark:text-[#34d399] shrink-0">
                   <Icon name="lock" className="h-4 w-4" />
                 </div>
-                <p className="text-[11px] leading-[1.55]">
-                  Your money goes directly to <span className={`font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-[#426457]'}`}>{checkout?.merchantName || 'the merchant'}</span>. PopPay never holds your funds.
+                <p className="text-[11px] leading-relaxed">
+                  Your money goes directly to <span className={`font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-slate-900'}`}>{checkout?.merchantName || 'the merchant'}</span>. PopPay never holds your funds.
                 </p>
               </div>
+
+              {/* UTR Submission Form */}
               <UtrSubmission
                 orderId={orderId}
                 alreadySubmitted={checkout?.utrSubmitted}
                 onConfirmed={applyOutcome}
+                checkoutDark={checkoutDark}
               />
             </section>
 
-            <aside className={`entrance-delay flex flex-col items-center px-5 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-7 ${
-              checkoutDark ? 'bg-[#0d1614] border-t md:border-t-0 md:border-l border-[#1a2d27]' : 'bg-[#f5f8f1]'
+            {/* QR Code Column (Desktop right aside, or Mobile QR Tab) */}
+            <aside className={`entrance-delay flex flex-col items-center p-5 sm:p-7 md:p-8 ${
+              mobileTab !== 'qr' ? 'hidden md:flex' : 'flex'
+            } ${
+              checkoutDark ? 'bg-[#0d1614] border-t md:border-t-0 md:border-l border-[#1a2d27]' : 'bg-slate-50/70 border-t md:border-t-0 md:border-l border-slate-200'
             }`}>
               <div className="mb-4 flex w-full items-center justify-between">
-                <p className={`text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#8ca097]' : 'text-[#6d8478]'}`}>Scan to pay</p>
+                <div>
+                  <p className={`text-[11px] font-bold uppercase tracking-[.14em] ${checkoutDark ? 'text-[#8ca097]' : 'text-slate-600'}`}>Scan to pay</p>
+                  <p className={`text-[11px] font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-emerald-700'}`}>₹{formatAmount(checkout?.payableAmount)}</p>
+                </div>
                 <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
-                  checkoutDark ? 'border-[#1f362e] bg-[#13221d] text-[#8ca097]' : 'border-[#dfe9dd] bg-[#fbfcf8] text-[#678477]'
-                }`}>UPI</span>
+                  checkoutDark ? 'border-[#1f362e] bg-[#13221d] text-[#8ca097]' : 'border-slate-200 bg-white text-slate-600 shadow-2xs'
+                }`}>UPI QR</span>
               </div>
-              <div className={`qr-frame qr-scanner-box grid aspect-square w-full max-w-[272px] place-items-center rounded-[22px] border p-3.5 ${
-                checkoutDark ? 'border-[#1f362e] bg-white' : 'border-[#e9eee7] bg-[#fffefa]'
+
+              {/* QR Frame with Laser Scanner Line */}
+              <div className={`qr-frame qr-scanner-box grid aspect-square w-full max-w-[260px] sm:max-w-[272px] place-items-center rounded-[22px] border p-3.5 ${
+                checkoutDark ? 'border-[#1f362e] bg-white' : 'border-slate-200 bg-white shadow-sm'
               }`}>
                 {qrImage ? (
                   <>
@@ -842,23 +925,49 @@ function PayCheckoutInner() {
                   </>
                 ) : (
                   <div className="flex flex-col items-center px-5 text-center">
-                    <div className="mb-3 h-8 w-8 rounded-lg border-2 border-[#c5d7c7] border-t-[#126b58] animate-spin" />
-                    <p className={`text-xs font-medium ${checkoutDark ? 'text-[#72857a]' : 'text-[#72857a]'}`}>Preparing secure QR code…</p>
+                    <div className="mb-3 h-8 w-8 rounded-lg border-2 border-slate-300 border-t-emerald-600 animate-spin" />
+                    <p className={`text-xs font-medium ${checkoutDark ? 'text-[#72857a]' : 'text-slate-500'}`}>Preparing secure QR code…</p>
                   </div>
                 )}
               </div>
-              <div className="mt-5 flex flex-col items-center gap-1.5 text-center">
-                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 shadow-xs ${
-                  checkoutDark ? 'border-[#1e3a30] bg-[#132620] text-[#34d399]' : 'border-[#d6e5d5] bg-white text-[#1a5b4c]'
+
+              {/* Bank Listener Status */}
+              <div className="mt-4 sm:mt-5 flex flex-col items-center gap-1.5 text-center">
+                <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 shadow-2xs ${
+                  checkoutDark ? 'border-[#1e3a30] bg-[#132620] text-[#34d399]' : 'border-emerald-200 bg-white text-emerald-800'
                 }`}>
                   <span className="radar-sonar h-2.5 w-2.5">
-                    <span className="h-2 w-2 rounded-full bg-[#22c55e]" />
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   </span>
                   <span className="text-[11px] font-bold">Live Bank Alert Listener Active</span>
                 </span>
-                <span className={`text-[11px] font-medium ${checkoutDark ? 'text-[#7e9288]' : 'text-[#678073]'}`}>Scan via PhonePe, GPay, Paytm or BHIM</span>
+                <span className={`text-[11px] font-medium ${checkoutDark ? 'text-[#7e9288]' : 'text-slate-500'}`}>Scan via PhonePe, GPay, Paytm or BHIM</span>
               </div>
-              <div className={`mt-auto w-full border-t pt-4 ${checkoutDark ? 'border-[#1a2e28]' : 'border-[#e2eade]'}`}>
+
+              {/* Mobile QR Helper: Quick UPI ID Copy */}
+              <div className="mt-4 md:hidden w-full">
+                <div className={`flex items-center justify-between rounded-xl border p-2.5 ${
+                  checkoutDark ? 'border-[#1e342c] bg-[#14221f]' : 'border-slate-200 bg-white'
+                }`}>
+                  <div className="min-w-0 flex-1 pr-2">
+                    <p className={`text-[9px] font-bold uppercase tracking-wider ${checkoutDark ? 'text-[#7e948a]' : 'text-slate-500'}`}>UPI ID</p>
+                    <p className={`truncate font-mono text-xs font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-slate-800'}`}>{upiId}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyUpiId}
+                    className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold ${
+                      checkoutDark ? 'border-[#223932] bg-[#182b25] text-[#34d399]' : 'border-slate-200 bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <Icon name={copied ? 'check' : 'copy'} className="h-3 w-3" />
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Waiting status footer */}
+              <div className={`mt-auto w-full border-t pt-4 mt-4 ${checkoutDark ? 'border-[#1a2e28]' : 'border-slate-200'}`}>
                 {viewState === 'waiting' ? (
                   <div className="flex items-center justify-center gap-2.5 text-center">
                     <span className="flex items-center gap-1.5">
@@ -866,11 +975,11 @@ function PayCheckoutInner() {
                       <i className="waiting-dot h-2 w-2 rounded-full" style={{ backgroundColor: brandColor }} />
                       <i className="waiting-dot h-2 w-2 rounded-full" style={{ backgroundColor: brandColor }} />
                     </span>
-                    <span className={`text-xs font-bold ${checkoutDark ? 'text-[#34d399]' : 'text-[#23584a]'}`}>Waiting for bank confirmation…</span>
+                    <span className={`text-xs font-bold ${checkoutDark ? 'text-[#34d399]' : 'text-emerald-800'}`}>Waiting for bank confirmation…</span>
                   </div>
                 ) : null}
-                <p className={`mt-1.5 text-center text-[10px] leading-4 ${checkoutDark ? 'text-[#6e8278]' : 'text-[#8a9990]'}`}>
-                  Funds transfer instantly to the merchant. Do not refresh.
+                <p className={`mt-1.5 text-center text-[10px] leading-4 ${checkoutDark ? 'text-[#6e8278]' : 'text-slate-500'}`}>
+                  Funds transfer directly to the merchant. Do not close.
                 </p>
               </div>
             </aside>

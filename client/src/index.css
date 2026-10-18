@@ -3,11 +3,11 @@
 
 :root {
   color-scheme: light;
-  --canvas: #f3f5ef;
-  --paper: #fffefa;
-  --ink: #142e2b;
-  --muted: #71817b;
-  --line: #e1e8e1;
+  --canvas: #f8fafc;
+  --paper: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
   --forest: #126b58;
   --forest-dark: #0b4f42;
   --mint: #dff3e9;
@@ -64,8 +64,12 @@ html.dark .merchant-shell {
   background: radial-gradient(ellipse at 92% 0%, rgba(30, 168, 138, .07), transparent 34rem), #090f0e !important;
 }
 
+.checkout-shell {
+  background: radial-gradient(ellipse at 50% -10%, rgba(18, 107, 88, .07), transparent 45rem), #f8fafc;
+}
+
 html.dark .checkout-shell {
-  background: radial-gradient(ellipse at 8% 4%, rgba(30, 168, 138, .12), transparent 29rem), #080e0c !important;
+  background: radial-gradient(ellipse at 50% -10%, rgba(30, 168, 138, .12), transparent 45rem), #080e0c !important;
 }
 
 html.dark .panel-shadow {
