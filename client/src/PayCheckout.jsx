@@ -80,24 +80,40 @@ function getUpiId(upiLink) {
 
 function PaymentLoader({ checkoutDark }) {
   return (
-    <main className={`checkout-shell min-h-[100dvh] px-4 py-6 sm:px-6 sm:py-10 ${checkoutDark ? 'bg-[#080e0c]' : ''}`}>
-      <div className="mx-auto max-w-[920px]">
-        <div className="mb-7 flex items-center justify-between">
-          <div className={`h-8 w-28 animate-pulse rounded-lg ${checkoutDark ? 'bg-[#152520]' : 'bg-[#dce5dc]'}`} />
-          <div className={`h-8 w-24 animate-pulse rounded-full ${checkoutDark ? 'bg-[#152520]' : 'bg-[#e4ebe3]'}`} />
+    <main className={`checkout-shell min-h-[100dvh] flex flex-col items-center justify-center px-4 py-8 transition-colors ${
+      checkoutDark ? 'bg-[#080e0c] text-white' : 'bg-slate-50 text-slate-900'
+    }`}>
+      <div className="relative mx-auto flex w-full max-w-sm flex-col items-center text-center">
+        {/* Glowing Radial Orb */}
+        <div className="absolute -top-12 h-44 w-44 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
+
+        {/* Animated Brand Logo Icon with Ping Ring */}
+        <div className="relative mb-6">
+          <div className="absolute -inset-2 rounded-2xl bg-emerald-500/25 blur-md animate-pulse" />
+          <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-lg">
+            <svg viewBox="0 0 24 24" className="h-8 w-8 animate-bounce" fill="none" aria-hidden="true">
+              <path d="M5 7.5h14M5 12h14M5 16.5h8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+              <circle cx="18" cy="17" r="3" fill="#a7f3d0" />
+            </svg>
+          </div>
         </div>
-        <div className={`grid overflow-hidden rounded-[28px] border shadow-[0_24px_70px_rgba(25,61,48,.08)] md:grid-cols-[1fr_360px] ${
-          checkoutDark ? 'border-[#1e332c] bg-[#111a18]' : 'border-[#e1e8e1] bg-[#fffefa]'
-        }`}>
-          <div className="space-y-5 p-6 sm:p-10">
-            <div className={`h-4 w-32 animate-pulse rounded ${checkoutDark ? 'bg-[#182b25]' : 'bg-[#e4ebe3]'}`} />
-            <div className={`h-10 w-52 animate-pulse rounded ${checkoutDark ? 'bg-[#182b25]' : 'bg-[#e4ebe3]'}`} />
-            <div className={`h-24 w-full animate-pulse rounded-2xl ${checkoutDark ? 'bg-[#14231f]' : 'bg-[#f0f3ed]'}`} />
-            <div className={`h-14 w-full animate-pulse rounded-xl ${checkoutDark ? 'bg-[#182b25]' : 'bg-[#e4ebe3]'}`} />
-          </div>
-          <div className={`flex min-h-[360px] items-center justify-center p-8 ${checkoutDark ? 'bg-[#0d1614]' : 'bg-[#f6f8f2]'}`}>
-            <div className={`h-56 w-56 animate-pulse rounded-2xl ${checkoutDark ? 'bg-[#152520]' : 'bg-[#e4ebe3]'}`} />
-          </div>
+
+        {/* Text and Fintech Progress Bar */}
+        <h2 className="font-[var(--font-display)] text-xl font-bold tracking-tight">
+          Opening Secure Checkout
+        </h2>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
+          Connecting to direct bank UPI payment gateway…
+        </p>
+
+        {/* Sexy Animated Progress Bar */}
+        <div className="mt-6 h-1.5 w-52 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+          <div className="h-full w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full animate-[shimmer-sweep_1.5s_infinite]" />
+        </div>
+
+        <div className="mt-8 flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+          <Icon name="lock" className="h-3 w-3" />
+          <span>256-BIT ENCRYPTED UPI</span>
         </div>
       </div>
     </main>
@@ -649,23 +665,34 @@ function PayCheckoutInner() {
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[.14em] text-[#16a34a] shimmer-badge mb-3">
-              <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-ping" />
-              <span>Payment confirmed</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[.14em] text-emerald-600 dark:text-emerald-400 shimmer-badge mb-3">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>Payment Confirmed</span>
             </div>
-            <h1 className={`font-[var(--font-display)] text-[32px] font-bold tracking-[-1.3px] ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>You’re all set!</h1>
-            <p className="mt-2 text-sm text-[#84928a]">Your payment was sent directly to {merchantName}.</p>
-            <div className="mt-6 inline-block rounded-2xl bg-gradient-to-b from-[#10b981]/15 to-transparent px-8 py-3 border border-[#10b981]/25">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#10b981]">Amount Paid</span>
-              <p className={`font-[var(--font-display)] text-[42px] font-bold tracking-[-1.8px] leading-tight ${checkoutDark ? 'text-white' : 'text-[#142e2b]'}`}>₹{formatAmount(checkout?.payableAmount)}</p>
+            <h1 className={`font-[var(--font-display)] text-[32px] sm:text-[36px] font-bold tracking-[-1.3px] ${checkoutDark ? 'text-white' : 'text-slate-900'}`}>
+              Thank You for Your Support! 🙏
+            </h1>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 font-medium">
+              Your payment was received directly by <span className="font-bold text-slate-800 dark:text-slate-200">{merchantName}</span>.
+            </p>
+            <div className="mt-6 inline-block rounded-2xl bg-gradient-to-b from-emerald-500/15 to-transparent px-8 py-3.5 border border-emerald-500/25 shadow-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Total Paid</span>
+              <p className={`font-[var(--font-display)] text-[42px] sm:text-[46px] font-bold tracking-[-1.8px] leading-tight ${checkoutDark ? 'text-white' : 'text-slate-900'}`}>
+                ₹{formatAmount(checkout?.payableAmount)}
+              </p>
             </div>
             {payment?.utr && (
-              <div className={`mx-auto mt-6 max-w-sm rounded-2xl px-5 py-4 text-left border ${checkoutDark ? 'bg-[#152420] border-[#1e342c]' : 'bg-[#f6f8f2] border-[#e2eae1]'}`}>
-                <p className="text-[11px] font-bold uppercase tracking-[.13em] text-[#84928a]">UPI reference number (UTR)</p>
-                <p className={`mt-1 break-all font-mono text-sm font-semibold ${checkoutDark ? 'text-[#34d399]' : 'text-[#126b58]'}`}>{payment.utr}</p>
+              <div className={`mx-auto mt-6 max-w-sm rounded-2xl px-5 py-3.5 text-left border ${checkoutDark ? 'bg-[#152420] border-[#1e342c]' : 'bg-slate-50 border-slate-200'}`}>
+                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-slate-500 dark:text-slate-400">Bank Reference (UTR)</p>
+                <p className={`mt-0.5 break-all font-mono text-sm font-bold ${checkoutDark ? 'text-emerald-400' : 'text-emerald-700'}`}>{payment.utr}</p>
               </div>
             )}
-            {payment?.redirectUrl && <p className="mt-6 text-xs text-[#71817b]">Taking you back in {redirectIn} seconds…</p>}
+            {payment?.redirectUrl && (
+              <p className="mt-6 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Redirecting back in <strong className="text-slate-900 dark:text-white font-bold">{redirectIn}s</strong>…</span>
+              </p>
+            )}
           </section>
         ) : (
           <div className={`entrance overflow-hidden rounded-[24px] sm:rounded-[28px] border md:grid md:grid-cols-[1fr_360px] ${
