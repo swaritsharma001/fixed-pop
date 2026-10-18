@@ -16,8 +16,6 @@ export default function App() {
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/privacy" element={<PrivacyPage />} />
-      {/* Public Developer Guide (Accessible without login) */}
-      <Route path="/docs" element={<IntegrationPage isPublic={true} />} />
       <Route path="/developer" element={<IntegrationPage isPublic={true} />} />
       <Route path="/guide" element={<IntegrationPage isPublic={true} />} />
       <Route element={<PrivateArea />}>
@@ -28,7 +26,8 @@ export default function App() {
         <Route path="/unmatched" element={<UnmatchedPage />} />
         <Route path="/branding" element={<BrandingPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/integration" element={<IntegrationPage />} />
+        <Route path="/docs" element={<IntegrationPage />} />
+        <Route path="/integration" element={<Navigate to="/docs" replace />} />
         <Route path="/admin" element={<AdminPage />} />
       </Route>
       <Route path="/" element={<Navigate to={hasSession() ? '/dashboard' : '/login'} replace />} />

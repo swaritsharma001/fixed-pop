@@ -398,7 +398,7 @@ export function DashboardPage() {
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                Developer Integration
+                Developer Docs
               </span>
               <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -430,7 +430,7 @@ export function DashboardPage() {
           </div>
           <div className="mt-5 flex flex-wrap gap-2.5">
             <Link
-              to="/integration"
+              to="/docs"
               className="inline-flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold shadow-2xs hover:bg-slate-800 transition"
             >
               <FileCode2 className="h-3.5 w-3.5" />

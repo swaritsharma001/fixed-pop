@@ -13,6 +13,9 @@ router.use('/webhooks', require('./webhookRoutes'));
 router.use('/dashboard', require('./dashboardRoutes'));
 router.use('/admin', require('./adminRoutes'));
 router.use('/', require('./paymentRoutes'));
-router.use('/dev', require('./devRoutes'));
+
+if (process.env.NODE_ENV !== 'production') {
+  router.use('/dev', require('./devRoutes'));
+}
 
 module.exports = router;

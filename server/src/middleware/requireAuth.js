@@ -1,6 +1,6 @@
 const { verifyAccessToken } = require('../services/tokenService');
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const authorization = req.get('authorization') || '';
   const match = authorization.match(/^Bearer\s+(\S+)$/i);
 
@@ -8,16 +8,30 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
+  let claims;
   try {
-    const claims = verifyAccessToken(match[1]);
+    claims = verifyAccessToken(match[1]);
     if (claims.type !== 'merchant' || !claims.sub) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
-    req.merchantId = claims.sub;
-    req.userRole = claims.role || 'merchant';
-    return next();
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  try {
+    const Merchant = require('../models/Merchant');
+    const merchant = await Merchant.findById(claims.sub).select('role isBanned');
+    if (!merchant) {
+      return res.status(401).json({ error: 'Account not found' });
+    }
+    if (merchant.isBanned) {
+      return res.status(403).json({ error: 'Your account has been suspended by the administrator.' });
+    }
+    req.merchantId = claims.sub;
+    req.userRole = merchant.role || claims.role || 'merchant';
+    return next();
+  } catch (err) {
+    return next(err);
   }
 }
 

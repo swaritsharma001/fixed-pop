@@ -10,6 +10,38 @@ const upiIdSchema = z
     'Enter a valid UPI ID such as name@bank',
   );
 
+function isPrivateOrLocalHost(urlStr) {
+  try {
+    const url = new URL(urlStr);
+    const host = url.hostname.toLowerCase();
+    if (
+      host === 'localhost' ||
+      host.endsWith('.localhost') ||
+      host.endsWith('.local') ||
+      host === '127.0.0.1' ||
+      host === '0.0.0.0' ||
+      host === '::1' ||
+      host === '169.254.169.254'
+    ) {
+      return true;
+    }
+    const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+    if (ipv4) {
+      const a = Number(ipv4[1]);
+      const b = Number(ipv4[2]);
+      if (a === 10) return true;
+      if (a === 127) return true;
+      if (a === 169 && b === 254) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 0) return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 const webhookUrlSchema = z
   .string()
   .trim()
@@ -18,11 +50,14 @@ const webhookUrlSchema = z
   .refine((value) => {
     try {
       const url = new URL(value);
-      return url.protocol === 'https:' && !url.username && !url.password;
+      if (url.protocol !== 'https:' || url.username || url.password) {
+        return false;
+      }
+      return !isPrivateOrLocalHost(value);
     } catch {
       return false;
     }
-  }, 'Webhook URL must use HTTPS and must not include credentials');
+  }, 'Webhook URL must use HTTPS and cannot point to local or private network addresses');
 
 const upiBodySchema = z.object({ upiId: upiIdSchema }).strict();
 const webhookBodySchema = z.object({ webhookUrl: webhookUrlSchema }).strict();

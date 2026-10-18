@@ -82,7 +82,7 @@ const navGroups = [
     links: [
       { to: '/branding', label: 'Checkout & Branding', icon: Palette },
       { to: '/settings', label: 'Settings', icon: Settings2 },
-      { to: '/integration', label: 'Developer API', icon: Code2 },
+      { to: '/docs', label: 'Docs', icon: Code2 },
     ],
   },
 ];
@@ -442,11 +442,11 @@ export function PrivateArea() {
                   <span>Create Link</span>
                 </Link>
                 <Link
-                  to="/integration"
+                  to="/docs"
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[.06] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-[#cbe3d7] transition hover:bg-slate-50 dark:hover:bg-white/10"
                 >
                   <Code2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>API Docs</span>
+                  <span>Docs</span>
                 </Link>
                 <button
                   type="button"

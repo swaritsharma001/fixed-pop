@@ -32,12 +32,12 @@ function dkimPassForSender(authenticationResults, sender) {
   if (domain === 'famapp.in') {
     return dkimPassForFamApp(authenticationResults);
   }
-  if (domain === 'gmail.com' || domain === 'google.com') {
-    return /dkim\s*=\s*pass[^;]*(?:header\.d|header\.i)\s*=\s*@?(?:gmail\.com|google\.com)(?:\s|;|$)/i.test(value)
-      || /dkim\s*=\s*pass/i.test(value)
-      || /spf\s*=\s*pass/i.test(value);
-  }
-  return /dkim\s*=\s*pass/i.test(value) || /spf\s*=\s*pass/i.test(value);
+  const escapedDomain = domain.replace(/\./g, '\\.');
+  const domainRegex = new RegExp(
+    `dkim\\s*=\\s*pass[^;]*(?:header\\.d|header\\.i)\\s*=\\s*@?${escapedDomain}(?:\\s|;|$)`,
+    'i',
+  );
+  return domainRegex.test(value);
 }
 
 function decodePayloadData(data) {

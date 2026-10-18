@@ -3,7 +3,7 @@ const Merchant = require('../models/Merchant');
 
 async function requireSecretKey(req, res, next) {
   const authorization = req.get('authorization') || '';
-  const match = authorization.match(/^Bearer\s+(pp_secret_[A-Za-z0-9_-]+)$/);
+  const match = authorization.match(/^Bearer\s+((?:pp_secret_|pop_sec_)[A-Za-z0-9_-]+)$/);
   if (!match) return res.status(401).json({ error: 'Secret key authentication required' });
 
   try {
@@ -13,8 +13,11 @@ async function requireSecretKey(req, res, next) {
       .digest('hex');
     const merchant = await Merchant.findOne({
       'keys.secretKeyHash': secretKeyHash,
-    }).select('+keys.secretKeyHash');
+    }).select('+keys.secretKeyHash isBanned');
     if (!merchant) return res.status(401).json({ error: 'Invalid secret key' });
+    if (merchant.isBanned) {
+      return res.status(403).json({ error: 'Merchant account is suspended' });
+    }
 
     req.merchantId = merchant.id;
     return next();
