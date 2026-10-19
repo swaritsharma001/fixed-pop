@@ -172,7 +172,7 @@ async function createPaymentLink(req, res, next) {
       merchantId: merchant.id,
       amountPaise: parsed.data.amount,
       receipt: parsed.data.receipt,
-      redirectUrl: parsed.data.redirectUrl,
+      redirectUrl: parsed.data.redirectUrl || 'https://www.poppay.tech/',
       expiresInMins: parsed.data.expiresInMins,
     });
 

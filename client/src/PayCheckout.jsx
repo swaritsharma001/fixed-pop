@@ -497,10 +497,11 @@ function PayCheckoutInner() {
   }, [checkout, orderId, viewState, applyOutcome]);
 
   useEffect(() => {
-    if (viewState !== 'success' || !payment?.redirectUrl) return undefined;
+    const targetUrl = payment?.redirectUrl || checkout?.redirectUrl;
+    if (viewState !== 'success' || !targetUrl) return undefined;
     let destination;
     try {
-      destination = new URL(payment.redirectUrl, window.location.origin);
+      destination = new URL(targetUrl, window.location.origin);
       if (!['https:', 'http:'].includes(destination.protocol)) return undefined;
     } catch {
       return undefined;
@@ -517,7 +518,7 @@ function PayCheckoutInner() {
       window.clearInterval(countdown);
       window.clearTimeout(redirectTimer);
     };
-  }, [viewState, payment?.redirectUrl]);
+  }, [viewState, payment?.redirectUrl, checkout?.redirectUrl]);
 
   useEffect(() => () => {
     if (copiedTimerRef.current) window.clearTimeout(copiedTimerRef.current);

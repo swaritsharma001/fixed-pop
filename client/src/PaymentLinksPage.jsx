@@ -35,7 +35,7 @@ export function PaymentLinksPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [receipt, setReceipt] = useState('');
-  const [redirectUrl, setRedirectUrl] = useState('');
+  const [redirectUrl, setRedirectUrl] = useState('https://www.poppay.tech/');
   const [expiresInMins, setExpiresInMins] = useState(null); // null = standard backend default (not forced)
   const [creating, setCreating] = useState(false);
 
@@ -78,10 +78,8 @@ export function PaymentLinksPage() {
       const payload = {
         amount: String(amount).trim(),
         receipt: receipt.trim(),
+        redirectUrl: redirectUrl.trim() || 'https://www.poppay.tech/',
       };
-      if (redirectUrl.trim()) {
-        payload.redirectUrl = redirectUrl.trim();
-      }
       if (expiresInMins) {
         payload.expiresInMins = Number(expiresInMins);
       }
@@ -103,7 +101,7 @@ export function PaymentLinksPage() {
       setNewLink({ ...created, fullUrl });
       setAmount('');
       setReceipt('');
-      setRedirectUrl('');
+      setRedirectUrl('https://www.poppay.tech/');
       setExpiresInMins(null);
       setCreateOpen(false);
       setMessage({ tone: 'success', text: `Payment link created for ₹${created.payableAmount}!` });
@@ -240,7 +238,7 @@ export function PaymentLinksPage() {
                 type="url"
                 value={redirectUrl}
                 onChange={(e) => setRedirectUrl(e.target.value)}
-                placeholder="https://yourwebsite.com/thank-you"
+                placeholder="https://www.poppay.tech/"
                 className="mt-1.5 h-11 w-full rounded-xl border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] px-3.5 text-sm text-[var(--pulse-ink)] outline-none focus:border-[var(--pulse-mint)] focus:ring-2 focus:ring-[var(--pulse-mint)]/20"
               />
               <p className="mt-1 text-[11px] text-[var(--pulse-muted)]">Auto-redirects customer upon payment confirmation.</p>

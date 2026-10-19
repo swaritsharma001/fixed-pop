@@ -151,6 +151,7 @@ async function publicCheckout(req, res, next) {
       payableAmount,
       status: order.status,
       expiresAt: order.expiresAt,
+      redirectUrl: order.redirectUrl || null,
       utrSubmitted: Boolean(order.reportedUtr),
       upiLink: `upi://pay?${params.toString()}`,
     });
@@ -175,6 +176,7 @@ async function checkoutStatus(req, res, next) {
       utrSubmitted: Boolean(order.reportedUtr),
     };
     if (order.status === 'PAID') {
+      if (order.redirectUrl) result.redirectUrl = order.redirectUrl;
       const payment = await Payment.findOne({
         merchantId: order.merchantId,
         orderId: order.orderId,
@@ -192,7 +194,6 @@ async function checkoutStatus(req, res, next) {
             .update(`${order.orderId}|${payment.id}`, 'utf8')
             .digest('hex');
         }
-        if (order.redirectUrl) result.redirectUrl = order.redirectUrl;
       }
     }
     return res.json(result);
