@@ -578,6 +578,7 @@ function PayCheckoutInner() {
   const promoClaimText = branding?.promoClaimText || 'CLAIM NOW';
   const guaranteeText = branding?.guaranteeText || 'Instant Verification Guaranteed';
   const trustNotice = branding?.trustNotice;
+  const isDark = Boolean(checkoutDark);
 
   return (
     <main
@@ -709,21 +710,44 @@ function PayCheckoutInner() {
           </section>
         ) : isBannerLayout ? (
           /* Gaming & Creator Pro Banner Checkout (1:1 with reference_checkout.png) */
-          <div className="entrance overflow-hidden rounded-[26px] sm:rounded-[32px] border border-white/10 dark:border-[#1d2f29] bg-[#0c1412] dark:bg-[#0c1412] shadow-2xl text-white">
-            {/* 1. Full Top Hero Graphic Banner */}
-            <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-[#162520]">
+          <div className={`entrance overflow-hidden rounded-[26px] sm:rounded-[32px] border shadow-2xl transition-colors ${
+            isDark
+              ? 'border-white/10 bg-[#0c1412] text-white'
+              : 'border-[#d2ded6] bg-white text-[#142e2b]'
+          }`}>
+            {/* 1. Full Top Hero Graphic Banner with geometric fallback */}
+            <div className={`relative h-44 sm:h-52 w-full overflow-hidden ${
+              isDark
+                ? 'bg-gradient-to-br from-[#0c1412] via-[#162923] to-[#07100e]'
+                : 'bg-gradient-to-br from-[#d4ece3] via-[#b6ded0] to-[#e4f2ec]'
+            }`}>
+              <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                <svg className="h-20 w-20 text-[#2ee6c5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <rect x="2" y="6" width="20" height="12" rx="4" />
+                  <path d="M6 12h4M8 10v4M15 11h.01M18 13h.01" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
               <img
                 src={bannerUrl || 'https://images.mintgram.live/1792383026477.png'}
-                alt="Tournament / Event Banner"
-                className="h-full w-full object-cover select-none"
-                onError={(e) => { e.currentTarget.src = 'https://images.mintgram.live/1792383026477.png'; }}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover select-none"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c1412] via-[#0c1412]/30 to-transparent" />
+              <div className={`absolute inset-0 ${
+                isDark
+                  ? 'bg-gradient-to-t from-[#0c1412] via-[#0c1412]/30 to-transparent'
+                  : 'bg-gradient-to-t from-white via-white/20 to-transparent'
+              }`} />
               {/* Overlaid Top-Right Hosted by Badge */}
-              <div className="absolute top-3 right-3 sm:top-3.5 sm:right-3.5 flex items-center gap-1.5 sm:gap-2 rounded-full bg-black/75 backdrop-blur-md border border-white/15 px-3 py-1 text-xs text-white shadow-lg">
+              <div className="absolute top-3 right-3 sm:top-3.5 sm:right-3.5 flex items-center gap-1.5 sm:gap-2 rounded-full bg-black/80 backdrop-blur-md border border-white/15 px-3 py-1 text-xs text-white shadow-lg">
                 <span className="text-[#a1b8ae] text-[11px] font-medium">Hosted by</span>
                 {hostAvatarUrl ? (
-                  <img src={hostAvatarUrl} alt="Host" className="h-5 w-5 rounded-full object-cover ring-2 ring-[#2ee6c5]" />
+                  <img
+                    src={hostAvatarUrl}
+                    alt=""
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    className="h-5 w-5 rounded-full object-cover ring-2 ring-[#2ee6c5]"
+                  />
                 ) : (
                   <span className="grid h-5 w-5 place-items-center rounded-full bg-[#126b58] font-bold text-[10px] ring-2 ring-[#2ee6c5]">
                     {(hostedBy || merchantName || 'H').charAt(0).toUpperCase()}
@@ -737,7 +761,9 @@ function PayCheckoutInner() {
             </div>
 
             {/* 2. Sub-App Bar */}
-            <div className="flex items-center justify-between px-5 sm:px-7 pt-4 pb-3 border-b border-white/10">
+            <div className={`flex items-center justify-between px-5 sm:px-7 pt-4 pb-3 border-b ${
+              isDark ? 'border-white/10' : 'border-[#e5ede8]'
+            }`}>
               <div className="flex items-center gap-2">
                 <span className="grid h-7 w-7 place-items-center rounded-[10px] bg-[var(--pulse-gradient)] text-white shadow-xs">
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
@@ -745,23 +771,33 @@ function PayCheckoutInner() {
                     <circle cx="18" cy="17" r="3" fill="white" />
                   </svg>
                 </span>
-                <span className="font-[var(--font-display)] text-[18px] font-bold tracking-tight text-white">poppay</span>
+                <span className={`font-[var(--font-display)] text-[18px] font-bold tracking-tight ${
+                  isDark ? 'text-white' : 'text-[#142e2b]'
+                }`}>poppay</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setCheckoutDark((d) => !d)}
-                  title={checkoutDark ? 'Switch to Light' : 'Switch to Dark'}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 hover:text-white transition"
+                  title={isDark ? 'Switch to Light' : 'Switch to Dark'}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border transition ${
+                    isDark
+                      ? 'border-white/15 bg-white/5 text-white/80 hover:text-white'
+                      : 'border-[#d2ded6] bg-[#f0f7f3] text-[#142e2b] hover:bg-[#e4ede7]'
+                  }`}
                 >
-                  {checkoutDark ? (
+                  {isDark ? (
                     <svg className="h-3.5 w-3.5 text-[#ff9a3c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
                   ) : (
-                    <svg className="h-3.5 w-3.5 text-[#2ee6c5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <svg className="h-3.5 w-3.5 text-[#007a65]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                   )}
                 </button>
-                <div className="flex items-center gap-1.5 rounded-full border border-[#2ee6c5]/50 bg-[#2ee6c5]/10 px-3 py-1 text-xs font-bold text-[#2ee6c5] shadow-[0_0_12px_rgba(46,230,197,0.15)]">
-                  <Icon name="lock" className="h-3 w-3 text-[#2ee6c5]" />
+                <div className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${
+                  isDark
+                    ? 'border-[#2ee6c5]/50 bg-[#2ee6c5]/10 text-[#2ee6c5] shadow-[0_0_12px_rgba(46,230,197,0.15)]'
+                    : 'border-[#009b80]/40 bg-[#009b80]/10 text-[#007a65]'
+                }`}>
+                  <Icon name="lock" className={`h-3 w-3 ${isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'}`} />
                   <span>SECURE</span>
                 </div>
               </div>
@@ -772,35 +808,66 @@ function PayCheckoutInner() {
               {/* YOU'RE PAYING Section */}
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#2ee6c5]">YOU&apos;RE PAYING</p>
-                  <h1 className="mt-0.5 font-[var(--font-display)] text-[22px] sm:text-[26px] font-bold leading-tight tracking-tight text-white truncate">
+                  <p className={`text-[10px] font-bold uppercase tracking-[.14em] ${
+                    isDark ? 'text-[#2ee6c5]' : 'text-[#00826b]'
+                  }`}>YOU&apos;RE PAYING</p>
+                  <h1 className={`mt-0.5 font-[var(--font-display)] text-[22px] sm:text-[26px] font-bold leading-tight tracking-tight truncate ${
+                    isDark ? 'text-white' : 'text-[#142e2b]'
+                  }`}>
                     {merchantName}
                   </h1>
-                  {tagline && <p className="mt-0.5 text-xs text-[#8ca097] truncate">{tagline}</p>}
+                  {tagline && (
+                    <p className={`mt-0.5 text-xs truncate ${
+                      isDark ? 'text-[#8ca097]' : 'text-[#4b685d]'
+                    }`}>{tagline}</p>
+                  )}
                 </div>
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt={merchantName}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-[#2ee6c5] shadow-[0_0_15px_rgba(46,230,197,0.3)]"
-                  />
-                ) : (
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#132822] ring-2 ring-[#2ee6c5] font-[var(--font-display)] text-lg font-bold text-[#2ee6c5] shadow-[0_0_15px_rgba(46,230,197,0.3)]">
+                <div className="relative shrink-0">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt=""
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'grid';
+                        }
+                      }}
+                      className={`h-12 w-12 rounded-full object-cover ring-2 ${
+                        isDark ? 'ring-[#2ee6c5] shadow-[0_0_15px_rgba(46,230,197,0.3)]' : 'ring-[#009b80]'
+                      }`}
+                    />
+                  ) : null}
+                  <div
+                    style={{ display: logoUrl ? 'none' : 'grid' }}
+                    className={`grid h-12 w-12 place-items-center rounded-full font-[var(--font-display)] text-lg font-bold ring-2 ${
+                      isDark
+                        ? 'bg-[#132822] ring-[#2ee6c5] text-[#2ee6c5] shadow-[0_0_15px_rgba(46,230,197,0.3)]'
+                        : 'bg-[#e2f3ec] ring-[#009b80] text-[#007a65]'
+                    }`}
+                  >
                     {merchantName.trim().charAt(0).toUpperCase()}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* EXACT PAYABLE AMOUNT Card */}
-              <div className="rounded-2xl border border-[#2ee6c5]/30 bg-[#07120f] p-4 sm:p-5 shadow-inner">
+              <div className={`rounded-2xl border p-4 sm:p-5 shadow-inner ${
+                isDark
+                  ? 'border-[#2ee6c5]/30 bg-[#07120f]'
+                  : 'border-[#a5d5c7] bg-[#f0f7f3]'
+              }`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#8ca097]">EXACT PAYABLE AMOUNT</span>
+                  <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                    isDark ? 'text-[#8ca097]' : 'text-[#3e5e52]'
+                  }`}>EXACT PAYABLE AMOUNT</span>
                   {remainingMs !== null && (
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums border transition-colors ${
                       isUrgent
                         ? 'border-red-500/40 bg-red-500/10 text-red-400 animate-pulse'
-                        : 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                        : isDark
+                          ? 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                          : 'border-[#9ad0c2] bg-[#d8ece4] text-[#006e5a]'
                     }`}>
                       <Icon name="clock" className="h-3 w-3" />
                       {formattedExpiry}
@@ -808,20 +875,30 @@ function PayCheckoutInner() {
                   )}
                 </div>
                 <div className="mt-2.5 flex items-baseline justify-between gap-3">
-                  <p className="font-[var(--font-display)] text-[34px] sm:text-[42px] font-extrabold text-[#2ee6c5] tracking-tight leading-none drop-shadow-[0_0_16px_rgba(46,230,197,0.35)]">
+                  <p className={`font-[var(--font-display)] text-[34px] sm:text-[42px] font-extrabold tracking-tight leading-none ${
+                    isDark
+                      ? 'text-[#2ee6c5] drop-shadow-[0_0_16px_rgba(46,230,197,0.35)]'
+                      : 'text-[#007a65]'
+                  }`}>
                     ₹{formatAmount(checkout?.payableAmount)}
                   </p>
                   <button
                     type="button"
                     onClick={copyAmount}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-3.5 py-1.5 text-xs font-bold text-[#2ee6c5] hover:bg-[#2ee6c5]/20 transition active:scale-95"
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition active:scale-95 ${
+                      isDark
+                        ? 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5] hover:bg-[#2ee6c5]/20'
+                        : 'border-[#9ad0c2] bg-white text-[#007a65] hover:bg-[#f9fdfb]'
+                    }`}
                     title="Copy exact amount"
                   >
                     <Icon name={amountCopied ? 'check' : 'copy'} className="h-3.5 w-3.5" />
                     {amountCopied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[#2ee6c5]">
+                <div className={`mt-3 flex items-center gap-2 text-xs font-bold ${
+                  isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                }`}>
                   <Icon name="check" className="h-4 w-4 shrink-0 stroke-[2.5]" />
                   <span>{guaranteeText}</span>
                 </div>
@@ -836,7 +913,7 @@ function PayCheckoutInner() {
                     rel="noopener noreferrer"
                     className="block rounded-2xl overflow-hidden border border-white/10 shadow-md hover:opacity-95 transition"
                   >
-                    <img src={promoBannerUrl} alt="Special Promotion" className="w-full h-auto object-cover max-h-36" />
+                    <img src={promoBannerUrl} alt="" className="w-full h-auto object-cover max-h-36" />
                   </a>
                 ) : (
                   <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#9333ea] via-[#ec4899] to-[#f43f5e] p-3.5 sm:p-4 text-white shadow-lg">
@@ -876,7 +953,9 @@ function PayCheckoutInner() {
 
               {/* ONE-CLICK MOBILE UPI */}
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#8ca097] mb-2">ONE-CLICK MOBILE UPI</p>
+                <p className={`text-[10px] font-bold uppercase tracking-[.14em] mb-2 ${
+                  isDark ? 'text-[#8ca097]' : 'text-[#3e5e52]'
+                }`}>ONE-CLICK MOBILE UPI</p>
                 <a
                   href={checkout?.upiLink || undefined}
                   onClick={(e) => { if (!checkout?.upiLink) e.preventDefault(); }}
@@ -908,9 +987,13 @@ function PayCheckoutInner() {
                       key={app.name}
                       href={checkout?.upiLink || undefined}
                       onClick={(e) => { if (!checkout?.upiLink) e.preventDefault(); }}
-                      className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border border-white/10 bg-[#0e1b17] hover:border-[#2ee6c5]/40 text-center transition active:scale-95 shadow-xs"
+                      className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-center transition active:scale-95 shadow-xs ${
+                        isDark
+                          ? 'border-white/10 bg-[#0e1b17] hover:border-[#2ee6c5]/40 text-[#b4c7be] hover:text-white'
+                          : 'border-[#d2e2d8] bg-[#f4f8f5] hover:border-[#009b80] text-[#1a382e] hover:text-black'
+                      }`}
                     >
-                      <span className="text-[11px] font-bold text-[#b4c7be] hover:text-white">{app.name}</span>
+                      <span className="text-[11px] font-bold">{app.name}</span>
                     </a>
                   ))}
                 </div>
@@ -918,18 +1001,28 @@ function PayCheckoutInner() {
 
               {/* Divider */}
               <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-white/10" />
-                <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#71857c]">
+                <span className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-[#d2ded6]'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-[.14em] ${
+                  isDark ? 'text-[#71857c]' : 'text-[#4b685d]'
+                }`}>
                   OR MANUAL TRANSFER VIA UPI ID
                 </span>
-                <span className="h-px flex-1 bg-white/10" />
+                <span className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-[#d2ded6]'}`} />
               </div>
 
               {/* Verified UPI ID */}
-              <div className="flex min-h-[58px] items-center gap-3 rounded-2xl border border-white/10 bg-[#091512] p-3.5 shadow-inner">
+              <div className={`flex min-h-[58px] items-center gap-3 rounded-2xl border p-3.5 shadow-inner ${
+                isDark
+                  ? 'border-white/10 bg-[#091512]'
+                  : 'border-[#d2e2d8] bg-[#f0f7f3]'
+              }`}>
                 <div className="min-w-0 flex-1 pl-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#71857c]">MERCHANT VERIFIED UPI ID</p>
-                  <p className="mt-0.5 break-all font-mono text-[13px] sm:text-[14px] font-bold text-[#2ee6c5] select-all">
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${
+                    isDark ? 'text-[#71857c]' : 'text-[#4b685d]'
+                  }`}>MERCHANT VERIFIED UPI ID</p>
+                  <p className={`mt-0.5 break-all font-mono text-[13px] sm:text-[14px] font-bold select-all ${
+                    isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                  }`}>
                     {upiId || checkout?.merchantUpiId || 'UPI ID unavailable'}
                   </p>
                 </div>
@@ -937,7 +1030,11 @@ function PayCheckoutInner() {
                   type="button"
                   onClick={copyUpiId}
                   disabled={!upiId && !checkout?.merchantUpiId}
-                  className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-3.5 text-xs font-bold text-[#2ee6c5] hover:bg-[#2ee6c5]/20 transition active:scale-95 disabled:opacity-50"
+                  className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border px-3.5 text-xs font-bold transition active:scale-95 disabled:opacity-50 ${
+                    isDark
+                      ? 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5] hover:bg-[#2ee6c5]/20'
+                      : 'border-[#9ad0c2] bg-white text-[#007a65] hover:bg-[#f9fdfb]'
+                  }`}
                 >
                   <Icon name={copied ? 'check' : 'copy'} className="h-4 w-4" />
                   {copied ? 'Copied' : 'Copy'}
@@ -945,8 +1042,12 @@ function PayCheckoutInner() {
               </div>
 
               {/* Security & Direct Payment Notice */}
-              <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#0a1714] p-3 text-[#8ca097]">
-                <div className="mt-0.5 text-[#2ee6c5] shrink-0">
+              <div className={`flex items-start gap-3 rounded-xl border p-3 ${
+                isDark
+                  ? 'border-white/10 bg-[#0a1714] text-[#8ca097]'
+                  : 'border-[#d2ded6] bg-[#f4f8f5] text-[#3e5e52]'
+              }`}>
+                <div className={`mt-0.5 shrink-0 ${isDark ? 'text-[#2ee6c5]' : 'text-[#00826b]'}`}>
                   <Icon name="shield" className="h-4 w-4" />
                 </div>
                 <p className="text-[11px] leading-relaxed">
@@ -959,7 +1060,11 @@ function PayCheckoutInner() {
                 <button
                   type="button"
                   onClick={() => setShowQrModal((s) => !s)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#0e1b17] px-3.5 py-1.5 text-xs font-bold text-[#b4c7be] hover:text-[#2ee6c5] hover:border-[#2ee6c5]/30 transition"
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition ${
+                    isDark
+                      ? 'border-white/10 bg-[#0e1b17] text-[#b4c7be] hover:text-[#2ee6c5] hover:border-[#2ee6c5]/30'
+                      : 'border-[#d2ded6] bg-[#f0f7f3] text-[#142e2b] hover:text-[#007a65] hover:border-[#009b80]'
+                  }`}
                 >
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM17 17h4v4h-4zM14 20v1M20 14v3"/></svg>
                   <span>{showQrModal ? 'Hide UPI QR' : 'Scan UPI QR Code'}</span>
@@ -968,7 +1073,11 @@ function PayCheckoutInner() {
                 {supportEmail && (
                   <a
                     href={`mailto:${supportEmail}`}
-                    className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#0e1b17] px-3.5 py-1.5 text-xs font-semibold text-[#8ca097] hover:text-white transition"
+                    className={`inline-flex items-center gap-1 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                      isDark
+                        ? 'border-white/10 bg-[#0e1b17] text-[#8ca097] hover:text-white'
+                        : 'border-[#d2ded6] bg-[#f0f7f3] text-[#4b685d] hover:text-[#142e2b]'
+                    }`}
                   >
                     <span>Need help?</span>
                   </a>
@@ -977,7 +1086,11 @@ function PayCheckoutInner() {
                 <button
                   type="button"
                   onClick={() => setShowUtrSection((s) => !s)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#0e1b17] px-3.5 py-1.5 text-xs font-semibold text-[#8ca097] hover:text-[#2ee6c5] hover:border-[#2ee6c5]/30 transition"
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
+                    isDark
+                      ? 'border-white/10 bg-[#0e1b17] text-[#8ca097] hover:text-[#2ee6c5] hover:border-[#2ee6c5]/30'
+                      : 'border-[#d2ded6] bg-[#f0f7f3] text-[#4b685d] hover:text-[#007a65] hover:border-[#009b80]'
+                  }`}
                 >
                   <span>Paid but not confirmed?</span>
                 </button>
@@ -985,8 +1098,14 @@ function PayCheckoutInner() {
 
               {/* Expandable QR Code Section */}
               {showQrModal && (
-                <div className="entrance mt-3 flex flex-col items-center rounded-2xl border border-[#2ee6c5]/30 bg-[#07120f] p-5 text-center">
-                  <p className="text-xs font-bold text-[#2ee6c5] uppercase tracking-wider mb-2">Scan via PhonePe, GPay or Paytm</p>
+                <div className={`entrance mt-3 flex flex-col items-center rounded-2xl border p-5 text-center ${
+                  isDark
+                    ? 'border-[#2ee6c5]/30 bg-[#07120f]'
+                    : 'border-[#a5d5c7] bg-[#f0f7f3]'
+                }`}>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${
+                    isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                  }`}>Scan via PhonePe, GPay or Paytm</p>
                   <div className="qr-frame qr-scanner-box grid aspect-square w-full max-w-[220px] place-items-center rounded-2xl bg-white p-3 shadow-md">
                     {qrImage ? (
                       <>
@@ -997,8 +1116,12 @@ function PayCheckoutInner() {
                       <div className="h-8 w-8 rounded-lg border-2 border-slate-300 border-t-[#2ee6c5] animate-spin" />
                     )}
                   </div>
-                  <div className="mt-3 flex items-center gap-2 rounded-full border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-3 py-1 text-[11px] font-bold text-[#2ee6c5]">
-                    <span className="h-2 w-2 rounded-full bg-[#2ee6c5] animate-ping" />
+                  <div className={`mt-3 flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold ${
+                    isDark
+                      ? 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                      : 'border-[#9ad0c2] bg-[#d8ece4] text-[#006e5a]'
+                  }`}>
+                    <span className={`h-2 w-2 rounded-full animate-ping ${isDark ? 'bg-[#2ee6c5]' : 'bg-[#007a65]'}`} />
                     <span>Live Bank Alert Listener Active</span>
                   </div>
                 </div>
@@ -1059,20 +1182,27 @@ function PayCheckoutInner() {
                     <p className="mt-1.5 break-words text-xs leading-relaxed text-[var(--pulse-muted)]">{tagline}</p>
                   )}
                 </div>
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt={merchantName}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                    className="mt-1 h-11 w-11 xs:h-12 xs:w-12 shrink-0 rounded-2xl object-cover border border-[var(--pulse-line)] shadow-xs"
-                  />
-                ) : (
+                <div className="relative shrink-0 mt-1">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt=""
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'grid';
+                        }
+                      }}
+                      className="h-11 w-11 xs:h-12 xs:w-12 rounded-2xl object-cover border border-[var(--pulse-line)] shadow-xs"
+                    />
+                  ) : null}
                   <div
-                    className="mt-1 grid h-11 w-11 xs:h-12 xs:w-12 shrink-0 place-items-center rounded-2xl font-[var(--font-display)] text-lg font-bold border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] text-[var(--pulse-ink)] shadow-xs"
+                    style={{ display: logoUrl ? 'none' : 'grid' }}
+                    className="grid h-11 w-11 xs:h-12 xs:w-12 place-items-center rounded-2xl font-[var(--font-display)] text-lg font-bold border border-[var(--pulse-line)] bg-[var(--pulse-panel-2)] text-[var(--pulse-ink)] shadow-xs"
                   >
                     {merchantName.trim().charAt(0).toUpperCase()}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Exact Payable Amount Card */}

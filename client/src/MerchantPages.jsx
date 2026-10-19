@@ -2093,6 +2093,7 @@ export function BrandingPage() {
 
   const effectiveShopName = displayName.trim() || merchant?.name || 'Your Brand';
   const initialLetter = effectiveShopName.trim().charAt(0).toUpperCase() || 'M';
+  const isDark = previewTheme === 'dark';
 
   return (
     <div className="page-enter">
@@ -2678,24 +2679,43 @@ export function BrandingPage() {
                 {/* Mobile Screen Content */}
                 {checkoutLayout === 'banner' ? (
                   /* Gaming & Creator Pro Mobile Mockup */
-                  <div className={`rounded-[24px] overflow-hidden shadow-sm border transition-colors ${
-                    previewTheme === 'dark'
-                      ? 'bg-[#0b1412] border-[#1d2f29] text-[#eaf3ee]'
-                      : 'bg-[#fffefa] border-[#e4ece2] text-[#142e2b]'
+                  <div className={`rounded-[24px] overflow-hidden shadow-md border transition-all ${
+                    isDark
+                      ? 'bg-[#0c1412] border-[#1e332c] text-[#eaf3ee]'
+                      : 'bg-white border-[#d2ded6] text-[#142e2b]'
                   }`}>
-                    {/* Top Hero Banner Graphic */}
-                    <div className="relative h-28 w-full overflow-hidden bg-[#162520]">
+                    {/* Top Hero Banner Graphic with geometric fallback */}
+                    <div className={`relative h-28 w-full overflow-hidden ${
+                      isDark
+                        ? 'bg-gradient-to-br from-[#0c1412] via-[#162923] to-[#07100e]'
+                        : 'bg-gradient-to-br from-[#d4ece3] via-[#b6ded0] to-[#e4f2ec]'
+                    }`}>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                        <svg className="h-16 w-16 text-[#2ee6c5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                          <rect x="2" y="6" width="20" height="12" rx="4" />
+                          <path d="M6 12h4M8 10v4M15 11h.01M18 13h.01" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </div>
                       <img
                         src={bannerUrl || 'https://images.mintgram.live/1792383026477.png'}
-                        alt="Hero Banner"
-                        className="h-full w-full object-cover"
-                        onError={(e) => { e.currentTarget.src = 'https://images.mintgram.live/1792383026477.png'; }}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover select-none"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                      <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/10 px-2 py-0.5 text-[9px] text-white shadow-sm">
-                        <span className="text-[#a1b8ae] text-[8px]">Hosted by</span>
+                      <div className={`absolute inset-0 ${
+                        isDark
+                          ? 'bg-gradient-to-t from-[#0c1412] via-[#0c1412]/30 to-transparent'
+                          : 'bg-gradient-to-t from-white via-white/20 to-transparent'
+                      }`} />
+                      <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/15 px-2.5 py-0.5 text-[9px] text-white shadow-md">
+                        <span className="text-[#a1b8ae] text-[8px] font-medium">Hosted by</span>
                         {hostAvatarUrl ? (
-                          <img src={hostAvatarUrl} alt="Host" className="h-4 w-4 rounded-full object-cover ring-1 ring-[#2ee6c5]" />
+                          <img
+                            src={hostAvatarUrl}
+                            alt=""
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            className="h-4 w-4 rounded-full object-cover ring-1 ring-[#2ee6c5]"
+                          />
                         ) : (
                           <span className="grid h-4 w-4 place-items-center rounded-full bg-[#126b58] font-bold text-[8px] ring-1 ring-[#2ee6c5]">
                             {(hostedBy || effectiveShopName || 'H').charAt(0).toUpperCase()}
@@ -2710,15 +2730,23 @@ export function BrandingPage() {
 
                     <div className="p-3.5 space-y-2.5">
                       {/* Brand Sub-Bar */}
-                      <div className="flex items-center justify-between border-b pb-2 border-[#1b2b26]/50">
+                      <div className={`flex items-center justify-between border-b pb-2 ${
+                        isDark ? 'border-white/10' : 'border-[#e5ede8]'
+                      }`}>
                         <div className="flex items-center gap-1.5">
                           <span className="grid h-5 w-5 place-items-center rounded-md bg-[var(--pulse-gradient)] text-white text-[10px] font-bold shadow-xs">
                             P
                           </span>
-                          <span className="font-[var(--font-display)] text-xs font-bold tracking-tight text-[#142e2b] dark:text-[#eaf3ee]">poppay</span>
+                          <span className={`font-[var(--font-display)] text-xs font-bold tracking-tight ${
+                            isDark ? 'text-white' : 'text-[#142e2b]'
+                          }`}>poppay</span>
                         </div>
-                        <div className="flex items-center gap-1 rounded-full border border-[#2ee6c5]/50 bg-[#2ee6c5]/10 px-2 py-0.5 text-[8px] font-bold text-[#2ee6c5]">
-                          <Lock className="h-2.5 w-2.5 text-[#2ee6c5]" />
+                        <div className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8px] font-bold ${
+                          isDark
+                            ? 'border-[#2ee6c5]/50 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                            : 'border-[#009b80]/40 bg-[#009b80]/10 text-[#007a65]'
+                        }`}>
+                          <Lock className="h-2.5 w-2.5" />
                           <span>SECURE</span>
                         </div>
                       </div>
@@ -2726,39 +2754,85 @@ export function BrandingPage() {
                       {/* YOU'RE PAYING */}
                       <div className="flex items-center justify-between gap-2 pt-0.5">
                         <div className="min-w-0 flex-1">
-                          <p className="text-[8px] font-bold uppercase tracking-wider text-[#2ee6c5]">YOU&apos;RE PAYING</p>
-                          <h4 className="font-[var(--font-display)] text-[14px] font-bold truncate text-[#142e2b] dark:text-[#f0f7f3]">
+                          <p className={`text-[8px] font-bold uppercase tracking-wider ${
+                            isDark ? 'text-[#2ee6c5]' : 'text-[#00826b]'
+                          }`}>YOU&apos;RE PAYING</p>
+                          <h4 className={`font-[var(--font-display)] text-[15px] font-bold truncate leading-tight ${
+                            isDark ? 'text-white' : 'text-[#142e2b]'
+                          }`}>
                             {effectiveShopName}
                           </h4>
-                          {tagline && <p className="text-[9px] text-[#85978f] truncate">{tagline}</p>}
+                          {tagline && (
+                            <p className={`text-[9px] truncate mt-0.5 ${
+                              isDark ? 'text-[#9bb3a8]' : 'text-[#4b685d]'
+                            }`}>{tagline}</p>
+                          )}
                         </div>
-                        {logoUrl ? (
-                          <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-full object-cover ring-2 ring-[#2ee6c5] shadow-xs" />
-                        ) : (
-                          <div className="grid h-8 w-8 place-items-center rounded-full bg-[#152e25] ring-2 ring-[#2ee6c5] font-bold text-xs text-[#2ee6c5] shadow-xs">
+                        <div className="relative shrink-0">
+                          {logoUrl ? (
+                            <img
+                              src={logoUrl}
+                              alt=""
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                if (e.currentTarget.nextElementSibling) {
+                                  e.currentTarget.nextElementSibling.style.display = 'grid';
+                                }
+                              }}
+                              className={`h-8 w-8 rounded-full object-cover ring-2 ${
+                                isDark ? 'ring-[#2ee6c5]' : 'ring-[#009b80]'
+                              }`}
+                            />
+                          ) : null}
+                          <div
+                            style={{ display: logoUrl ? 'none' : 'grid' }}
+                            className={`grid h-8 w-8 place-items-center rounded-full font-[var(--font-display)] text-xs font-bold ring-2 ${
+                              isDark
+                                ? 'bg-[#152e25] ring-[#2ee6c5] text-[#2ee6c5]'
+                                : 'bg-[#e2f3ec] ring-[#009b80] text-[#007a65]'
+                            }`}
+                          >
                             {initialLetter}
                           </div>
-                        )}
+                        </div>
                       </div>
 
                       {/* Exact Payable Amount Card */}
-                      <div className="rounded-xl border border-[#2ee6c5]/25 bg-[#07120f] p-2.5 shadow-inner">
-                        <div className="flex items-center justify-between text-[9px] font-bold text-[#8ca097]">
+                      <div className={`rounded-xl border p-2.5 shadow-inner ${
+                        isDark
+                          ? 'border-[#2ee6c5]/25 bg-[#07120f]'
+                          : 'border-[#a5d5c7] bg-[#f0f7f3]'
+                      }`}>
+                        <div className={`flex items-center justify-between text-[9px] font-bold ${
+                          isDark ? 'text-[#8ca097]' : 'text-[#3e5e52]'
+                        }`}>
                           <span>EXACT PAYABLE AMOUNT</span>
-                          <span className="rounded-full bg-[#1b352c] text-[#2ee6c5] px-1.5 py-0.5 text-[8px] flex items-center gap-1 font-mono">
+                          <span className={`rounded-full px-1.5 py-0.5 text-[8px] flex items-center gap-1 font-mono border ${
+                            isDark
+                              ? 'bg-[#1b352c] text-[#2ee6c5] border-[#2ee6c5]/30'
+                              : 'bg-[#d8ece4] text-[#006e5a] border-[#9ad0c2]'
+                          }`}>
                             <Clock3 className="h-2.5 w-2.5" />
                             09:28
                           </span>
                         </div>
                         <div className="mt-1 flex items-baseline justify-between">
-                          <p className="font-[var(--font-display)] text-[22px] font-extrabold text-[#2ee6c5] tracking-tight">
+                          <p className={`font-[var(--font-display)] text-[22px] font-extrabold tracking-tight ${
+                            isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                          }`}>
                             ₹499.24
                           </p>
-                          <span className="rounded-lg border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-2 py-0.5 text-[9px] font-bold text-[#2ee6c5]">
+                          <span className={`rounded-lg border px-2 py-0.5 text-[9px] font-bold ${
+                            isDark
+                              ? 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                              : 'border-[#9ad0c2] bg-white text-[#007a65]'
+                          }`}>
                             Copy
                           </span>
                         </div>
-                        <p className="mt-1 flex items-center gap-1 text-[8px] font-semibold text-[#2ee6c5]">
+                        <p className={`mt-1 flex items-center gap-1 text-[8px] font-semibold ${
+                          isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                        }`}>
                           <Check className="h-2.5 w-2.5" />
                           <span>{guaranteeText || 'Instant Verification Guaranteed'}</span>
                         </p>
@@ -2779,7 +2853,9 @@ export function BrandingPage() {
 
                       {/* One-Click Mobile UPI */}
                       <div>
-                        <p className="text-[8px] font-bold uppercase tracking-wider text-[#8ca097] mb-1">ONE-CLICK MOBILE UPI</p>
+                        <p className={`text-[8px] font-bold uppercase tracking-wider mb-1 ${
+                          isDark ? 'text-[#8ca097]' : 'text-[#3e5e52]'
+                        }`}>ONE-CLICK MOBILE UPI</p>
                         <div className="rounded-xl bg-gradient-to-r from-[#2ee6c5] via-[#3b82f6] to-[#8b5cf6] p-2 text-white flex items-center justify-between shadow-sm">
                           <div className="flex items-center gap-2">
                             <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/20">
@@ -2796,7 +2872,14 @@ export function BrandingPage() {
                         </div>
                         <div className="mt-1.5 grid grid-cols-4 gap-1">
                           {['PhonePe', 'Google Pay', 'Paytm', 'Cred / Other'].map((name) => (
-                            <div key={name} className="rounded-lg border border-[#1f332c] bg-[#14221f] py-1 text-center text-[8px] font-bold text-[#b4c7be]">
+                            <div
+                              key={name}
+                              className={`rounded-lg border py-1 text-center text-[8px] font-bold ${
+                                isDark
+                                  ? 'border-[#1f332c] bg-[#14221f] text-[#b4c7be]'
+                                  : 'border-[#d2e2d8] bg-[#f4f8f5] text-[#1a382e]'
+                              }`}
+                            >
                               {name}
                             </div>
                           ))}
@@ -2804,28 +2887,54 @@ export function BrandingPage() {
                       </div>
 
                       {/* Manual UPI ID */}
-                      <div className="rounded-lg border border-[#1f332c] bg-[#0c1513] p-2 flex items-center justify-between">
+                      <div className={`rounded-lg border p-2 flex items-center justify-between ${
+                        isDark
+                          ? 'border-[#1f332c] bg-[#0c1513]'
+                          : 'border-[#d2e2d8] bg-[#f0f7f3]'
+                      }`}>
                         <div className="min-w-0 pr-1">
-                          <p className="text-[7.5px] font-bold uppercase text-[#71857c]">MERCHANT VERIFIED UPI ID</p>
-                          <p className="font-mono text-[9px] font-bold text-[#2ee6c5] truncate">{merchant?.upiId || 'merchant@bank'}</p>
+                          <p className={`text-[7.5px] font-bold uppercase ${
+                            isDark ? 'text-[#71857c]' : 'text-[#4b685d]'
+                          }`}>MERCHANT VERIFIED UPI ID</p>
+                          <p className={`font-mono text-[9px] font-bold truncate ${
+                            isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                          }`}>{merchant?.upiId || 'merchant@bank'}</p>
                         </div>
-                        <span className="shrink-0 rounded bg-[#1b352c] px-1.5 py-0.5 text-[8px] font-bold text-[#2ee6c5]">
+                        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[8px] font-bold border ${
+                          isDark
+                            ? 'border-[#2ee6c5]/30 bg-[#1b352c] text-[#2ee6c5]'
+                            : 'border-[#9ad0c2] bg-white text-[#007a65]'
+                        }`}>
                           Copy
                         </span>
                       </div>
 
                       {/* Trust Notice */}
-                      <div className="flex items-center gap-1.5 rounded-lg bg-[#14221f]/50 p-1.5 text-[7.5px] text-[#8ca097]">
-                        <ShieldCheck className="h-3 w-3 text-[#2ee6c5] shrink-0" />
+                      <div className={`flex items-center gap-1.5 rounded-lg p-1.5 text-[7.5px] border ${
+                        isDark
+                          ? 'border-white/5 bg-[#14221f]/50 text-[#8ca097]'
+                          : 'border-[#d2e2d8] bg-[#f4f8f5] text-[#3e5e52]'
+                      }`}>
+                        <ShieldCheck className={`h-3 w-3 shrink-0 ${isDark ? 'text-[#2ee6c5]' : 'text-[#00826b]'}`} />
                         <span className="truncate">{trustNotice || `Your money goes directly to ${effectiveShopName}. PopPay never holds your funds.`}</span>
                       </div>
 
                       {/* Bottom Help Pills */}
-                      <div className="flex items-center justify-center gap-2 pt-1 border-t border-white/5">
-                        <span className="rounded-full border border-[#1f332c] bg-[#14221f] px-2 py-0.5 text-[8px] font-semibold text-[#8ca097]">
+                      <div className={`flex items-center justify-center gap-2 pt-1 border-t ${
+                        isDark ? 'border-white/5' : 'border-[#e5ede8]'
+                      }`}>
+                        <span className={`rounded-full border px-2 py-0.5 text-[8px] font-semibold ${
+                          isDark
+                            ? 'border-[#1f332c] bg-[#14221f] text-[#8ca097]'
+                            : 'border-[#d2e2d8] bg-[#f4f8f5] text-[#3e5e52]'
+                        }`}>
                           Need help?
                         </span>
-                        <span className="rounded-full border border-[#1f332c] bg-[#14221f] px-2 py-0.5 text-[8px] font-semibold text-[#8ca097]">
+                        <span className={`rounded-full border px-2 py-0.5 text-[8px] font-semibold ${
+                          isDark
+                            ? 'border-[#1f332c] bg-[#14221f] text-[#8ca097]'
+                            : 'border-[#d2e2d8] bg-[#f4f8f5] text-[#3e5e52]'
+                        }`}>
                           Paid but not confirmed?
                         </span>
                       </div>
@@ -2857,21 +2966,31 @@ export function BrandingPage() {
                           }`}>{tagline}</p>
                         )}
                       </div>
-                      {logoUrl ? (
-                        <img
-                          src={logoUrl}
-                          alt="Shop logo"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          className="h-9 w-9 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
-                        />
-                      ) : (
+                      <div className="relative shrink-0">
+                        {logoUrl ? (
+                          <img
+                            src={logoUrl}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextElementSibling) {
+                                e.currentTarget.nextElementSibling.style.display = 'grid';
+                              }
+                            }}
+                            className="h-9 w-9 rounded-xl object-cover border border-[#e2eae2]"
+                          />
+                        ) : null}
                         <div
-                          style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
-                          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
+                          style={{
+                            display: logoUrl ? 'none' : 'grid',
+                            backgroundColor: `${brandColor}20`,
+                            color: brandColor,
+                          }}
+                          className="grid h-9 w-9 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
                         >
                           {initialLetter}
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     {/* Amount Card */}
@@ -2980,37 +3099,173 @@ export function BrandingPage() {
 
                 {checkoutLayout === 'banner' ? (
                   /* Gaming Desktop Mockup */
-                  <div>
-                    <div className="relative h-28 w-full overflow-hidden bg-[#162520]">
+                  <div className={`transition-colors ${isDark ? 'text-[#eaf3ee]' : 'text-[#142e2b]'}`}>
+                    {/* Top Hero Graphic Banner with geometric fallback */}
+                    <div className={`relative h-32 w-full overflow-hidden ${
+                      isDark
+                        ? 'bg-gradient-to-br from-[#0c1412] via-[#162923] to-[#07100e]'
+                        : 'bg-gradient-to-br from-[#d4ece3] via-[#b6ded0] to-[#e4f2ec]'
+                    }`}>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                        <svg className="h-20 w-20 text-[#2ee6c5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+                          <rect x="2" y="6" width="20" height="12" rx="4" />
+                          <path d="M6 12h4M8 10v4M15 11h.01M18 13h.01" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </div>
                       <img
                         src={bannerUrl || 'https://images.mintgram.live/1792383026477.png'}
-                        alt="Hero Banner"
-                        className="h-full w-full object-cover"
-                        onError={(e) => { e.currentTarget.src = 'https://images.mintgram.live/1792383026477.png'; }}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover select-none"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                      <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/10 px-2 py-0.5 text-[9px] text-white">
-                        <span className="text-[#a1b8ae] text-[8px]">Hosted by</span>
+                      <div className={`absolute inset-0 ${
+                        isDark
+                          ? 'bg-gradient-to-t from-[#111a18] via-[#111a18]/30 to-transparent'
+                          : 'bg-gradient-to-t from-white via-white/20 to-transparent'
+                      }`} />
+                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/15 px-2.5 py-0.5 text-[9px] text-white shadow-md">
+                        <span className="text-[#a1b8ae] text-[8px] font-medium">Hosted by</span>
+                        {hostAvatarUrl ? (
+                          <img
+                            src={hostAvatarUrl}
+                            alt=""
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            className="h-4 w-4 rounded-full object-cover ring-1 ring-[#2ee6c5]"
+                          />
+                        ) : (
+                          <span className="grid h-4 w-4 place-items-center rounded-full bg-[#126b58] font-bold text-[8px] ring-1 ring-[#2ee6c5]">
+                            {(hostedBy || effectiveShopName || 'H').charAt(0).toUpperCase()}
+                          </span>
+                        )}
                         <span className="font-bold text-white max-w-[80px] truncate">{hostedBy || 'Host'}</span>
                         <span className="rounded bg-[#ff9a3c] px-1 py-0.2 text-[8px] font-extrabold text-black">{hostBadge || '65'}</span>
                       </div>
                     </div>
+
                     <div className="p-4 sm:p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-[8px] font-bold uppercase tracking-wider text-[#2ee6c5]">YOU&apos;RE PAYING</p>
-                          <h4 className="font-[var(--font-display)] text-[16px] font-bold text-[#f0f7f3] truncate">{effectiveShopName}</h4>
+                      {/* Brand Sub-Bar */}
+                      <div className={`flex items-center justify-between border-b pb-2 ${
+                        isDark ? 'border-white/10' : 'border-[#e5ede8]'
+                      }`}>
+                        <div className="flex items-center gap-1.5">
+                          <span className="grid h-5 w-5 place-items-center rounded-md bg-[var(--pulse-gradient)] text-white text-[10px] font-bold shadow-xs">
+                            P
+                          </span>
+                          <span className={`font-[var(--font-display)] text-xs font-bold tracking-tight ${
+                            isDark ? 'text-white' : 'text-[#142e2b]'
+                          }`}>poppay</span>
                         </div>
-                        <span className="rounded-full border border-[#2ee6c5]/40 bg-[#2ee6c5]/10 px-2.5 py-0.5 text-[9px] font-bold text-[#2ee6c5]">
-                          SECURE
-                        </span>
+                        <div className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8px] font-bold ${
+                          isDark
+                            ? 'border-[#2ee6c5]/50 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                            : 'border-[#009b80]/40 bg-[#009b80]/10 text-[#007a65]'
+                        }`}>
+                          <Lock className="h-2.5 w-2.5" />
+                          <span>SECURE</span>
+                        </div>
                       </div>
-                      <div className="rounded-xl border border-[#2ee6c5]/30 bg-[#07120f] p-3">
-                        <p className="text-[9px] font-bold text-[#8ca097]">EXACT PAYABLE AMOUNT</p>
-                        <p className="mt-1 font-[var(--font-display)] text-[28px] font-extrabold text-[#2ee6c5]">
-                          ₹499.24
+
+                      {/* YOU'RE PAYING */}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-[8px] font-bold uppercase tracking-wider ${
+                            isDark ? 'text-[#2ee6c5]' : 'text-[#00826b]'
+                          }`}>YOU&apos;RE PAYING</p>
+                          <h4 className={`font-[var(--font-display)] text-[17px] font-bold truncate leading-tight ${
+                            isDark ? 'text-white' : 'text-[#142e2b]'
+                          }`}>
+                            {effectiveShopName}
+                          </h4>
+                          {tagline && (
+                            <p className={`text-[10px] truncate mt-0.5 ${
+                              isDark ? 'text-[#9bb3a8]' : 'text-[#4b685d]'
+                            }`}>{tagline}</p>
+                          )}
+                        </div>
+                        <div className="relative shrink-0">
+                          {logoUrl ? (
+                            <img
+                              src={logoUrl}
+                              alt=""
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                if (e.currentTarget.nextElementSibling) {
+                                  e.currentTarget.nextElementSibling.style.display = 'grid';
+                                }
+                              }}
+                              className={`h-9 w-9 rounded-full object-cover ring-2 ${
+                                isDark ? 'ring-[#2ee6c5]' : 'ring-[#009b80]'
+                              }`}
+                            />
+                          ) : null}
+                          <div
+                            style={{ display: logoUrl ? 'none' : 'grid' }}
+                            className={`grid h-9 w-9 place-items-center rounded-full font-[var(--font-display)] text-xs font-bold ring-2 ${
+                              isDark
+                                ? 'bg-[#152e25] ring-[#2ee6c5] text-[#2ee6c5]'
+                                : 'bg-[#e2f3ec] ring-[#009b80] text-[#007a65]'
+                            }`}
+                          >
+                            {initialLetter}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Exact Payable Amount */}
+                      <div className={`rounded-xl border p-3 shadow-inner ${
+                        isDark
+                          ? 'border-[#2ee6c5]/25 bg-[#07120f]'
+                          : 'border-[#a5d5c7] bg-[#f0f7f3]'
+                      }`}>
+                        <div className={`flex items-center justify-between text-[9px] font-bold ${
+                          isDark ? 'text-[#8ca097]' : 'text-[#3e5e52]'
+                        }`}>
+                          <span>EXACT PAYABLE AMOUNT</span>
+                          <span className={`rounded-full px-2 py-0.5 text-[8px] flex items-center gap-1 font-mono border ${
+                            isDark
+                              ? 'bg-[#1b352c] text-[#2ee6c5] border-[#2ee6c5]/30'
+                              : 'bg-[#d8ece4] text-[#006e5a] border-[#9ad0c2]'
+                          }`}>
+                            <Clock3 className="h-2.5 w-2.5" />
+                            09:28
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-baseline justify-between">
+                          <p className={`font-[var(--font-display)] text-[28px] font-extrabold tracking-tight ${
+                            isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                          }`}>
+                            ₹499.24
+                          </p>
+                          <span className={`rounded-lg border px-2.5 py-1 text-[9px] font-bold ${
+                            isDark
+                              ? 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                              : 'border-[#9ad0c2] bg-white text-[#007a65]'
+                          }`}>
+                            Copy
+                          </span>
+                        </div>
+                        <p className={`mt-1 flex items-center gap-1 text-[8.5px] font-semibold ${
+                          isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                        }`}>
+                          <Check className="h-2.5 w-2.5" />
+                          <span>{guaranteeText || 'Instant Verification Guaranteed'}</span>
                         </p>
                       </div>
+
+                      {/* Promo Banner if enabled */}
+                      {enablePromoBanner && (
+                        <div className="rounded-xl bg-gradient-to-r from-[#9333ea] via-[#ec4899] to-[#f43f5e] p-2.5 text-white shadow-sm flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-black leading-tight">GET 50% OFF NEXT ENTRY!</p>
+                            <p className="text-[8px] text-white/80">Use code GAMER50 on checkout</p>
+                          </div>
+                          <span className="shrink-0 rounded-lg bg-yellow-400 px-2 py-1 text-[8.5px] font-extrabold text-black uppercase shadow-xs">
+                            {promoClaimText || 'CLAIM NOW'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* One Click UPI */}
                       <button
                         type="button"
                         className="w-full rounded-xl bg-gradient-to-r from-[#2ee6c5] via-[#3b82f6] to-[#8b5cf6] py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
@@ -3018,7 +3273,50 @@ export function BrandingPage() {
                         <span>Pay with UPI App</span>
                         <ArrowRight className="h-3 w-3" />
                       </button>
-                      <div className="text-center text-[9px] text-[#70847b]">
+
+                      {/* App Pills */}
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {['PhonePe', 'Google Pay', 'Paytm', 'Cred / Other'].map((name) => (
+                          <div
+                            key={name}
+                            className={`rounded-lg border py-1 text-center text-[8.5px] font-bold ${
+                              isDark
+                                ? 'border-[#1f332c] bg-[#14221f] text-[#b4c7be]'
+                                : 'border-[#d2e2d8] bg-[#f4f8f5] text-[#1a382e]'
+                            }`}
+                          >
+                            {name}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Verified UPI ID */}
+                      <div className={`rounded-lg border p-2 flex items-center justify-between ${
+                        isDark
+                          ? 'border-[#1f332c] bg-[#0c1513]'
+                          : 'border-[#d2e2d8] bg-[#f0f7f3]'
+                      }`}>
+                        <div className="min-w-0 pr-1">
+                          <p className={`text-[8px] font-bold uppercase ${
+                            isDark ? 'text-[#71857c]' : 'text-[#4b685d]'
+                          }`}>MERCHANT VERIFIED UPI ID</p>
+                          <p className={`font-mono text-[10px] font-bold truncate ${
+                            isDark ? 'text-[#2ee6c5]' : 'text-[#007a65]'
+                          }`}>{merchant?.upiId || 'merchant@bank'}</p>
+                        </div>
+                        <span className={`shrink-0 rounded px-2 py-0.5 text-[8.5px] font-bold border ${
+                          isDark
+                            ? 'border-[#2ee6c5]/30 bg-[#1b352c] text-[#2ee6c5]'
+                            : 'border-[#9ad0c2] bg-white text-[#007a65]'
+                        }`}>
+                          Copy
+                        </span>
+                      </div>
+
+                      {/* Direct UPI Notice */}
+                      <div className={`text-center text-[9px] ${
+                        isDark ? 'text-[#70847b]' : 'text-[#556960]'
+                      }`}>
                         Direct UPI to {effectiveShopName}
                       </div>
                     </div>
@@ -3040,21 +3338,31 @@ export function BrandingPage() {
                           previewTheme === 'dark' ? 'text-[#85978f]' : 'text-[#6d7f76]'
                         }`}>{tagline}</p>}
                       </div>
-                      {logoUrl ? (
-                        <img
-                          src={logoUrl}
-                          alt="Shop logo"
-                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          className="h-10 w-10 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
-                        />
-                      ) : (
+                      <div className="relative shrink-0">
+                        {logoUrl ? (
+                          <img
+                            src={logoUrl}
+                            alt=""
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              if (e.currentTarget.nextElementSibling) {
+                                e.currentTarget.nextElementSibling.style.display = 'grid';
+                              }
+                            }}
+                            className="h-10 w-10 rounded-xl object-cover border border-[#e2eae2]"
+                          />
+                        ) : null}
                         <div
-                          style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
-                          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
+                          style={{
+                            display: logoUrl ? 'none' : 'grid',
+                            backgroundColor: `${brandColor}20`,
+                            color: brandColor,
+                          }}
+                          className="grid h-10 w-10 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
                         >
                           {initialLetter}
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     <div className={`rounded-xl border p-3 ${
