@@ -87,9 +87,20 @@ async function updateBranding(req, res, next) {
       displayName: parsed.data.displayName || nameToSet,
       brandColor: parsed.data.brandColor || merchant.branding?.brandColor || '#126b58',
       checkoutTheme: parsed.data.checkoutTheme || merchant.branding?.checkoutTheme || 'light',
-      logoUrl: parsed.data.logoUrl || null,
-      tagline: parsed.data.tagline || null,
-      supportEmail: parsed.data.supportEmail || null,
+      checkoutLayout: parsed.data.checkoutLayout || merchant.branding?.checkoutLayout || 'classic',
+      bannerUrl: parsed.data.bannerUrl !== undefined ? (parsed.data.bannerUrl || null) : (merchant.branding?.bannerUrl || null),
+      hostedBy: parsed.data.hostedBy !== undefined ? (parsed.data.hostedBy || null) : (merchant.branding?.hostedBy || null),
+      hostAvatarUrl: parsed.data.hostAvatarUrl !== undefined ? (parsed.data.hostAvatarUrl || null) : (merchant.branding?.hostAvatarUrl || null),
+      hostBadge: parsed.data.hostBadge !== undefined ? (parsed.data.hostBadge || null) : (merchant.branding?.hostBadge || null),
+      enablePromoBanner: parsed.data.enablePromoBanner !== undefined ? Boolean(parsed.data.enablePromoBanner) : Boolean(merchant.branding?.enablePromoBanner),
+      promoBannerUrl: parsed.data.promoBannerUrl !== undefined ? (parsed.data.promoBannerUrl || null) : (merchant.branding?.promoBannerUrl || null),
+      promoLink: parsed.data.promoLink !== undefined ? (parsed.data.promoLink || null) : (merchant.branding?.promoLink || null),
+      promoClaimText: parsed.data.promoClaimText !== undefined ? (parsed.data.promoClaimText || 'CLAIM NOW') : (merchant.branding?.promoClaimText || 'CLAIM NOW'),
+      guaranteeText: parsed.data.guaranteeText !== undefined ? (parsed.data.guaranteeText || 'Instant Verification Guaranteed') : (merchant.branding?.guaranteeText || 'Instant Verification Guaranteed'),
+      trustNotice: parsed.data.trustNotice !== undefined ? (parsed.data.trustNotice || null) : (merchant.branding?.trustNotice || null),
+      logoUrl: parsed.data.logoUrl !== undefined ? (parsed.data.logoUrl || null) : (merchant.branding?.logoUrl || null),
+      tagline: parsed.data.tagline !== undefined ? (parsed.data.tagline || null) : (merchant.branding?.tagline || null),
+      supportEmail: parsed.data.supportEmail !== undefined ? (parsed.data.supportEmail || null) : (merchant.branding?.supportEmail || null),
     };
     await merchant.save();
 

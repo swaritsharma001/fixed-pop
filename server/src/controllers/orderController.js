@@ -128,10 +128,22 @@ async function publicCheckout(req, res, next) {
     });
     return res.json({
       merchantName: shopName,
+      merchantUpiId: merchant.upiId || null,
       branding: {
         displayName: shopName,
         brandColor: merchant.branding?.brandColor || '#126b58',
         checkoutTheme: merchant.branding?.checkoutTheme || 'light',
+        checkoutLayout: merchant.branding?.checkoutLayout || 'classic',
+        bannerUrl: merchant.branding?.bannerUrl || null,
+        hostedBy: merchant.branding?.hostedBy || null,
+        hostAvatarUrl: merchant.branding?.hostAvatarUrl || null,
+        hostBadge: merchant.branding?.hostBadge || null,
+        enablePromoBanner: Boolean(merchant.branding?.enablePromoBanner),
+        promoBannerUrl: merchant.branding?.promoBannerUrl || null,
+        promoLink: merchant.branding?.promoLink || null,
+        promoClaimText: merchant.branding?.promoClaimText || 'CLAIM NOW',
+        guaranteeText: merchant.branding?.guaranteeText || 'Instant Verification Guaranteed',
+        trustNotice: merchant.branding?.trustNotice || null,
         logoUrl: merchant.branding?.logoUrl || null,
         tagline: merchant.branding?.tagline || null,
         supportEmail: merchant.branding?.supportEmail || null,

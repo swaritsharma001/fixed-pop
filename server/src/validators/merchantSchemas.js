@@ -72,6 +72,45 @@ const brandingBodySchema = z
       .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'Must be a valid hex color code like #126b58')
       .optional(),
     checkoutTheme: z.enum(['light', 'dark', 'auto']).optional(),
+    checkoutLayout: z.enum(['classic', 'banner']).optional(),
+    bannerUrl: z
+      .string()
+      .trim()
+      .url('Must be a valid URL starting with http:// or https://')
+      .max(2048)
+      .nullable()
+      .optional()
+      .or(z.literal('')),
+    hostedBy: z.string().trim().max(120).nullable().optional().or(z.literal('')),
+    hostAvatarUrl: z
+      .string()
+      .trim()
+      .url('Must be a valid URL starting with http:// or https://')
+      .max(2048)
+      .nullable()
+      .optional()
+      .or(z.literal('')),
+    hostBadge: z.string().trim().max(30).nullable().optional().or(z.literal('')),
+    enablePromoBanner: z.boolean().optional(),
+    promoBannerUrl: z
+      .string()
+      .trim()
+      .url('Must be a valid URL starting with http:// or https://')
+      .max(2048)
+      .nullable()
+      .optional()
+      .or(z.literal('')),
+    promoLink: z
+      .string()
+      .trim()
+      .url('Must be a valid URL starting with http:// or https://')
+      .max(2048)
+      .nullable()
+      .optional()
+      .or(z.literal('')),
+    promoClaimText: z.string().trim().max(50).nullable().optional().or(z.literal('')),
+    guaranteeText: z.string().trim().max(120).nullable().optional().or(z.literal('')),
+    trustNotice: z.string().trim().max(250).nullable().optional().or(z.literal('')),
     logoUrl: z
       .string()
       .trim()

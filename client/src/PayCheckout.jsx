@@ -38,6 +38,12 @@ function Icon({ name, className = '' }) {
   if (name === 'refresh') {
     return <svg {...common}><path d="M20 7v5h-5M4 17v-5h5" /><path d="M5.7 9a7 7 0 0 1 11.6-2L20 12M4 12l2.7 5a7 7 0 0 0 11.6-2" /></svg>;
   }
+  if (name === 'shield') {
+    return <svg {...common}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
+  }
+  if (name === 'sparkles') {
+    return <svg {...common}><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z" /></svg>;
+  }
   return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg>;
 }
 
@@ -260,18 +266,22 @@ function PayCheckoutInner() {
   const [redirectIn, setRedirectIn] = useState(3);
   const [checkoutDark, setCheckoutDark] = useState(false);
   const [mobileTab, setMobileTab] = useState('upi');
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [showUtrSection, setShowUtrSection] = useState(false);
 
   useEffect(() => {
     if (checkout?.branding?.checkoutTheme === 'dark') {
       setCheckoutDark(true);
     } else if (checkout?.branding?.checkoutTheme === 'light') {
       setCheckoutDark(false);
+    } else if (checkout?.branding?.checkoutLayout === 'banner') {
+      setCheckoutDark(true);
     } else if (checkout?.branding?.checkoutTheme === 'auto') {
       if (typeof window !== 'undefined' && window.matchMedia) {
         setCheckoutDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
       }
     }
-  }, [checkout?.branding?.checkoutTheme]);
+  }, [checkout?.branding?.checkoutTheme, checkout?.branding?.checkoutLayout]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', checkoutDark);
@@ -550,48 +560,64 @@ function PayCheckoutInner() {
     }
   }
 
-  const logoUrl = checkout?.branding?.logoUrl;
-  const tagline = checkout?.branding?.tagline;
-  const supportEmail = checkout?.branding?.supportEmail;
-  const merchantName = checkout?.merchantName || checkout?.branding?.displayName || 'Merchant';
+  const branding = checkout?.branding || {};
+  const logoUrl = branding?.logoUrl;
+  const tagline = branding?.tagline;
+  const supportEmail = branding?.supportEmail;
+  const merchantName = checkout?.merchantName || branding?.displayName || 'Merchant';
+
+  const checkoutLayout = branding?.checkoutLayout || 'classic';
+  const isBannerLayout = checkoutLayout === 'banner';
+  const bannerUrl = branding?.bannerUrl;
+  const hostedBy = branding?.hostedBy;
+  const hostAvatarUrl = branding?.hostAvatarUrl;
+  const hostBadge = branding?.hostBadge;
+  const enablePromoBanner = branding?.enablePromoBanner;
+  const promoBannerUrl = branding?.promoBannerUrl;
+  const promoLink = branding?.promoLink;
+  const promoClaimText = branding?.promoClaimText || 'CLAIM NOW';
+  const guaranteeText = branding?.guaranteeText || 'Instant Verification Guaranteed';
+  const trustNotice = branding?.trustNotice;
 
   return (
     <main
-      className="checkout-shell min-h-[100dvh] px-4 py-5 sm:px-6 sm:py-9 transition-colors bg-[var(--pulse-bg)] text-[var(--pulse-ink)]"
+      className="checkout-shell min-h-[100dvh] px-3.5 py-4 sm:px-6 sm:py-8 transition-colors bg-[var(--pulse-bg)] text-[var(--pulse-ink)] flex flex-col justify-center"
     >
-      <div className="mx-auto max-w-[920px]">
-        <header className="entrance mb-5 flex items-center justify-between px-1 sm:mb-7">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--pulse-gradient)] text-white shadow-xs"
-            >
-              <svg viewBox="0 0 24 24" className="h-[21px] w-[21px]" fill="none" aria-hidden="true">
-                <path d="M5 7.5h14M5 12h14M5 16.5h8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-                <circle cx="18" cy="17" r="3" fill="white" />
-              </svg>
-            </span>
-            <span className="font-[var(--font-display)] text-[21px] font-bold tracking-tight text-[var(--pulse-ink)]">poppay</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCheckoutDark((d) => !d)}
-              title={checkoutDark ? 'Switch to Light checkout' : 'Switch to Dark checkout'}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--pulse-line)] bg-[var(--pulse-panel)] px-2.5 py-1 text-xs font-semibold text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
-            >
-              {checkoutDark ? (
-                <svg className="h-3.5 w-3.5 text-[var(--pulse-amber)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-              ) : (
-                <svg className="h-3.5 w-3.5 text-[var(--pulse-mint)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-              )}
-            </button>
-            <div className="flex items-center gap-1.5 rounded-full border border-[var(--pulse-line)] bg-[var(--pulse-panel)] px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold text-[var(--pulse-muted)]">
-              <Icon name="lock" className="h-[13px] w-[13px] text-[var(--pulse-mint)]" />
-              <span className="hidden xs:inline">SECURE CHECKOUT</span>
-              <span className="xs:hidden">SECURE</span>
+      <div className={`mx-auto w-full transition-all ${isBannerLayout ? 'max-w-[480px]' : 'max-w-[920px]'}`}>
+        {!isBannerLayout && (
+          <header className="entrance mb-5 flex items-center justify-between px-1 sm:mb-7">
+            <div className="flex items-center gap-2.5">
+              <span
+                className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--pulse-gradient)] text-white shadow-xs"
+              >
+                <svg viewBox="0 0 24 24" className="h-[21px] w-[21px]" fill="none" aria-hidden="true">
+                  <path d="M5 7.5h14M5 12h14M5 16.5h8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                  <circle cx="18" cy="17" r="3" fill="white" />
+                </svg>
+              </span>
+              <span className="font-[var(--font-display)] text-[21px] font-bold tracking-tight text-[var(--pulse-ink)]">poppay</span>
             </div>
-          </div>
-        </header>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCheckoutDark((d) => !d)}
+                title={checkoutDark ? 'Switch to Light checkout' : 'Switch to Dark checkout'}
+                className="flex items-center gap-1.5 rounded-full border border-[var(--pulse-line)] bg-[var(--pulse-panel)] px-2.5 py-1 text-xs font-semibold text-[var(--pulse-ink-2)] hover:text-[var(--pulse-ink)] transition"
+              >
+                {checkoutDark ? (
+                  <svg className="h-3.5 w-3.5 text-[var(--pulse-amber)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                ) : (
+                  <svg className="h-3.5 w-3.5 text-[var(--pulse-mint)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                )}
+              </button>
+              <div className="flex items-center gap-1.5 rounded-full border border-[var(--pulse-line)] bg-[var(--pulse-panel)] px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold text-[var(--pulse-muted)]">
+                <Icon name="lock" className="h-[13px] w-[13px] text-[var(--pulse-mint)]" />
+                <span className="hidden xs:inline">SECURE CHECKOUT</span>
+                <span className="xs:hidden">SECURE</span>
+              </div>
+            </div>
+          </header>
+        )}
 
         {viewState === 'error' ? (
           <section className="entrance pulse-card px-6 py-12 text-center sm:px-12">
@@ -681,7 +707,317 @@ function PayCheckoutInner() {
               </p>
             )}
           </section>
+        ) : isBannerLayout ? (
+          /* Gaming & Creator Pro Banner Checkout (1:1 with reference_checkout.png) */
+          <div className="entrance overflow-hidden rounded-[26px] sm:rounded-[32px] border border-white/10 dark:border-[#1d2f29] bg-[#0c1412] dark:bg-[#0c1412] shadow-2xl text-white">
+            {/* 1. Full Top Hero Graphic Banner */}
+            <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-[#162520]">
+              <img
+                src={bannerUrl || 'https://images.mintgram.live/1792383026477.png'}
+                alt="Tournament / Event Banner"
+                className="h-full w-full object-cover select-none"
+                onError={(e) => { e.currentTarget.src = 'https://images.mintgram.live/1792383026477.png'; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c1412] via-[#0c1412]/30 to-transparent" />
+              {/* Overlaid Top-Right Hosted by Badge */}
+              <div className="absolute top-3 right-3 sm:top-3.5 sm:right-3.5 flex items-center gap-1.5 sm:gap-2 rounded-full bg-black/75 backdrop-blur-md border border-white/15 px-3 py-1 text-xs text-white shadow-lg">
+                <span className="text-[#a1b8ae] text-[11px] font-medium">Hosted by</span>
+                {hostAvatarUrl ? (
+                  <img src={hostAvatarUrl} alt="Host" className="h-5 w-5 rounded-full object-cover ring-2 ring-[#2ee6c5]" />
+                ) : (
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[#126b58] font-bold text-[10px] ring-2 ring-[#2ee6c5]">
+                    {(hostedBy || merchantName || 'H').charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="font-bold text-white max-w-[100px] truncate">{hostedBy || merchantName || 'Host'}</span>
+                <span className="rounded bg-[#ff9a3c] px-1.5 py-0.5 text-[10px] font-extrabold text-black tracking-wide">
+                  {hostBadge || '65'}
+                </span>
+              </div>
+            </div>
+
+            {/* 2. Sub-App Bar */}
+            <div className="flex items-center justify-between px-5 sm:px-7 pt-4 pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="grid h-7 w-7 place-items-center rounded-[10px] bg-[var(--pulse-gradient)] text-white shadow-xs">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+                    <path d="M5 7.5h14M5 12h14M5 16.5h8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                    <circle cx="18" cy="17" r="3" fill="white" />
+                  </svg>
+                </span>
+                <span className="font-[var(--font-display)] text-[18px] font-bold tracking-tight text-white">poppay</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCheckoutDark((d) => !d)}
+                  title={checkoutDark ? 'Switch to Light' : 'Switch to Dark'}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 hover:text-white transition"
+                >
+                  {checkoutDark ? (
+                    <svg className="h-3.5 w-3.5 text-[#ff9a3c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                  ) : (
+                    <svg className="h-3.5 w-3.5 text-[#2ee6c5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  )}
+                </button>
+                <div className="flex items-center gap-1.5 rounded-full border border-[#2ee6c5]/50 bg-[#2ee6c5]/10 px-3 py-1 text-xs font-bold text-[#2ee6c5] shadow-[0_0_12px_rgba(46,230,197,0.15)]">
+                  <Icon name="lock" className="h-3 w-3 text-[#2ee6c5]" />
+                  <span>SECURE</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Main Content Container */}
+            <div className="p-5 sm:p-7 space-y-5">
+              {/* YOU'RE PAYING Section */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#2ee6c5]">YOU&apos;RE PAYING</p>
+                  <h1 className="mt-0.5 font-[var(--font-display)] text-[22px] sm:text-[26px] font-bold leading-tight tracking-tight text-white truncate">
+                    {merchantName}
+                  </h1>
+                  {tagline && <p className="mt-0.5 text-xs text-[#8ca097] truncate">{tagline}</p>}
+                </div>
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={merchantName}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-[#2ee6c5] shadow-[0_0_15px_rgba(46,230,197,0.3)]"
+                  />
+                ) : (
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#132822] ring-2 ring-[#2ee6c5] font-[var(--font-display)] text-lg font-bold text-[#2ee6c5] shadow-[0_0_15px_rgba(46,230,197,0.3)]">
+                    {merchantName.trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              {/* EXACT PAYABLE AMOUNT Card */}
+              <div className="rounded-2xl border border-[#2ee6c5]/30 bg-[#07120f] p-4 sm:p-5 shadow-inner">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#8ca097]">EXACT PAYABLE AMOUNT</span>
+                  {remainingMs !== null && (
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums border transition-colors ${
+                      isUrgent
+                        ? 'border-red-500/40 bg-red-500/10 text-red-400 animate-pulse'
+                        : 'border-[#2ee6c5]/30 bg-[#2ee6c5]/10 text-[#2ee6c5]'
+                    }`}>
+                      <Icon name="clock" className="h-3 w-3" />
+                      {formattedExpiry}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2.5 flex items-baseline justify-between gap-3">
+                  <p className="font-[var(--font-display)] text-[34px] sm:text-[42px] font-extrabold text-[#2ee6c5] tracking-tight leading-none drop-shadow-[0_0_16px_rgba(46,230,197,0.35)]">
+                    ₹{formatAmount(checkout?.payableAmount)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={copyAmount}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-3.5 py-1.5 text-xs font-bold text-[#2ee6c5] hover:bg-[#2ee6c5]/20 transition active:scale-95"
+                    title="Copy exact amount"
+                  >
+                    <Icon name={amountCopied ? 'check' : 'copy'} className="h-3.5 w-3.5" />
+                    {amountCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[#2ee6c5]">
+                  <Icon name="check" className="h-4 w-4 shrink-0 stroke-[2.5]" />
+                  <span>{guaranteeText}</span>
+                </div>
+              </div>
+
+              {/* Promotional Reward Card (if enabled) */}
+              {enablePromoBanner && (
+                promoBannerUrl ? (
+                  <a
+                    href={promoLink || '#'}
+                    target={promoLink ? '_blank' : undefined}
+                    rel="noopener noreferrer"
+                    className="block rounded-2xl overflow-hidden border border-white/10 shadow-md hover:opacity-95 transition"
+                  >
+                    <img src={promoBannerUrl} alt="Special Promotion" className="w-full h-auto object-cover max-h-36" />
+                  </a>
+                ) : (
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#9333ea] via-[#ec4899] to-[#f43f5e] p-3.5 sm:p-4 text-white shadow-lg">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-yellow-300">
+                          <Icon name="sparkles" className="h-3 w-3" />
+                          <span>SPECIAL REWARD OFFER</span>
+                        </div>
+                        <p className="mt-0.5 text-sm sm:text-base font-extrabold leading-snug drop-shadow-sm">
+                          GET 50% OFF ON YOUR NEXT ENTRY!
+                        </p>
+                        <p className="text-[11px] text-white/80 font-medium">Use code GAMER50 on checkout</p>
+                      </div>
+                      {promoLink ? (
+                        <a
+                          href={promoLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-black px-3.5 py-2 text-xs font-extrabold uppercase shadow-md transition active:scale-95"
+                        >
+                          {promoClaimText}
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => alert('Code GAMER50 copied! Use it on your next checkout.')}
+                          className="shrink-0 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-black px-3.5 py-2 text-xs font-extrabold uppercase shadow-md transition active:scale-95"
+                        >
+                          {promoClaimText}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+
+              {/* ONE-CLICK MOBILE UPI */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#8ca097] mb-2">ONE-CLICK MOBILE UPI</p>
+                <a
+                  href={checkout?.upiLink || undefined}
+                  onClick={(e) => { if (!checkout?.upiLink) e.preventDefault(); }}
+                  className="group relative flex min-h-[58px] items-center justify-between overflow-hidden rounded-2xl bg-gradient-to-r from-[#2ee6c5] via-[#3b82f6] to-[#8b5cf6] px-4 sm:px-5 text-white shadow-[0_4px_20px_rgba(46,230,197,0.3)] hover:brightness-105 active:scale-[0.99] transition"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/20 shadow-inner group-hover:scale-105 transition-transform">
+                      <Icon name="arrow" className="h-5 w-5" />
+                    </span>
+                    <span className="text-left">
+                      <span className="block text-[14px] font-bold leading-tight">Pay with UPI App</span>
+                      <span className="block text-[11px] font-normal text-white/85">Tap to open installed UPI app</span>
+                    </span>
+                  </span>
+                  <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur-sm shadow-xs">
+                    Tap to open
+                  </span>
+                </a>
+
+                {/* 4 Fast App Pills */}
+                <div className="mt-2.5 grid grid-cols-4 gap-2">
+                  {[
+                    { name: 'PhonePe' },
+                    { name: 'Google Pay' },
+                    { name: 'Paytm' },
+                    { name: 'Cred / Other' },
+                  ].map((app) => (
+                    <a
+                      key={app.name}
+                      href={checkout?.upiLink || undefined}
+                      onClick={(e) => { if (!checkout?.upiLink) e.preventDefault(); }}
+                      className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border border-white/10 bg-[#0e1b17] hover:border-[#2ee6c5]/40 text-center transition active:scale-95 shadow-xs"
+                    >
+                      <span className="text-[11px] font-bold text-[#b4c7be] hover:text-white">{app.name}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-white/10" />
+                <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#71857c]">
+                  OR MANUAL TRANSFER VIA UPI ID
+                </span>
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
+
+              {/* Verified UPI ID */}
+              <div className="flex min-h-[58px] items-center gap-3 rounded-2xl border border-white/10 bg-[#091512] p-3.5 shadow-inner">
+                <div className="min-w-0 flex-1 pl-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#71857c]">MERCHANT VERIFIED UPI ID</p>
+                  <p className="mt-0.5 break-all font-mono text-[13px] sm:text-[14px] font-bold text-[#2ee6c5] select-all">
+                    {upiId || checkout?.merchantUpiId || 'UPI ID unavailable'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyUpiId}
+                  disabled={!upiId && !checkout?.merchantUpiId}
+                  className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-3.5 text-xs font-bold text-[#2ee6c5] hover:bg-[#2ee6c5]/20 transition active:scale-95 disabled:opacity-50"
+                >
+                  <Icon name={copied ? 'check' : 'copy'} className="h-4 w-4" />
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+
+              {/* Security & Direct Payment Notice */}
+              <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#0a1714] p-3 text-[#8ca097]">
+                <div className="mt-0.5 text-[#2ee6c5] shrink-0">
+                  <Icon name="shield" className="h-4 w-4" />
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  {trustNotice || `Your money goes directly to ${merchantName}. PopPay never holds your funds.`}
+                </p>
+              </div>
+
+              {/* Quick Action Helpers */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowQrModal((s) => !s)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#0e1b17] px-3.5 py-1.5 text-xs font-bold text-[#b4c7be] hover:text-[#2ee6c5] hover:border-[#2ee6c5]/30 transition"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM17 17h4v4h-4zM14 20v1M20 14v3"/></svg>
+                  <span>{showQrModal ? 'Hide UPI QR' : 'Scan UPI QR Code'}</span>
+                </button>
+
+                {supportEmail && (
+                  <a
+                    href={`mailto:${supportEmail}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#0e1b17] px-3.5 py-1.5 text-xs font-semibold text-[#8ca097] hover:text-white transition"
+                  >
+                    <span>Need help?</span>
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowUtrSection((s) => !s)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#0e1b17] px-3.5 py-1.5 text-xs font-semibold text-[#8ca097] hover:text-[#2ee6c5] hover:border-[#2ee6c5]/30 transition"
+                >
+                  <span>Paid but not confirmed?</span>
+                </button>
+              </div>
+
+              {/* Expandable QR Code Section */}
+              {showQrModal && (
+                <div className="entrance mt-3 flex flex-col items-center rounded-2xl border border-[#2ee6c5]/30 bg-[#07120f] p-5 text-center">
+                  <p className="text-xs font-bold text-[#2ee6c5] uppercase tracking-wider mb-2">Scan via PhonePe, GPay or Paytm</p>
+                  <div className="qr-frame qr-scanner-box grid aspect-square w-full max-w-[220px] place-items-center rounded-2xl bg-white p-3 shadow-md">
+                    {qrImage ? (
+                      <>
+                        <img src={qrImage} alt="UPI QR code" className="h-full w-full object-contain select-none" />
+                        <div className="qr-scanner-line" />
+                      </>
+                    ) : (
+                      <div className="h-8 w-8 rounded-lg border-2 border-slate-300 border-t-[#2ee6c5] animate-spin" />
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 rounded-full border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-3 py-1 text-[11px] font-bold text-[#2ee6c5]">
+                    <span className="h-2 w-2 rounded-full bg-[#2ee6c5] animate-ping" />
+                    <span>Live Bank Alert Listener Active</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Expandable UTR Submission */}
+              {(showUtrSection || checkout?.utrSubmitted) && (
+                <div className="entrance pt-1">
+                  <UtrSubmission
+                    orderId={orderId}
+                    alreadySubmitted={checkout?.utrSubmitted}
+                    onConfirmed={applyOutcome}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
+          /* Classic Pulse Card Layout */
           <div className="entrance pulse-card overflow-hidden md:grid md:grid-cols-[1fr_360px] p-0">
             {/* Mobile Tab Selector (hidden on desktop) */}
             <div className="md:hidden flex border-b border-[var(--pulse-line)] p-1.5 gap-1.5 bg-[var(--pulse-panel-2)]">

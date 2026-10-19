@@ -15,14 +15,19 @@ import {
   ExternalLink,
   Eye,
   FileCode2,
+  Flame,
+  Image,
   KeyRound,
+  LayoutTemplate,
   Link2,
+  Lock,
   Mail,
   Monitor,
   Moon,
   Palette,
   Plus,
   RefreshCw,
+  Shield,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -1983,6 +1988,17 @@ export function BrandingPage() {
   const [displayName, setDisplayName] = useState(merchant?.branding?.displayName || merchant?.name || '');
   const [brandColor, setBrandColor] = useState(merchant?.branding?.brandColor || '#126b58');
   const [checkoutTheme, setCheckoutTheme] = useState(merchant?.branding?.checkoutTheme || 'light');
+  const [checkoutLayout, setCheckoutLayout] = useState(merchant?.branding?.checkoutLayout || 'classic');
+  const [bannerUrl, setBannerUrl] = useState(merchant?.branding?.bannerUrl || '');
+  const [hostedBy, setHostedBy] = useState(merchant?.branding?.hostedBy || '');
+  const [hostAvatarUrl, setHostAvatarUrl] = useState(merchant?.branding?.hostAvatarUrl || '');
+  const [hostBadge, setHostBadge] = useState(merchant?.branding?.hostBadge || '');
+  const [enablePromoBanner, setEnablePromoBanner] = useState(Boolean(merchant?.branding?.enablePromoBanner));
+  const [promoBannerUrl, setPromoBannerUrl] = useState(merchant?.branding?.promoBannerUrl || '');
+  const [promoLink, setPromoLink] = useState(merchant?.branding?.promoLink || '');
+  const [promoClaimText, setPromoClaimText] = useState(merchant?.branding?.promoClaimText || 'CLAIM NOW');
+  const [guaranteeText, setGuaranteeText] = useState(merchant?.branding?.guaranteeText || 'Instant Verification Guaranteed');
+  const [trustNotice, setTrustNotice] = useState(merchant?.branding?.trustNotice || '');
   const [logoUrl, setLogoUrl] = useState(merchant?.branding?.logoUrl || '');
   const [tagline, setTagline] = useState(merchant?.branding?.tagline || '');
   const [supportEmail, setSupportEmail] = useState(merchant?.branding?.supportEmail || '');
@@ -1997,6 +2013,17 @@ export function BrandingPage() {
       setBrandColor(merchant.branding?.brandColor || '#126b58');
       setCheckoutTheme(merchant.branding?.checkoutTheme || 'light');
       setPreviewTheme(merchant.branding?.checkoutTheme === 'dark' ? 'dark' : 'light');
+      setCheckoutLayout(merchant.branding?.checkoutLayout || 'classic');
+      setBannerUrl(merchant.branding?.bannerUrl || '');
+      setHostedBy(merchant.branding?.hostedBy || '');
+      setHostAvatarUrl(merchant.branding?.hostAvatarUrl || '');
+      setHostBadge(merchant.branding?.hostBadge || '');
+      setEnablePromoBanner(Boolean(merchant.branding?.enablePromoBanner));
+      setPromoBannerUrl(merchant.branding?.promoBannerUrl || '');
+      setPromoLink(merchant.branding?.promoLink || '');
+      setPromoClaimText(merchant.branding?.promoClaimText || 'CLAIM NOW');
+      setGuaranteeText(merchant.branding?.guaranteeText || 'Instant Verification Guaranteed');
+      setTrustNotice(merchant.branding?.trustNotice || '');
       setLogoUrl(merchant.branding?.logoUrl || '');
       setTagline(merchant.branding?.tagline || '');
       setSupportEmail(merchant.branding?.supportEmail || '');
@@ -2018,6 +2045,17 @@ export function BrandingPage() {
         displayName: displayName.trim() || merchant.name,
         brandColor,
         checkoutTheme,
+        checkoutLayout,
+        bannerUrl: bannerUrl.trim() || null,
+        hostedBy: hostedBy.trim() || null,
+        hostAvatarUrl: hostAvatarUrl.trim() || null,
+        hostBadge: hostBadge.trim() || null,
+        enablePromoBanner,
+        promoBannerUrl: promoBannerUrl.trim() || null,
+        promoLink: promoLink.trim() || null,
+        promoClaimText: promoClaimText.trim() || 'CLAIM NOW',
+        guaranteeText: guaranteeText.trim() || 'Instant Verification Guaranteed',
+        trustNotice: trustNotice.trim() || null,
         logoUrl: logoUrl.trim() || null,
         tagline: tagline.trim() || null,
         supportEmail: supportEmail.trim() || null,
@@ -2025,7 +2063,7 @@ export function BrandingPage() {
       const res = await updateBranding(payload);
       if (refreshMerchant) await refreshMerchant();
       else if (setMerchant) setMerchant((curr) => ({ ...curr, ...res }));
-      setMessage({ tone: 'success', text: 'Checkout look, theme mode and branding successfully saved!' });
+      setMessage({ tone: 'success', text: 'Checkout look, layout and branding successfully saved!' });
     } catch (err) {
       setMessage({ tone: 'error', text: err.message || 'Could not save branding settings.' });
     } finally {
@@ -2036,6 +2074,17 @@ export function BrandingPage() {
   function resetDefaults() {
     setDisplayName(merchant?.name || 'My Store');
     setBrandColor('#126b58');
+    setCheckoutLayout('classic');
+    setBannerUrl('');
+    setHostedBy('');
+    setHostAvatarUrl('');
+    setHostBadge('');
+    setEnablePromoBanner(false);
+    setPromoBannerUrl('');
+    setPromoLink('');
+    setPromoClaimText('CLAIM NOW');
+    setGuaranteeText('Instant Verification Guaranteed');
+    setTrustNotice('');
     setLogoUrl('');
     setTagline('Direct & Secure UPI Transfer');
     setSupportEmail('');
@@ -2307,6 +2356,242 @@ export function BrandingPage() {
               </div>
             </div>
           </Panel>
+
+          <Panel>
+            <PanelTitle
+              title="Checkout UI Style & Creator Mode"
+              detail="Choose between Classic Pulse or the Gaming & Creator Banner UI with top tournament graphics, creator badges, and promo cards."
+            />
+            <div className="space-y-6 p-5 sm:p-6">
+              {/* Layout Switcher */}
+              <div>
+                <p className="mb-2.5 text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                  Checkout Layout Style
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutLayout('classic')}
+                    className={`flex flex-col items-start p-4 rounded-xl border text-left transition ${
+                      checkoutLayout === 'classic'
+                        ? 'border-[#126b58] bg-[#f0f6f2] dark:bg-[#152e25] dark:border-[#34d399] shadow-sm ring-2 ring-[#126b58]/20'
+                        : 'border-[#e2e8e0] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] text-[#697f74] hover:border-[#ccd7cb]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-[#142e2b] dark:text-[#eaf3ee]">
+                      <LayoutTemplate className="h-4 w-4 text-[#126b58] dark:text-[#34d399]" />
+                      <span>Classic Pulse (Normal)</span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-[#71857c] dark:text-[#8ea299]">
+                      Clean, minimalist fintech card. Best for standard SaaS, eCommerce, and general invoices.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutLayout('banner')}
+                    className={`flex flex-col items-start p-4 rounded-xl border text-left transition ${
+                      checkoutLayout === 'banner'
+                        ? 'border-[#126b58] bg-[#f0f6f2] dark:bg-[#152e25] dark:border-[#34d399] shadow-sm ring-2 ring-[#126b58]/20'
+                        : 'border-[#e2e8e0] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] text-[#697f74] hover:border-[#ccd7cb]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-[#142e2b] dark:text-[#eaf3ee]">
+                      <Flame className="h-4 w-4 text-[#ff3d81]" />
+                      <span>Gaming & Creator Pro (Banner UI)</span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-[#71857c] dark:text-[#8ea299]">
+                      Top game/tournament hero banner, "Hosted by" badge, promo reward card & fast UPI app pills.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Creator & Banner Customization Options */}
+              {checkoutLayout === 'banner' && (
+                <div className="space-y-5 rounded-2xl border border-[#dce6dc] dark:border-[#1d2f2a] bg-[#f7faf6] dark:bg-[#111e1a] p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[#126b58] dark:text-[#34d399] flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Banner & Host Customization
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBannerUrl('https://images.mintgram.live/1792383026477.png');
+                        setHostedBy('Ujjwal Gaming');
+                        setHostBadge('65');
+                        setEnablePromoBanner(true);
+                        setPromoClaimText('CLAIM NOW');
+                      }}
+                      className="text-[11px] font-bold text-[#126b58] dark:text-[#34d399] hover:underline"
+                    >
+                      Fill Minecraft Preset
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                      Top Hero Banner Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={bannerUrl}
+                      onChange={(e) => setBannerUrl(e.target.value)}
+                      placeholder="https://example.com/banner.png or leave empty for default banner"
+                      className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3.5 text-xs font-mono text-[#294b40] dark:text-[#eaf3ee] outline-none transition focus:border-[#5b9b7b] focus:ring-4 focus:ring-[#126b58]/10"
+                    />
+                    <p className="mt-1.5 text-[11px] text-[#7d8e85]">
+                      High-impact header banner (e.g. tournament, product or game graphic).
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                        Hosted By Name
+                      </label>
+                      <input
+                        type="text"
+                        maxLength="120"
+                        value={hostedBy}
+                        onChange={(e) => setHostedBy(e.target.value)}
+                        placeholder="e.g. Ujjwal Gaming"
+                        className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3.5 text-xs text-[#294b40] dark:text-[#eaf3ee] outline-none transition focus:border-[#5b9b7b]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                        Host Avatar URL
+                      </label>
+                      <input
+                        type="url"
+                        value={hostAvatarUrl}
+                        onChange={(e) => setHostAvatarUrl(e.target.value)}
+                        placeholder="https://.../avatar.png"
+                        className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3.5 text-xs font-mono text-[#294b40] dark:text-[#eaf3ee] outline-none transition focus:border-[#5b9b7b]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                        Host Level / Badge
+                      </label>
+                      <input
+                        type="text"
+                        maxLength="30"
+                        value={hostBadge}
+                        onChange={(e) => setHostBadge(e.target.value)}
+                        placeholder="e.g. 65 or PRO"
+                        className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3.5 text-xs text-[#294b40] dark:text-[#eaf3ee] outline-none transition focus:border-[#5b9b7b]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Promo Banner Card Toggle */}
+                  <div className="pt-2 border-t border-[#dce5dc] dark:border-[#1d2f2a]">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={enablePromoBanner}
+                        onChange={(e) => setEnablePromoBanner(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-[#126b58] focus:ring-[#126b58]"
+                      />
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                        Enable Promotional Reward / Offer Banner
+                      </span>
+                    </label>
+
+                    {enablePromoBanner && (
+                      <div className="mt-3.5 space-y-3 pl-6">
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#5a7167] dark:text-[#a1b8ae]">
+                            Promo Banner Artwork URL (Optional)
+                          </label>
+                          <input
+                            type="url"
+                            value={promoBannerUrl}
+                            onChange={(e) => setPromoBannerUrl(e.target.value)}
+                            placeholder="Leave empty to use built-in 50% Off reward card"
+                            className="mt-1 h-10 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3 text-xs font-mono text-[#294b40] dark:text-[#eaf3ee] outline-none focus:border-[#5b9b7b]"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#5a7167] dark:text-[#a1b8ae]">
+                              Promo Target URL
+                            </label>
+                            <input
+                              type="url"
+                              value={promoLink}
+                              onChange={(e) => setPromoLink(e.target.value)}
+                              placeholder="https://myshop.com/offer"
+                              className="mt-1 h-10 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3 text-xs text-[#294b40] dark:text-[#eaf3ee] outline-none focus:border-[#5b9b7b]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#5a7167] dark:text-[#a1b8ae]">
+                              Claim Button Text
+                            </label>
+                            <input
+                              type="text"
+                              maxLength="50"
+                              value={promoClaimText}
+                              onChange={(e) => setPromoClaimText(e.target.value)}
+                              placeholder="CLAIM NOW"
+                              className="mt-1 h-10 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3 text-xs text-[#294b40] dark:text-[#eaf3ee] outline-none focus:border-[#5b9b7b]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Trust and Guarantee Text */}
+                  <div className="pt-2 border-t border-[#dce5dc] dark:border-[#1d2f2a] grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                        Verification Guarantee Badge Text
+                      </label>
+                      <input
+                        type="text"
+                        maxLength="120"
+                        value={guaranteeText}
+                        onChange={(e) => setGuaranteeText(e.target.value)}
+                        placeholder="Instant Verification Guaranteed"
+                        className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3.5 text-xs text-[#294b40] dark:text-[#eaf3ee] outline-none transition focus:border-[#5b9b7b]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#436458] dark:text-[#a1b8ae]">
+                        Custom Trust Notice
+                      </label>
+                      <input
+                        type="text"
+                        maxLength="250"
+                        value={trustNotice}
+                        onChange={(e) => setTrustNotice(e.target.value)}
+                        placeholder="Leave empty for default direct-to-merchant text"
+                        className="mt-2 h-11 w-full rounded-xl border border-[#dce5dc] dark:border-[#1d2f2a] bg-white dark:bg-[#15221f] px-3.5 text-xs text-[#294b40] dark:text-[#eaf3ee] outline-none transition focus:border-[#5b9b7b]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={saveBranding}
+                  style={{ backgroundColor: brandColor }}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-md transition hover:opacity-95 active:scale-95 disabled:opacity-50"
+                >
+                  {busy ? <Spinner small /> : <Check className="h-4 w-4" />}
+                  {busy ? 'Saving changes…' : 'Save layout & branding'}
+                </button>
+              </div>
+            </div>
+          </Panel>
         </div>
 
         {/* Right Column: Razorpay-Style Live Device Mockup with Light/Dark Theme Switcher */}
@@ -2391,128 +2676,286 @@ export function BrandingPage() {
                 </div>
 
                 {/* Mobile Screen Content */}
-                <div className={`rounded-[24px] p-4 shadow-sm border transition-colors ${
-                  previewTheme === 'dark'
-                    ? 'bg-[#111a18] border-[#1d2f29] text-[#eaf3ee]'
-                    : 'bg-[#fffefa] border-[#e4ece2] text-[#142e2b]'
-                }`}>
-                  {/* Shop Header */}
-                  <div className={`mb-4 flex items-start justify-between gap-2.5 border-b pb-3 ${
-                    previewTheme === 'dark' ? 'border-[#1b2b26]' : 'border-[#edf2ea]'
+                {checkoutLayout === 'banner' ? (
+                  /* Gaming & Creator Pro Mobile Mockup */
+                  <div className={`rounded-[24px] overflow-hidden shadow-sm border transition-colors ${
+                    previewTheme === 'dark'
+                      ? 'bg-[#0b1412] border-[#1d2f29] text-[#eaf3ee]'
+                      : 'bg-[#fffefa] border-[#e4ece2] text-[#142e2b]'
                   }`}>
-                    <div className="min-w-0 flex-1">
-                      <p className={`text-[9px] font-bold uppercase tracking-wider ${
-                        previewTheme === 'dark' ? 'text-[#8ca097]' : 'text-[#829289]'
-                      }`}>Paying to</p>
-                      <h4 className={`truncate font-[var(--font-display)] text-[16px] font-bold ${
-                        previewTheme === 'dark' ? 'text-[#f0f7f3]' : 'text-[#142e2b]'
-                      }`}>
-                        {effectiveShopName}
-                      </h4>
-                      {tagline && (
-                        <p className={`truncate text-[10px] ${
-                          previewTheme === 'dark' ? 'text-[#85978f]' : 'text-[#6d7f76]'
-                        }`}>{tagline}</p>
+                    {/* Top Hero Banner Graphic */}
+                    <div className="relative h-28 w-full overflow-hidden bg-[#162520]">
+                      <img
+                        src={bannerUrl || 'https://images.mintgram.live/1792383026477.png'}
+                        alt="Hero Banner"
+                        className="h-full w-full object-cover"
+                        onError={(e) => { e.currentTarget.src = 'https://images.mintgram.live/1792383026477.png'; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                      <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/10 px-2 py-0.5 text-[9px] text-white shadow-sm">
+                        <span className="text-[#a1b8ae] text-[8px]">Hosted by</span>
+                        {hostAvatarUrl ? (
+                          <img src={hostAvatarUrl} alt="Host" className="h-4 w-4 rounded-full object-cover ring-1 ring-[#2ee6c5]" />
+                        ) : (
+                          <span className="grid h-4 w-4 place-items-center rounded-full bg-[#126b58] font-bold text-[8px] ring-1 ring-[#2ee6c5]">
+                            {(hostedBy || effectiveShopName || 'H').charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="font-bold text-white max-w-[65px] truncate">{hostedBy || 'Host'}</span>
+                        <span className="rounded bg-[#ff9a3c] px-1 py-0.2 text-[8px] font-extrabold text-black">
+                          {hostBadge || '65'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 space-y-2.5">
+                      {/* Brand Sub-Bar */}
+                      <div className="flex items-center justify-between border-b pb-2 border-[#1b2b26]/50">
+                        <div className="flex items-center gap-1.5">
+                          <span className="grid h-5 w-5 place-items-center rounded-md bg-[var(--pulse-gradient)] text-white text-[10px] font-bold shadow-xs">
+                            P
+                          </span>
+                          <span className="font-[var(--font-display)] text-xs font-bold tracking-tight text-[#142e2b] dark:text-[#eaf3ee]">poppay</span>
+                        </div>
+                        <div className="flex items-center gap-1 rounded-full border border-[#2ee6c5]/50 bg-[#2ee6c5]/10 px-2 py-0.5 text-[8px] font-bold text-[#2ee6c5]">
+                          <Lock className="h-2.5 w-2.5 text-[#2ee6c5]" />
+                          <span>SECURE</span>
+                        </div>
+                      </div>
+
+                      {/* YOU'RE PAYING */}
+                      <div className="flex items-center justify-between gap-2 pt-0.5">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[8px] font-bold uppercase tracking-wider text-[#2ee6c5]">YOU&apos;RE PAYING</p>
+                          <h4 className="font-[var(--font-display)] text-[14px] font-bold truncate text-[#142e2b] dark:text-[#f0f7f3]">
+                            {effectiveShopName}
+                          </h4>
+                          {tagline && <p className="text-[9px] text-[#85978f] truncate">{tagline}</p>}
+                        </div>
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="Logo" className="h-8 w-8 rounded-full object-cover ring-2 ring-[#2ee6c5] shadow-xs" />
+                        ) : (
+                          <div className="grid h-8 w-8 place-items-center rounded-full bg-[#152e25] ring-2 ring-[#2ee6c5] font-bold text-xs text-[#2ee6c5] shadow-xs">
+                            {initialLetter}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Exact Payable Amount Card */}
+                      <div className="rounded-xl border border-[#2ee6c5]/25 bg-[#07120f] p-2.5 shadow-inner">
+                        <div className="flex items-center justify-between text-[9px] font-bold text-[#8ca097]">
+                          <span>EXACT PAYABLE AMOUNT</span>
+                          <span className="rounded-full bg-[#1b352c] text-[#2ee6c5] px-1.5 py-0.5 text-[8px] flex items-center gap-1 font-mono">
+                            <Clock3 className="h-2.5 w-2.5" />
+                            09:28
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-baseline justify-between">
+                          <p className="font-[var(--font-display)] text-[22px] font-extrabold text-[#2ee6c5] tracking-tight">
+                            ₹499.24
+                          </p>
+                          <span className="rounded-lg border border-[#2ee6c5]/30 bg-[#2ee6c5]/10 px-2 py-0.5 text-[9px] font-bold text-[#2ee6c5]">
+                            Copy
+                          </span>
+                        </div>
+                        <p className="mt-1 flex items-center gap-1 text-[8px] font-semibold text-[#2ee6c5]">
+                          <Check className="h-2.5 w-2.5" />
+                          <span>{guaranteeText || 'Instant Verification Guaranteed'}</span>
+                        </p>
+                      </div>
+
+                      {/* Optional Promo Banner */}
+                      {enablePromoBanner && (
+                        <div className="rounded-xl bg-gradient-to-r from-[#9333ea] via-[#ec4899] to-[#f43f5e] p-2 text-white shadow-sm flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black leading-tight">GET 50% OFF NEXT ENTRY!</p>
+                            <p className="text-[7.5px] text-white/80">Use code GAMER50 on checkout</p>
+                          </div>
+                          <span className="shrink-0 rounded-lg bg-yellow-400 px-2 py-1 text-[8px] font-extrabold text-black uppercase shadow-xs">
+                            {promoClaimText || 'CLAIM NOW'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* One-Click Mobile UPI */}
+                      <div>
+                        <p className="text-[8px] font-bold uppercase tracking-wider text-[#8ca097] mb-1">ONE-CLICK MOBILE UPI</p>
+                        <div className="rounded-xl bg-gradient-to-r from-[#2ee6c5] via-[#3b82f6] to-[#8b5cf6] p-2 text-white flex items-center justify-between shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/20">
+                              <ArrowRight className="h-3 w-3" />
+                            </span>
+                            <div className="text-left">
+                              <p className="text-[10px] font-bold leading-tight">Pay with UPI App</p>
+                              <p className="text-[8px] text-white/80">Tap to open installed app</p>
+                            </div>
+                          </div>
+                          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[8px] font-bold backdrop-blur-xs">
+                            Tap to open
+                          </span>
+                        </div>
+                        <div className="mt-1.5 grid grid-cols-4 gap-1">
+                          {['PhonePe', 'Google Pay', 'Paytm', 'Cred / Other'].map((name) => (
+                            <div key={name} className="rounded-lg border border-[#1f332c] bg-[#14221f] py-1 text-center text-[8px] font-bold text-[#b4c7be]">
+                              {name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Manual UPI ID */}
+                      <div className="rounded-lg border border-[#1f332c] bg-[#0c1513] p-2 flex items-center justify-between">
+                        <div className="min-w-0 pr-1">
+                          <p className="text-[7.5px] font-bold uppercase text-[#71857c]">MERCHANT VERIFIED UPI ID</p>
+                          <p className="font-mono text-[9px] font-bold text-[#2ee6c5] truncate">{merchant?.upiId || 'merchant@bank'}</p>
+                        </div>
+                        <span className="shrink-0 rounded bg-[#1b352c] px-1.5 py-0.5 text-[8px] font-bold text-[#2ee6c5]">
+                          Copy
+                        </span>
+                      </div>
+
+                      {/* Trust Notice */}
+                      <div className="flex items-center gap-1.5 rounded-lg bg-[#14221f]/50 p-1.5 text-[7.5px] text-[#8ca097]">
+                        <ShieldCheck className="h-3 w-3 text-[#2ee6c5] shrink-0" />
+                        <span className="truncate">{trustNotice || `Your money goes directly to ${effectiveShopName}. PopPay never holds your funds.`}</span>
+                      </div>
+
+                      {/* Bottom Help Pills */}
+                      <div className="flex items-center justify-center gap-2 pt-1 border-t border-white/5">
+                        <span className="rounded-full border border-[#1f332c] bg-[#14221f] px-2 py-0.5 text-[8px] font-semibold text-[#8ca097]">
+                          Need help?
+                        </span>
+                        <span className="rounded-full border border-[#1f332c] bg-[#14221f] px-2 py-0.5 text-[8px] font-semibold text-[#8ca097]">
+                          Paid but not confirmed?
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Classic Screen Content */
+                  <div className={`rounded-[24px] p-4 shadow-sm border transition-colors ${
+                    previewTheme === 'dark'
+                      ? 'bg-[#111a18] border-[#1d2f29] text-[#eaf3ee]'
+                      : 'bg-[#fffefa] border-[#e4ece2] text-[#142e2b]'
+                  }`}>
+                    {/* Shop Header */}
+                    <div className={`mb-4 flex items-start justify-between gap-2.5 border-b pb-3 ${
+                      previewTheme === 'dark' ? 'border-[#1b2b26]' : 'border-[#edf2ea]'
+                    }`}>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-[9px] font-bold uppercase tracking-wider ${
+                          previewTheme === 'dark' ? 'text-[#8ca097]' : 'text-[#829289]'
+                        }`}>Paying to</p>
+                        <h4 className={`truncate font-[var(--font-display)] text-[16px] font-bold ${
+                          previewTheme === 'dark' ? 'text-[#f0f7f3]' : 'text-[#142e2b]'
+                        }`}>
+                          {effectiveShopName}
+                        </h4>
+                        {tagline && (
+                          <p className={`truncate text-[10px] ${
+                            previewTheme === 'dark' ? 'text-[#85978f]' : 'text-[#6d7f76]'
+                          }`}>{tagline}</p>
+                        )}
+                      </div>
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt="Shop logo"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          className="h-9 w-9 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
+                        />
+                      ) : (
+                        <div
+                          style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
+                        >
+                          {initialLetter}
+                        </div>
                       )}
                     </div>
-                    {logoUrl ? (
-                      <img
-                        src={logoUrl}
-                        alt="Shop logo"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        className="h-9 w-9 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
-                      />
-                    ) : (
-                      <div
-                        style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
-                        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
-                      >
-                        {initialLetter}
+
+                    {/* Amount Card */}
+                    <div className={`rounded-xl border p-3 ${
+                      previewTheme === 'dark'
+                        ? 'border-[#1f332c] bg-[#14221f]'
+                        : 'border-[#e5ebe2] bg-[#f8faf6]'
+                    }`}>
+                      <div className="flex items-center justify-between text-[10px] font-bold text-[#71857c]">
+                        <span>EXACT AMOUNT</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] ${
+                          previewTheme === 'dark' ? 'bg-[#1b352c] text-[#4ade80]' : 'bg-[#edf3eb] text-[#3e6858]'
+                        }`}>
+                          ⏱ 09:48
+                        </span>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Amount Card */}
-                  <div className={`rounded-xl border p-3 ${
-                    previewTheme === 'dark'
-                      ? 'border-[#1f332c] bg-[#14221f]'
-                      : 'border-[#e5ebe2] bg-[#f8faf6]'
-                  }`}>
-                    <div className="flex items-center justify-between text-[10px] font-bold text-[#71857c]">
-                      <span>EXACT AMOUNT</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[9px] ${
-                        previewTheme === 'dark' ? 'bg-[#1b352c] text-[#4ade80]' : 'bg-[#edf3eb] text-[#3e6858]'
+                      <p className={`mt-1 font-[var(--font-display)] text-[26px] font-bold ${
+                        previewTheme === 'dark' ? 'text-[#ffffff]' : 'text-[#142e2b]'
                       }`}>
-                        ⏱ 09:48
-                      </span>
-                    </div>
-                    <p className={`mt-1 font-[var(--font-display)] text-[26px] font-bold ${
-                      previewTheme === 'dark' ? 'text-[#ffffff]' : 'text-[#142e2b]'
-                    }`}>
-                      <span style={{ color: brandColor }} className="mr-0.5 text-[18px]">₹</span>499.24
-                    </p>
-                    <p className="mt-1 text-[9px] font-semibold" style={{ color: brandColor }}>
-                      Includes 24p unique verification suffix
-                    </p>
-                  </div>
-
-                  {/* Primary CTA Button */}
-                  <div className="mt-3.5">
-                    <button
-                      type="button"
-                      style={{
-                        backgroundColor: brandColor,
-                        boxShadow: `0 4px 14px ${brandColor}40`,
-                      }}
-                      className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
-                    >
-                      <span>Pay via UPI App</span>
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
-                    <p className="mt-1 text-center text-[8px] text-[#829288]">
-                      GPay · PhonePe · Paytm · BHIM · Cred
-                    </p>
-                  </div>
-
-                  {/* Merchant UPI ID display */}
-                  <div className={`mt-3 rounded-lg border p-2 text-left ${
-                    previewTheme === 'dark'
-                      ? 'border-[#1f332c] bg-[#14221f]'
-                      : 'border-[#e4ebe2] bg-white'
-                  }`}>
-                    <p className="text-[8px] font-bold uppercase tracking-wider text-[#8b9c92]">Verified UPI ID</p>
-                    <p className={`font-mono text-[11px] font-semibold truncate ${
-                      previewTheme === 'dark' ? 'text-[#4ade80]' : 'text-[#234b3f]'
-                    }`}>
-                      {merchant?.upiId || 'merchant@bank'}
-                    </p>
-                  </div>
-
-                  {/* Micro QR Mockup */}
-                  <div className={`mt-3 flex items-center gap-3 rounded-xl border p-2 ${
-                    previewTheme === 'dark'
-                      ? 'border-[#1f332c] bg-[#14221f]'
-                      : 'border-[#e8eee6] bg-[#f7faf5]'
-                  }`}>
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white border border-[#dbe4d9] font-mono text-[8px] font-bold text-[#142e2b]">
-                      [ QR ]
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <p className={`text-[10px] font-bold ${previewTheme === 'dark' ? 'text-[#eaf3ee]' : 'text-[#234b3f]'}`}>
-                        Instant Bank Sync
+                        <span style={{ color: brandColor }} className="mr-0.5 text-[18px]">₹</span>499.24
                       </p>
-                      <p className="text-[9px] text-[#788a81]">Auto-detected within 3 seconds</p>
+                      <p className="mt-1 text-[9px] font-semibold" style={{ color: brandColor }}>
+                        Includes 24p unique verification suffix
+                      </p>
+                    </div>
+
+                    {/* Primary CTA Button */}
+                    <div className="mt-3.5">
+                      <button
+                        type="button"
+                        style={{
+                          backgroundColor: brandColor,
+                          boxShadow: `0 4px 14px ${brandColor}40`,
+                        }}
+                        className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
+                      >
+                        <span>Pay via UPI App</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                      <p className="mt-1 text-center text-[8px] text-[#829288]">
+                        GPay · PhonePe · Paytm · BHIM · Cred
+                      </p>
+                    </div>
+
+                    {/* Merchant UPI ID display */}
+                    <div className={`mt-3 rounded-lg border p-2 text-left ${
+                      previewTheme === 'dark'
+                        ? 'border-[#1f332c] bg-[#14221f]'
+                        : 'border-[#e4ebe2] bg-white'
+                    }`}>
+                      <p className="text-[8px] font-bold uppercase tracking-wider text-[#8b9c92]">Verified UPI ID</p>
+                      <p className={`font-mono text-[11px] font-semibold truncate ${
+                        previewTheme === 'dark' ? 'text-[#4ade80]' : 'text-[#234b3f]'
+                      }`}>
+                        {merchant?.upiId || 'merchant@bank'}
+                      </p>
+                    </div>
+
+                    {/* Micro QR Mockup */}
+                    <div className={`mt-3 flex items-center gap-3 rounded-xl border p-2 ${
+                      previewTheme === 'dark'
+                        ? 'border-[#1f332c] bg-[#14221f]'
+                        : 'border-[#e8eee6] bg-[#f7faf5]'
+                    }`}>
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-white border border-[#dbe4d9] font-mono text-[8px] font-bold text-[#142e2b]">
+                        [ QR ]
+                      </div>
+                      <div className="min-w-0 text-left">
+                        <p className={`text-[10px] font-bold ${previewTheme === 'dark' ? 'text-[#eaf3ee]' : 'text-[#234b3f]'}`}>
+                          Instant Bank Sync
+                        </p>
+                        <p className="text-[9px] text-[#788a81]">Auto-detected within 3 seconds</p>
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className={`mt-3 border-t pt-2 text-center text-[8px] ${
+                      previewTheme === 'dark' ? 'border-[#1b2b26] text-[#70847b]' : 'border-[#edf2ea] text-[#8b9c92]'
+                    }`}>
+                      Direct UPI to {effectiveShopName}
+                      {supportEmail && ` · ${supportEmail}`}
                     </div>
                   </div>
-
-                  {/* Footer */}
-                  <div className={`mt-3 border-t pt-2 text-center text-[8px] ${
-                    previewTheme === 'dark' ? 'border-[#1b2b26] text-[#70847b]' : 'border-[#edf2ea] text-[#8b9c92]'
-                  }`}>
-                    Direct UPI to {effectiveShopName}
-                    {supportEmail && ` · ${supportEmail}`}
-                  </div>
-                </div>
+                )}
               </div>
             ) : (
               /* Desktop Card Mockup */
@@ -2535,69 +2978,117 @@ export function BrandingPage() {
                   </span>
                 </div>
 
-                <div className="p-4 sm:p-5">
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <p className={`text-[9px] font-bold uppercase tracking-wider ${
-                        previewTheme === 'dark' ? 'text-[#8ca097]' : 'text-[#829289]'
-                      }`}>Paying to</p>
-                      <h4 className={`font-[var(--font-display)] text-[18px] font-bold ${
-                        previewTheme === 'dark' ? 'text-[#f0f7f3]' : 'text-[#142e2b]'
-                      }`}>
-                        {effectiveShopName}
-                      </h4>
-                      {tagline && <p className={`text-[10px] ${
-                        previewTheme === 'dark' ? 'text-[#85978f]' : 'text-[#6d7f76]'
-                      }`}>{tagline}</p>}
-                    </div>
-                    {logoUrl ? (
+                {checkoutLayout === 'banner' ? (
+                  /* Gaming Desktop Mockup */
+                  <div>
+                    <div className="relative h-28 w-full overflow-hidden bg-[#162520]">
                       <img
-                        src={logoUrl}
-                        alt="Shop logo"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                        className="h-10 w-10 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
+                        src={bannerUrl || 'https://images.mintgram.live/1792383026477.png'}
+                        alt="Hero Banner"
+                        className="h-full w-full object-cover"
+                        onError={(e) => { e.currentTarget.src = 'https://images.mintgram.live/1792383026477.png'; }}
                       />
-                    ) : (
-                      <div
-                        style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
-                      >
-                        {initialLetter}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                      <div className="absolute top-2 right-2 flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/10 px-2 py-0.5 text-[9px] text-white">
+                        <span className="text-[#a1b8ae] text-[8px]">Hosted by</span>
+                        <span className="font-bold text-white max-w-[80px] truncate">{hostedBy || 'Host'}</span>
+                        <span className="rounded bg-[#ff9a3c] px-1 py-0.2 text-[8px] font-extrabold text-black">{hostBadge || '65'}</span>
                       </div>
-                    )}
+                    </div>
+                    <div className="p-4 sm:p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[8px] font-bold uppercase tracking-wider text-[#2ee6c5]">YOU&apos;RE PAYING</p>
+                          <h4 className="font-[var(--font-display)] text-[16px] font-bold text-[#f0f7f3] truncate">{effectiveShopName}</h4>
+                        </div>
+                        <span className="rounded-full border border-[#2ee6c5]/40 bg-[#2ee6c5]/10 px-2.5 py-0.5 text-[9px] font-bold text-[#2ee6c5]">
+                          SECURE
+                        </span>
+                      </div>
+                      <div className="rounded-xl border border-[#2ee6c5]/30 bg-[#07120f] p-3">
+                        <p className="text-[9px] font-bold text-[#8ca097]">EXACT PAYABLE AMOUNT</p>
+                        <p className="mt-1 font-[var(--font-display)] text-[28px] font-extrabold text-[#2ee6c5]">
+                          ₹499.24
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="w-full rounded-xl bg-gradient-to-r from-[#2ee6c5] via-[#3b82f6] to-[#8b5cf6] py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
+                      >
+                        <span>Pay with UPI App</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                      <div className="text-center text-[9px] text-[#70847b]">
+                        Direct UPI to {effectiveShopName}
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  /* Classic Desktop Mockup */
+                  <div className="p-4 sm:p-5">
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div>
+                        <p className={`text-[9px] font-bold uppercase tracking-wider ${
+                          previewTheme === 'dark' ? 'text-[#8ca097]' : 'text-[#829289]'
+                        }`}>Paying to</p>
+                        <h4 className={`font-[var(--font-display)] text-[18px] font-bold ${
+                          previewTheme === 'dark' ? 'text-[#f0f7f3]' : 'text-[#142e2b]'
+                        }`}>
+                          {effectiveShopName}
+                        </h4>
+                        {tagline && <p className={`text-[10px] ${
+                          previewTheme === 'dark' ? 'text-[#85978f]' : 'text-[#6d7f76]'
+                        }`}>{tagline}</p>}
+                      </div>
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt="Shop logo"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          className="h-10 w-10 shrink-0 rounded-xl object-cover border border-[#e2eae2]"
+                        />
+                      ) : (
+                        <div
+                          style={{ backgroundColor: `${brandColor}20`, color: brandColor }}
+                          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl font-[var(--font-display)] text-sm font-bold border border-black/5"
+                        >
+                          {initialLetter}
+                        </div>
+                      )}
+                    </div>
 
-                  <div className={`rounded-xl border p-3 ${
-                    previewTheme === 'dark' ? 'border-[#1f332c] bg-[#14221f]' : 'border-[#e5ebe2] bg-[#f8faf6]'
-                  }`}>
-                    <p className="text-[10px] font-bold text-[#71857c]">EXACT PAYABLE AMOUNT</p>
-                    <p className={`mt-1 font-[var(--font-display)] text-[28px] font-bold ${
-                      previewTheme === 'dark' ? 'text-white' : 'text-[#142e2b]'
+                    <div className={`rounded-xl border p-3 ${
+                      previewTheme === 'dark' ? 'border-[#1f332c] bg-[#14221f]' : 'border-[#e5ebe2] bg-[#f8faf6]'
                     }`}>
-                      <span style={{ color: brandColor }} className="mr-0.5 text-[20px]">₹</span>499.24
-                    </p>
-                  </div>
+                      <p className="text-[10px] font-bold text-[#71857c]">EXACT PAYABLE AMOUNT</p>
+                      <p className={`mt-1 font-[var(--font-display)] text-[28px] font-bold ${
+                        previewTheme === 'dark' ? 'text-white' : 'text-[#142e2b]'
+                      }`}>
+                        <span style={{ color: brandColor }} className="mr-0.5 text-[20px]">₹</span>499.24
+                      </p>
+                    </div>
 
-                  <div className="mt-3.5">
-                    <button
-                      type="button"
-                      style={{
-                        backgroundColor: brandColor,
-                        boxShadow: `0 4px 14px ${brandColor}40`,
-                      }}
-                      className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
-                    >
-                      <span>Pay with UPI App</span>
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
-                  </div>
+                    <div className="mt-3.5">
+                      <button
+                        type="button"
+                        style={{
+                          backgroundColor: brandColor,
+                          boxShadow: `0 4px 14px ${brandColor}40`,
+                        }}
+                        className="w-full rounded-xl py-2.5 text-center text-xs font-bold text-white shadow-sm flex items-center justify-center gap-1.5"
+                      >
+                        <span>Pay with UPI App</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </div>
 
-                  <div className={`mt-3 text-center text-[9px] ${
-                    previewTheme === 'dark' ? 'text-[#70847b]' : 'text-[#86998f]'
-                  }`}>
-                    Powered by PopPay · Direct UPI to {effectiveShopName}
+                    <div className={`mt-3 text-center text-[9px] ${
+                      previewTheme === 'dark' ? 'text-[#70847b]' : 'text-[#86998f]'
+                    }`}>
+                      Powered by PopPay · Direct UPI to {effectiveShopName}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
