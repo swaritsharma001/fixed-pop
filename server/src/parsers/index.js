@@ -13,7 +13,7 @@ function parserForSender(sender) {
   if (normalized.endsWith('@famapp.in')) {
     return famapp.parseFamAppEmail;
   }
-  return null;
+  return parseGenericPaymentEmail;
 }
 
 module.exports = { parserForSender, parsersBySender };
