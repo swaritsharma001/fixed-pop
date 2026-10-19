@@ -546,9 +546,11 @@ function PayCheckoutInner() {
 
   if (remainingMs !== null) {
     if (totalDays > 0) {
-      formattedExpiry = `Valid for ${totalDays}d ${totalHours % 24}h`;
-    } else if (totalHours > 1) {
-      formattedExpiry = `Valid for ${totalHours} hours`;
+      const remainingHours = totalHours % 24;
+      formattedExpiry = remainingHours > 0 ? `Valid for ${totalDays}d ${remainingHours}h` : `Valid for ${totalDays}d`;
+    } else if (totalHours >= 1) {
+      const remainingMinutes = totalMinutes % 60;
+      formattedExpiry = remainingMinutes > 0 ? `Valid for ${totalHours}h ${remainingMinutes}m` : `Valid for ${totalHours}h`;
     } else if (totalMinutes > 0) {
       const mins = totalMinutes;
       const secs = Math.floor((remainingMs % 60000) / 1000);

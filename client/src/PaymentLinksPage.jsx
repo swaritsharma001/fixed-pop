@@ -86,22 +86,7 @@ export function PaymentLinksPage() {
         payload.expiresInMins = Number(expiresInMins);
       }
 
-      let created;
-      try {
-        created = await createPaymentLink(payload);
-      } catch (err) {
-        // If the backend has not yet been updated and rejects unknown fields, cleanly retry with standard payload
-        if (payload.expiresInMins) {
-          const fallbackPayload = {
-            amount: payload.amount,
-            receipt: payload.receipt,
-          };
-          if (payload.redirectUrl) fallbackPayload.redirectUrl = payload.redirectUrl;
-          created = await createPaymentLink(fallbackPayload);
-        } else {
-          throw err;
-        }
-      }
+      const created = await createPaymentLink(payload);
 
       const fullUrl = created.checkoutUrl?.startsWith('http')
         ? created.checkoutUrl

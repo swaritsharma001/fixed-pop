@@ -173,6 +173,7 @@ async function createPaymentLink(req, res, next) {
       amountPaise: parsed.data.amount,
       receipt: parsed.data.receipt,
       redirectUrl: parsed.data.redirectUrl,
+      expiresInMins: parsed.data.expiresInMins,
     });
 
     return res.status(201).json({
