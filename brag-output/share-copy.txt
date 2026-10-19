@@ -1,0 +1,3 @@
+Traditional gateways take 2–3% on every UPI payment and make you wait 2 days for settlement. 
+
+We built PopPay: instant peer-to-peer UPI checkout with dynamic paise matching, automated bank & FamApp alert parsing, and real-time SSE payment push. Zero gateway cuts. 100% direct to your bank. ⚡🇮🇳

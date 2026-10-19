@@ -135,3 +135,4 @@ dist
 
 # PopPay local configuration
 /server/.env
+.hyperframes/
